@@ -11,6 +11,9 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 - [Input](#input)
 - [Steps](#steps)
 - [Running pipeline on Compute cluster](#running-pipeline-on-compute-cluster)
+- [Quick Start](#quick-start)
+- [Customizing Config file](#customizing-config-file)
+- [Log](#log)
 
 ## Installation
 
