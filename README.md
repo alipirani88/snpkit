@@ -4,6 +4,10 @@
 ---
 This pipeline calls variants on PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used to to build a phylogeny or as an input for Gubbins/Beast analysis
 
+## Contents
+---
+
+
 **Installation**
 ---
 Pending
@@ -11,7 +15,7 @@ Pending
 
 **Input** 
 ---
-Input is a directory(-readsdir) containing SE/PE reads and a config file where all the parameters for the pipeline are set at the start of pipeline. This config file settings will be used universally on all samples. An example config file with default parameters are included in the pipeline folder. You can customize the config file and provide it with the -config argument. Detailed information in section [Customizing Config file]()
+Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize the config file and provide it with the -config argument. Detailed information in section [Customizing Config file]()
 
 **Steps**
 ---
