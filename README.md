@@ -6,8 +6,8 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 
 **Contents**
 
-- [Installation](https://github.com/alipirani88/variant_calling_pipeline/edit/master/README.md)
-- [Input](https://github.com/alipirani88/variant_calling_pipeline/edit/master/README.md)
+- [Installation](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Installation)
+- [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Input)
 
 **Installation**
 ---
