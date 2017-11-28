@@ -1,6 +1,6 @@
 # Variant Calling and core SNP diagnostics Pipeline
 
-## Synopsis
+### Synopsis
 
 
 This pipeline calls variants on PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used to to build a phylogeny or as an input for Gubbins/Beast analysis
