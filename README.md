@@ -23,7 +23,7 @@ Pending. Ignore this if you are in snitkin lab. The dependencies are already ins
 ## Input
 
 
-Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize the config file and provide it with the -config argument. Detailed information in section [Customizing Config file]()
+Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize the config file and provide it with the -config argument. Detailed information in section [Customizing Config file](#customizing-config-file)
 
 ## Steps
 
@@ -82,7 +82,7 @@ Assuming you want to generate core snps for more than a few hundred samples and 
 ```
 nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00
 ```
-See option resources in scheduler section of config file. 
+See option resources in scheduler section of [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information in section [Customizing Config file](#customizing-config-file)
 
 - Run variant calling step (All) on a set of PE reads with default parameters
 
