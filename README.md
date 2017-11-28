@@ -10,7 +10,7 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 - [Installation](#installation)
 - [Input](#input)
 - [Steps](#steps)
-- [Running pipeline on Compute cluster](#running-pipeline-on-compute-cluster)
+- [Run pipeline on Compute cluster](#run-pipeline-on-compute-cluster)
 - [Quick Start](#quick-start)
 - [Customizing Config file](#customizing-config-file)
 - [Log](#log)
@@ -55,7 +55,7 @@ Option ***core_prep*** : Run this step before running the last core steps. This 
 Option ***core*** : This step will generate core SNP consensus fasta file and a consensus fasta of only core variant positions. Various data matrices will generated at this step that can be used later for diagnostics purposes. 
 
 
-## Running pipeline on Compute cluster
+## Run pipeline on Compute cluster
 
 
 The variant calling can be run in parallel on each sample using the -cluster argument. Set the pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. For more details, check out UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website.
