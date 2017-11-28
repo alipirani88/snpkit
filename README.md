@@ -7,10 +7,10 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 
 ### Contents
 
-- [Installation](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Installation)
-- [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Input)
-- [Steps](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Steps)
-- [Running pipeline on Compute cluster](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#RunningpipelineonComputecluster)
+- [Installation](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md###Installation)
+- [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md###Input)
+- [Steps](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md###Steps)
+- [Running pipeline on Compute cluster](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md###RunningpipelineonComputecluster)
 
 ### Installation
 
