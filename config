@@ -4,13 +4,10 @@
 aligner: bowtie
 # Options for variant_caller: samtoolswithpostalignbam / gatkhaplotypecaller /samtools
 variant_caller: samtools
-########################################################################################################################
 
 # Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
 [bin_path]
 binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
-
-########################################################################################################################
 
 [scheduler]
 resources: nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00

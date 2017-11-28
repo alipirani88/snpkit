@@ -27,8 +27,8 @@
       <file leaf-file-name="config" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/config">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33333334" vertical-offset="5812" max-vertical-offset="17160">
-              <caret line="282" column="59" selection-start-line="282" selection-start-column="10" selection-end-line="282" selection-end-column="59" />
+            <state vertical-scroll-proportion="0.20578231" vertical-offset="0" max-vertical-offset="17094">
+              <caret line="11" column="10" selection-start-line="11" selection-start-column="1" selection-end-line="11" selection-end-column="10" />
               <folding />
             </state>
           </provider>
@@ -47,8 +47,8 @@
       <file leaf-file-name="variant_call.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/variant_call.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-7.6153846" vertical-offset="0" max-vertical-offset="8844">
-              <caret line="32" column="84" selection-start-line="32" selection-start-column="75" selection-end-line="32" selection-end-column="84" />
+            <state vertical-scroll-proportion="-6.769231" vertical-offset="0" max-vertical-offset="8844">
+              <caret line="30" column="118" selection-start-line="30" selection-start-column="98" selection-end-line="30" selection-end-column="118" />
               <folding />
             </state>
           </provider>
@@ -79,9 +79,9 @@
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
         <option value="$PROJECT_DIR$/variant_call.py" />
-        <option value="$PROJECT_DIR$/config" />
         <option value="$PROJECT_DIR$/README_detail.md" />
         <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/config" />
       </list>
     </option>
   </component>
@@ -313,14 +313,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/run_commands_parallel.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-22.0" vertical-offset="0" max-vertical-offset="682">
-          <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-37.2" vertical-offset="3240" max-vertical-offset="4488">
@@ -332,18 +324,26 @@
         <state />
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/run_commands_parallel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-22.0" vertical-offset="0" max-vertical-offset="682">
+          <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/variant_call.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-7.6153846" vertical-offset="0" max-vertical-offset="8844">
-          <caret line="32" column="84" selection-start-line="32" selection-start-column="75" selection-end-line="32" selection-end-column="84" />
+        <state vertical-scroll-proportion="-6.769231" vertical-offset="0" max-vertical-offset="8844">
+          <caret line="30" column="118" selection-start-line="30" selection-start-column="98" selection-end-line="30" selection-end-column="118" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33333334" vertical-offset="5812" max-vertical-offset="17160">
-          <caret line="282" column="59" selection-start-line="282" selection-start-column="10" selection-end-line="282" selection-end-column="59" />
+        <state vertical-scroll-proportion="0.20578231" vertical-offset="0" max-vertical-offset="17094">
+          <caret line="11" column="10" selection-start-line="11" selection-start-column="1" selection-end-line="11" selection-end-column="10" />
           <folding />
         </state>
       </provider>
