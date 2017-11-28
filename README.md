@@ -10,7 +10,7 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 - [Installation](#installation)
 - [Input](#input)
 - [Steps](#steps)
-- [Running pipeline on Compute cluster](#running-pipeline-on-rompute-cluster)
+- [Running pipeline on Compute cluster](#running-pipeline-on-compute-cluster)
 
 ## Installation
 
