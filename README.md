@@ -122,7 +122,7 @@ example:
 nodes=1:ppn=4,mem=47000mb,walltime=92:00:00
 ```
 
-Replace the resources option in scheduler section of config file with the above line.
+Replace the resources option in scheduler section of config file with the above line before running the below command.
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
