@@ -1,28 +1,28 @@
 # Variant Calling and core SNP diagnostics Pipeline
 
-### Synopsis
+## Synopsis
 
 
 This pipeline calls variants on PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used to to build a phylogeny or as an input for Gubbins/Beast analysis
 
-### Contents
+## Contents
 
 - [Installation](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md###Installation)
 - [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md###Input)
 - [Steps](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md###Steps)
 - [Running pipeline on Compute cluster](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#running-pipeline-on-rompute-cluster)
 
-### Installation
+## Installation
 
 Pending. Ignore this if you are in snitkin lab. The dependencies are already installed in lab bin_group folder.
 
 
-### Input
+## Input
 
 
 Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize the config file and provide it with the -config argument. Detailed information in section [Customizing Config file]()
 
-### Steps
+## Steps
 
 
 There are three main steps to generate core SNPs which should be provided with -steps argument.
@@ -52,7 +52,7 @@ Option ***core_prep*** : Run this step before running the last core steps. This 
 Option ***core*** : This step will generate core SNP consensus fasta file and a consensus fasta of only core variant positions. Various data matrices will generated at this step that can be used later for diagnostics purposes. 
 
 
-# Running pipeline on Compute cluster
+## Running pipeline on Compute cluster
 
 
 The variant calling can be run in parallel on each sample using the -cluster argument. Set the pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. For more details, check out UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website.
@@ -72,7 +72,7 @@ Possible options for -cluster option(Supported system: pbs):
 qstat -u USERNAME  
 ```
 
-### Quick Start
+## Quick Start
 
 
 Run variant calling on a set of PE reads with default parameters
@@ -85,7 +85,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 The above command will run variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the config file or check the help menu of the pipeline.
 
 
-### Customizing Config file:
+## Customizing Config file:
 
 The pipeline implements customisable variant calling configurations using config file. Config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
 Currently, The pipeline supports BWA aligner(mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
@@ -139,7 +139,7 @@ Parameters for each tools can be customised under the 'tool_parameter' attribute
 
 For example, to change the minadapterlength parameter of Trimmomatic from 8 to 10, replace minadapterlength of 8 with suppose 10 and restart the pipeline.
 
-### Log:
+## Log:
 
 The pipeline generates a log file following the naming convention: yyyy_mm_dd_hrs_mins_secs_analysisname.log.txt and tracks each event/command run by the pipleine. The log file sections follow the standard [Python logging conventions](https://docs.python.org/2/howto/logging.html): 
 ***INFO*** to print STDOUT messages; ***DEBUG*** to print commands ran by pipeline, ***ERROR*** to print STDERR messages and ***EXCEPTION*** to print an exception that occured while the pipeline was running.
