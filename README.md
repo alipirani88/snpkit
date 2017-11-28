@@ -77,8 +77,13 @@ qstat -u USERNAME
 
 ## Quick Start
 
+Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster. The default pbs resources used for parallel jobs are: 
 
-Run variant calling on a set of PE reads with default parameters
+
+nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00
+
+
+- Run variant calling step (All) on a set of PE reads with default parameters
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps All
@@ -88,6 +93,22 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 The above command will run variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the [config]() file or check the help menu of the pipeline.
 
 The results of variant calling will be placed in an individual folder for each sample. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
+
+OPTIONAL: In case, you want to rerun the above analysis with different variant call/filter parameters (i.e skip the read cleaning, alignment and post-alignment steps), you can do it as follows:
+
+NOTE: OPTIONAL
+```
+
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats
+
+```
+- Run core_prep step to generate files for core SNP calling.
+
+
+```
+
+
+```
 
 ## Customizing Config file:
 
