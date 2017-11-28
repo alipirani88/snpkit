@@ -8,12 +8,12 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 ### Contents
 
 - [Installation](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Installation)
-- [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.m**Input)
+- [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.m#Input)
+- [Steps]((https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.m#Steps)
 
 ### Installation
 
-
-Pending
+Pending. Ignore this if you are in snitkin lab. The dependencies are already installed in lab bin_group folder.
 
 
 ### Input
@@ -21,7 +21,7 @@ Pending
 
 Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize the config file and provide it with the -config argument. Detailed information in section [Customizing Config file]()
 
-###Steps
+### Steps
 
 
 There are three main steps to generate core SNPs which should be provided with -steps argument.
