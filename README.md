@@ -8,8 +8,8 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 ### Contents
 
 - [Installation](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Installation)
-- [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.m#Input)
-- [Steps](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.m#Steps)
+- [Input](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Input)
+- [Steps](https://github.com/alipirani88/variant_calling_pipeline/blob/master/README.md#Steps)
 
 ### Installation
 
