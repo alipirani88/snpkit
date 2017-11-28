@@ -95,14 +95,6 @@ The above command will run variant calling (step 1) pipeline on a set of PE read
 
 The results of variant calling will be placed in an individual folder for each sample. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
 
-OPTIONAL: In case, you want to rerun the above analysis with different variant call/filter parameters (i.e skip the read cleaning, alignment and post-alignment steps), you can do it as follows:
-
-NOTE: OPTIONAL
-```
-
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats -cluster parallel-cluster
-
-```
 - Run core_prep step to generate files for core SNP calling.
 
 Run this steps to generate various intermediate files that will be used for generating core SNPs.
@@ -122,12 +114,25 @@ example:
 nodes=1:ppn=4,mem=47000mb,walltime=92:00:00
 ```
 
-Replace the resources option in scheduler section of config file with the above line before running the below command.
+Replace the resources option in scheduler section of config file with the above line before running the command.
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
 
 ```
+
+
+
+---
+OPTIONAL: In case, you want to rerun the above analysis with different variant call/filter parameters (i.e skip the read cleaning, alignment and post-alignment steps), you can do it as follows:
+
+NOTE: OPTIONAL
+```
+
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats -cluster parallel-cluster
+
+```
+---
 
 ## Customizing Config file:
 
