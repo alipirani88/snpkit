@@ -101,7 +101,7 @@ def pipeline(args, logger):
 
     ## Continue: 3. Stages: Post-Alignment using SAMTOOLS, PICARD etc
     ## 3. Stages: Post-Alignment using SAMTOOLS, PICARD etc
-    def post_align():
+    def post_align(out_sam):
         keep_logging('START: Post-Alignment using SAMTOOLS, PICARD etc...', 'START: Post-Alignment using SAMTOOLS, PICARD etc...', logger, 'info')
         out_sorted_bam = prepare_bam(out_sam, args.output_folder, args.analysis_name, files_to_delete, logger, Config)
         keep_logging('END: Post-Alignment using SAMTOOLS, PICARD etc...', 'END: Post-Alignment using SAMTOOLS, PICARD etc...', logger, 'info')
@@ -223,7 +223,8 @@ def pipeline(args, logger):
             stats()
         elif steps_list[0] == "post-align":
             #Check BAM file here
-            out_sorted_bam = post_align()
+            out_sam = "%s/%s_aln.sam" % (args.output_folder, args.analysis_name)
+            out_sorted_bam = post_align(out_sam)
             #out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
