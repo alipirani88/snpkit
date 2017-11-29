@@ -150,6 +150,9 @@ example: To remove ERR134615 from analysis:
 
 ```
 rm /Path/test_output_core/core_temp_dir/ERR134615*
+
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
+
 ```
 
 ## Customizing Config file:
