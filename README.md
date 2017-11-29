@@ -155,6 +155,22 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
+## Output Files
+
+<!---
+| Extension | Description |
+| --------- | ----------- |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+
+--->
+
+
 ## Bonus Ducks
 
 - Run only a part of variant calling step

@@ -235,7 +235,7 @@ def create_job_fasta(jobrun, vcf_filenames):
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             print "Running: qsub %s" % i
-            #os.system("qsub %s" % i)
+            os.system("qsub %s" % i)
 
     elif jobrun == "parallel-local":
         """
@@ -244,8 +244,6 @@ def create_job_fasta(jobrun, vcf_filenames):
         command_array = []
         command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
-
-
         for i in vcf_filenames:
             job_name = os.path.basename(i)
             job_print_string = "#PBS -N %s_fasta\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i, args.reference)
@@ -253,11 +251,8 @@ def create_job_fasta(jobrun, vcf_filenames):
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
             f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
         pbs_scripts = glob.glob(pbs_dir)
-
-
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
         f3.close()
@@ -276,8 +271,6 @@ def create_job_fasta(jobrun, vcf_filenames):
         command_array = []
         command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
-
-
         for i in vcf_filenames:
             job_name = os.path.basename(i)
             job_print_string = "#PBS -N %s_fasta\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i, args.reference)
@@ -285,11 +278,8 @@ def create_job_fasta(jobrun, vcf_filenames):
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
             f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
         pbs_scripts = glob.glob(pbs_dir)
-
-
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
         f3.close()
@@ -298,8 +288,7 @@ def create_job_fasta(jobrun, vcf_filenames):
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-
-        os.system("bash command_file")
+        os.system("bash %s/command_file" % args.filter2_only_snp_vcf_dir)
     else:
         """
         Generate a Command list of each job and run it on local system one at a time
@@ -513,7 +502,7 @@ def generate_position_label_data_matrix():
             print_string_header = "\t"
             for i in vcf_filenames:
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
-            f1.write('\t' + print_string_header.strip() + '\n')
+            #f1.write('\t' + print_string_header.strip() + '\n')
             f2.write('\t' + print_string_header.strip() + '\n')
             f3.write('\t' + print_string_header.strip() + '\n')
             f4.write('\t' + print_string_header.strip() + '\n')
@@ -1066,7 +1055,7 @@ def extract_only_ref_variant_fasta():
 def extract_only_ref_variant_fasta_from_reference():
     ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir).readlines()
     fasta_string = ""
-    firstLine = ffp.pop(0)
+    #firstLine = ffp.pop(0)
     for lines in ffp:
         lines = lines.strip()
         extract_base = "grep -v \'>\' %s | tr -d \'\\n\'| cut -b%s" % (args.reference, lines)
@@ -1081,7 +1070,6 @@ def extract_only_ref_variant_fasta_from_reference():
     fasta_string = re.sub(pattern, '', fasta_string)
     final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '')) + fasta_string
     fp = open("%s/%s_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', ''))), 'w+')
-    #print final_fasta_string
     fp.write(final_fasta_string)
     fp.close()
 
@@ -1214,12 +1202,12 @@ if __name__ == '__main__':
 
 
     if "3" in args.steps:
-        print "Step 3: Introduced a bug. Require Testing."
+        print "Step 3: Require Testing."
         """ Analyze the FQ values of all the unique variant """
         #FQ_analysis()
 
         """
-        Introduced a bug. Require Testing.
+        Require Testing.
         """
         # """ Analyze the positions that were filtered out only due to insufficient depth"""
         #DP_analysis()
