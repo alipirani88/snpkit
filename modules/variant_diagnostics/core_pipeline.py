@@ -17,8 +17,9 @@ from pyfasta import Fasta
 from datetime import datetime
 import threading
 import json
-# from ..modules.logging_subprocess import *
-# from ..modules.log_modules import *
+from config_settings import ConfigSectionMap
+from logging_subprocess import *
+from log_modules import *
 
 parser = argparse.ArgumentParser(description='Parsing filtered VCF files and investigating Variants to determine the reason why it was filtered out from the final list')
 required = parser.add_argument_group('Required arguments')
@@ -159,8 +160,6 @@ def create_job(jobrun, vcf_filenames):
         #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
         pbs_scripts = glob.glob(pbs_dir)
-
-
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
         f3.close()
@@ -502,7 +501,7 @@ def generate_position_label_data_matrix():
             print_string_header = "\t"
             for i in vcf_filenames:
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
-            #f1.write('\t' + print_string_header.strip() + '\n')
+            #f.write('\t' + print_string_header.strip() + '\n')
             f2.write('\t' + print_string_header.strip() + '\n')
             f3.write('\t' + print_string_header.strip() + '\n')
             f4.write('\t' + print_string_header.strip() + '\n')
@@ -760,6 +759,7 @@ def generate_position_label_data_matrix():
     barplot_stats()
 
 def generate_vcf_files():
+    base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
     filter2_files_array = []
     for i in vcf_filenames:
         filter2_file = i.replace('_no_proximate_snp.vcf', '')
@@ -797,13 +797,13 @@ def generate_vcf_files():
     print "\nGenerating Consensus...\n"
     for file in filtered_out_vcf_files:
         f1 = open(filename, 'a+')
-        bgzip_cmd = "bgzip -f %s\n" % file
+        bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
         f1.write(bgzip_cmd)
         subprocess.call([bgzip_cmd], shell=True)
-        tabix_cmd = "tabix -f -p vcf %s.gz\n" % file
+        tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
         f1.write(tabix_cmd)
         subprocess.call([tabix_cmd], shell=True)
-        fasta_cmd = "cat %s | /home/apirani/bin/vcftools_0.1.12b/bin/vcf-consensus %s.gz > %s.fa\n" % (args.reference, file, file.replace('_filter2_final.vcf_core.vcf', ''))
+        fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s.fa\n" % (args.reference, base_vcftools_bin, file, file.replace('_filter2_final.vcf_core.vcf', ''))
         f1.write(fasta_cmd)
         subprocess.call([fasta_cmd], shell=True)
         base = os.path.basename(file)
@@ -812,12 +812,12 @@ def generate_vcf_files():
         subprocess.call([sed_command], shell=True)
         f1.write(sed_command)
     print "The consensus commands are in : %s" % filename
-    sequence_lgth_cmd = "for i in %s/*.fa; do bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % args.filter2_only_snp_vcf_dir
+    sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk-master'])
     os.system(sequence_lgth_cmd)
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
-    gatk_filter2_command = "java -jar ~/bin/GenomeAnalysisTK-3.3-0/GenomeAnalysisTK.jar -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
+    gatk_filter2_command = "java -jar %s/%s/GenomeAnalysisTK.jar -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("gatk", Config)['gatk_bin'], reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
     print "\n\nRunning Command: [%s]\n\n" % gatk_filter2_command
     os.system(gatk_filter2_command)
     filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (out_path, analysis, out_path, analysis)

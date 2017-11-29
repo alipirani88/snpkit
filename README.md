@@ -19,7 +19,7 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 
 ## Installation
 
-Pending. Ignore this if you are in snitkin lab. The dependencies are already installed in lab bin_group folder.
+Pending. Ignore this if you are in snitkin lab. The dependencies are already installed in lab bin_group folder. Use the python version installed in /nfs/esnitkin/bin_group/anaconda2/bin/python
 
 
 ## Input
@@ -157,7 +157,10 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ## Output Files
 
-<!---
+***Variant Calling***: Each sample folder under output directory contains standard variant calling outputs such as clean reads, aligned BAM files, filtered non-core vcf and various stats file. Detailed explanation can be found in section [Variant Calling Output](#variant-calling-output).
+
+Pending...
+
 | Extension | Description |
 | --------- | ----------- |
 | . |  |
@@ -168,7 +171,22 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 | . |  |
 | . |  |
 
---->
+
+
+
+***Core Variants***: The final core step results will be moved to \*_core_results directory under output directory. There are two results folder, core_snp_consensus and data_matrix. The core SNP vcf and consensus fasta files are stored in core_snp_consensus while the data matrices for useful for variant diagnostics can be found in data_matrix.
+
+Pending...
+
+| Extension | Description |
+| --------- | ----------- |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
 
 
 ## Bonus Ducks
@@ -303,7 +321,7 @@ python pipeline.py [-h] -PE1 path-to-forward-PE-read -PE2 path-to-reverse-PE-rea
 - config: Path to your customized config file. Make sure the section names are similar to the default config file.
 
 
-**Output**:
+**Variant Calling Output**:
 ***
 
 The pipeline generates various output files from different tools at different steps. The most notable ones are:
@@ -324,5 +342,4 @@ The pipeline generates various output files from different tools at different st
 >2. ***analysisname_vcf_stats***: vcf stats(raw) generated using vcftools
 >3. ***analysisname_depth_of_coverage***: Depth of Coverage generated using GATK Depth of Coverage.
 >4. ***analysisname_markduplicates_metrics***: Mark Duplicates metrics generated during Picard Mark Duplicates step.
->5. ***analysisname_report.pdf*** and ***genome_results.txt***: generated using [Qualimap bamQC](http://qualimap.bioinfo.cipf.es/).
----># variant_calling_pipeline
+--->
