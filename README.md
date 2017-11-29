@@ -14,6 +14,7 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 - [Quick Start](#quick-start)
 - [Customizing Config file](#customizing-config-file)
 - [Log](#log)
+- [Bonus Ducks](#bonus-ducks)
 
 ## Installation
 
@@ -140,6 +141,21 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats -cluster parallel-cluster -filenames filenames.txt
 ```
 
+- Run core_prep and core steps on selected files
+
+If you decide to exclude some samples from core snp analysis step (step 3), there is a way to do that without running the entire pipeline. 
+
+Go to your output directory /Path/test_output_core/ and remove files that start with exclusion sample prefix from a directory named core_temp_dir
+
+example: To remove ERR134615 from analysis:
+
+```
+rm /Path/test_output_core/core_temp_dir/ERR134615*
+
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
+
+```
+
 ## Customizing Config file:
 
 The pipeline implements customisable variant calling configurations using config file. Config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
@@ -196,8 +212,15 @@ For example, to change the minadapterlength parameter of Trimmomatic from 8 to 1
 
 ## Log:
 
-The pipeline generates a log file following the naming convention: yyyy_mm_dd_hrs_mins_secs_analysisname.log.txt and tracks each event/command run by the pipleine. The log file sections follow the standard [Python logging conventions](https://docs.python.org/2/howto/logging.html): 
-***INFO*** to print STDOUT messages; ***DEBUG*** to print commands ran by pipeline, ***ERROR*** to print STDERR messages and ***EXCEPTION*** to print an exception that occured while the pipeline was running.
+The pipeline generates a log file following the naming convention: yyyy_mm_dd_hrs_mins_secs_analysisname.log.txt and tracks each event/command. The log file sections follow standard [Python logging conventions](https://docs.python.org/2/howto/logging.html): 
+
+***INFO*** to print STDOUT messages; 
+
+***DEBUG*** to print commands ran by pipeline, 
+
+***ERROR*** to print STDERR messages and 
+
+***EXCEPTION*** to print an exception that occured while the pipeline was running.
 
 
 
