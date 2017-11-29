@@ -44,6 +44,8 @@ required.add_argument('-steps', action='store', dest="steps",
                          'Step 1: Run pbs jobs and process all pipeline generated vcf files to generate label files'
                          'Step 2: Analyze label files and generate matrix'
                          'Step 3: DP/FQ Analysis')
+required.add_argument('-results_dir', action='store', dest="results_dir",
+                    help='Path to Core results directory')
 args = parser.parse_args()
 
 
@@ -1083,6 +1085,13 @@ def extract_only_ref_variant_fasta_from_reference():
     fp.write(final_fasta_string)
     fp.close()
 
+def make_sure_path_exists(out_path):
+    try:
+        os.makedirs(out_path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            keep_logging('Errors in output folder path! please change the output path or analysis name.', 'Errors in output folder path! please change the output path or analysis name', logger, 'exception')
+            exit()
 
 """
 Pending inclusion
@@ -1185,6 +1194,18 @@ if __name__ == '__main__':
         extract_only_ref_variant_fasta_from_reference()
 
         extract_only_ref_variant_fasta()
+
+        #Adhoc
+        data_matrix_dir = args.results_dir + '/data_matrix'
+        core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
+        make_sure_path_exists(data_matrix_dir)
+        make_sure_path_exists(core_vcf_fasta_dir)
+
+        move_data_matrix_results = "mv %s/*.txt %s/temp* %s/All* %s/Only %s/*.R %s" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
+        move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz %s/*.fa %s" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+
+        os.system(move_data_matrix_results)
+        os.system(move_core_vcf_fasta_results)
 
         print "Description of Results:\n" \
               "1. bargraph_counts.txt and bargraph_percentage.txt: contains counts/percentage of unique positions filtered out due to different filter parameters for each sample. Run bargraph.R to plot bargraph statistics." \

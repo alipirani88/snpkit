@@ -34,35 +34,37 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="samtools.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/modules/samtools.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1606" max-vertical-offset="2948">
-              <caret line="32" column="176" selection-start-line="32" selection-start-column="176" selection-end-line="32" selection-end-column="176" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="run_commands_parallel.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/run_commands_parallel.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="550" max-vertical-offset="682">
-              <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/README.md">
           <provider editor-type-id="MarkdownPreviewEditor">
             <state />
           </provider>
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.27868852" vertical-offset="1283" max-vertical-offset="6996">
+            <state vertical-scroll-proportion="-10.766666" vertical-offset="1283" max-vertical-offset="6996">
               <caret line="73" column="98" selection-start-line="73" selection-start-column="98" selection-end-line="73" selection-end-column="98" />
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="variant_call.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/variant_call.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="38.826923" vertical-offset="2987" max-vertical-offset="8866">
+              <caret line="58" column="18" selection-start-line="52" selection-start-column="0" selection-end-line="58" selection-end-column="18" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="core_pipeline.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.59366757" vertical-offset="25879" max-vertical-offset="27676">
+              <caret line="1207" column="45" selection-start-line="1207" selection-start-column="45" selection-end-line="1207" selection-end-column="45" />
+              <folding>
+                <element signature="e#0#31#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -77,16 +79,16 @@
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/parse_vcf_for_reason_individual_jobs.py" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/reason_job.py" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py" />
-        <option value="$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
         <option value="$PROJECT_DIR$/README_detail.md" />
         <option value="$PROJECT_DIR$/config" />
-        <option value="$PROJECT_DIR$/variant_call.py" />
         <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/variant_call.py" />
+        <option value="$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="24" />
+    <option name="x" value="6" />
     <option name="y" value="23" />
     <option name="width" value="2536" />
     <option name="height" value="1325" />
@@ -144,6 +146,24 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="modules" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="variant_calling_pipeline" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="variant_calling_pipeline" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="modules" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="variant_diagnostics" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -292,7 +312,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="24" y="23" width="2536" height="1325" extended-state="0" />
+    <frame x="6" y="23" width="2536" height="1325" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -401,9 +421,27 @@
         <state />
       </provider>
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.27868852" vertical-offset="1283" max-vertical-offset="6996">
+        <state vertical-scroll-proportion="-10.766666" vertical-offset="1283" max-vertical-offset="6996">
           <caret line="73" column="98" selection-start-line="73" selection-start-column="98" selection-end-line="73" selection-end-column="98" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="38.826923" vertical-offset="2987" max-vertical-offset="8866">
+          <caret line="58" column="18" selection-start-line="52" selection-start-column="0" selection-end-line="58" selection-end-column="18" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.59366757" vertical-offset="25879" max-vertical-offset="27676">
+          <caret line="1207" column="45" selection-start-line="1207" selection-start-column="45" selection-end-line="1207" selection-end-column="45" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

@@ -277,9 +277,9 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
     keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
 
-def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger):
+def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir):
     file_exists(reference)
-    core_pipeline = "/home/apirani/anaconda/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster)
+    core_pipeline = "/home/apirani/anaconda/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
@@ -357,6 +357,8 @@ if __name__ == '__main__':
         keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
         core_temp_dir = args.output_folder + "/core_temp_dir/"
         make_sure_path_exists(core_temp_dir)
+        # core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
+        # make_sure_path_exists(core_results_dir)
         keep_logging('Copying vcf files to %s' % core_temp_dir, 'Copying vcf files to %s' % core_temp_dir, logger, 'info')
         cp_command = "cp %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf.gz %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf.gz %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
         call(cp_command, logger)
@@ -380,6 +382,8 @@ if __name__ == '__main__':
     elif "core" in args.steps:
         keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
         core_temp_dir = args.output_folder + "/core_temp_dir/"
+        core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
+        make_sure_path_exists(core_results_dir)
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = glob.glob("%s/*vcf_no_proximate_snp.vcf" % core_temp_dir)
         if len(list_of_label_files) == len(list_of_vcf_files):
@@ -397,7 +401,7 @@ if __name__ == '__main__':
                 out_fp.write(os.path.basename(file)+'\n')
         out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
-        run_core_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger)
+        run_core_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, core_results_dir)
 
     else:
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')
