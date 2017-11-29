@@ -14,7 +14,7 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 - [Quick Start](#quick-start)
 - [Customizing Config file](#customizing-config-file)
 - [Log](#log)
-- [Bonus Ducks](#bonusducks)
+- [Bonus Ducks](#bonus-ducks)
 
 ## Installation
 
