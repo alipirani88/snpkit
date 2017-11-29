@@ -140,6 +140,18 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats -cluster parallel-cluster -filenames filenames.txt
 ```
 
+- Run core_prep and core steps on selected files
+
+If you decide to exclude some samples from core snp analysis step (step 3), there is a way to do that without running the entire pipeline. 
+
+Go to your output directory /Path/test_output_core/ and remove files that start with exclusion sample prefix from a directory named core_temp_dir
+
+example: To remove ERR134615 from analysis:
+
+```
+rm /Path/test_output_core/core_temp_dir/ERR134615*
+```
+
 ## Customizing Config file:
 
 The pipeline implements customisable variant calling configurations using config file. Config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
