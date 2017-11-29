@@ -1,7 +1,7 @@
 # Set which tools to use in pipeline:
 [pipeline]
 # Options for Aligner:bwa / smalt / bowtie
-aligner: bowtie
+aligner: bwa
 # Options for variant_caller: samtoolswithpostalignbam / gatkhaplotypecaller /samtools
 variant_caller: samtools
 

@@ -321,28 +321,30 @@ if __name__ == '__main__':
     args = parser().parse_args()
     global config_file
     global log_unique_time
+    if args.output_folder != '':
+        args.output_folder += '/'
+    make_sure_path_exists(args.output_folder)
     log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
     if args.config:
         config_file = args.config
     else:
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
     global logger
+    logger = generate_logger(args.output_folder, args.analysis_name, log_unique_time)
     global Config
     global files_to_delete
     files_to_delete = []
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
+    call("cp %s %s/%s_%s_config_copy.txt" % (config_file, args.output_folder, log_unique_time, args.analysis_name), logger)
 
     # Run pipeline steps
     if "core" not in args.steps:
-        if args.output_folder != '':
-            args.output_folder += '/'
-        make_sure_path_exists(args.output_folder)
         if args.cluster:
             cluster_mode = args.cluster
         else:
             cluster_mode = "local"
-        logger = generate_logger(args.output_folder, args.analysis_name, log_unique_time)
+
         keep_logging('START: Variant Calling Pipeline', 'START: Variant Calling Pipeline', logger, 'info')
 
         list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
@@ -352,7 +354,6 @@ if __name__ == '__main__':
         keep_logging('End: Variant calling Pipeline', 'End: Variant calling Pipeline', logger, 'info')
 
     elif "core_prep" in args.steps:
-        logger = generate_logger(args.output_folder, args.analysis_name, log_unique_time)
         keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
         core_temp_dir = args.output_folder + "/core_temp_dir/"
         make_sure_path_exists(core_temp_dir)
@@ -377,7 +378,6 @@ if __name__ == '__main__':
         run_core_prep_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger)
 
     elif "core" in args.steps:
-        logger = generate_logger(args.output_folder, args.analysis_name, log_unique_time)
         keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
         core_temp_dir = args.output_folder + "/core_temp_dir/"
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
@@ -398,9 +398,6 @@ if __name__ == '__main__':
         out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         run_core_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger)
-
-
-
 
     else:
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')
