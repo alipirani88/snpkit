@@ -70,8 +70,8 @@ Variant Calling pipeline for Illumina PE/SE data.
 Required arguments:
 
   -type         Type of reads: SE or PE
-  -readsdir     Path to Sequencing Reads Data directory. NOTE: Provide full/absolute path.
-  -outdir       Output Folder Path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
+  -readsdir     Path to Sequencing Reads Data directory. Requires full/absolute path.
+  -outdir       Output Folder Path ending with output directory name to save the results. Requires full/absolute path.
   -index        Reference Index Name. Most Frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris
   -steps        Variant Calling Steps in sequential order.
                 1.   All: This will run all the steps starting from cleaning the reads to variant calling;
