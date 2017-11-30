@@ -147,7 +147,7 @@ Since this step compares multiple files simultaneously and involves multiple I/O
 example:
 
 ```
-nodes=1:ppn=4,mem=47000mb,walltime=92:00:00
+nodes=1:ppn=4,mem=47000mb,walltime=24:00:00
 ```
 
 Replace the resources option in scheduler section of config file with the above line before running the command.
