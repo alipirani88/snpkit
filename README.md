@@ -116,7 +116,7 @@ qstat -u USERNAME
 Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster(Time and memory efficient). The default pbs resources used for parallel jobs are: 
 
 ```
-nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00
+nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
 ```
 See option resources in scheduler section of [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information in section [Customizing Config file](#customizing-config-file)
 
@@ -227,6 +227,14 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ## Customizing Config file:
 
+By default, the pipeline uses config file that comes with the pipeline. Make sure to edit this config file or copy it to your local system, edit it and provide path of this edited config file with -config argument.
+
+```
+
+cp variant_calling_pipeline/config /Path-to-local/config_edit
+
+```
+
 The pipeline implements customisable variant calling configurations using config file. Config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
 Currently, The pipeline supports BWA aligner(mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
 
@@ -248,7 +256,24 @@ Make sure you have downloaded all the dependencies for the pipeline in a folder 
 binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 ```
 
-NOTE: Add the required perl libraries(such as in the case of vcftools) PERL5LIB environment variable. 
+NOTE: Add the required perl libraries(such as in the case of vcftools) PERL5LIB environment variable. For flux users, you can do that by loading perl-modules
+
+```
+module load perl-modules
+```
+
+If you wish to run the jobs on clsuter, make sure you cahnge the necessary schedular parameters in scheduler section shown below: for more information, visit [flux](http://arc-ts.umich.edu/systems-and-services/flux/) homepage.
+
+```
+
+[scheduler]
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
+email: username@umich.edu
+queue: XXX
+flux_account: XXX
+notification: a
+
+```
 
 Every tool has its own *_bin option where you can set the folder name in which the tool resides. For example, in the below Trimmomatic section example, the Trimmomatic tool resides in /Trimmomatic/ folder that is set with trimmomatic_bin option which in itself resides in /nfs/esnitkin/bin_group/variant_calling_bin/ folder that was set in binbase option above.
 
