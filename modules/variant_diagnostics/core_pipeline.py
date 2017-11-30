@@ -17,9 +17,10 @@ from pyfasta import Fasta
 from datetime import datetime
 import threading
 import json
+import ConfigParser
 from config_settings import ConfigSectionMap
-from logging_subprocess import *
-from log_modules import *
+#from logging_subprocess import *
+#from log_modules import *
 
 parser = argparse.ArgumentParser(description='Parsing filtered VCF files and investigating Variants to determine the reason why it was filtered out from the final list')
 required = parser.add_argument_group('Required arguments')
@@ -47,6 +48,8 @@ required.add_argument('-steps', action='store', dest="steps",
                          'Step 3: DP/FQ Analysis')
 required.add_argument('-results_dir', action='store', dest="results_dir",
                     help='Path to Core results directory')
+required.add_argument('-config', action='store', dest="config",
+                    help='Path to config file')
 args = parser.parse_args()
 
 
@@ -129,7 +132,7 @@ def create_job(jobrun, vcf_filenames):
         """
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/reason_job.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i)
+            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/reason_job.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i)
             job_file_name = "%s.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -152,7 +155,7 @@ def create_job(jobrun, vcf_filenames):
 
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/reason_job.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i)
+            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/reason_job.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i)
             job_file_name = "%s.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -189,7 +192,7 @@ def create_job(jobrun, vcf_filenames):
 
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/reason_job.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i)
+            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/reason_job.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i)
             job_file_name = "%s.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -210,7 +213,7 @@ def create_job(jobrun, vcf_filenames):
         #print "Running local mode: bash %s" % command_file
         os.system("bash %s" % command_file)
 
-def create_job_fasta(jobrun, vcf_filenames):
+def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
 
     """
     Based on type of jobrun; generate jobs and run accordingly.
@@ -224,7 +227,7 @@ def create_job_fasta(jobrun, vcf_filenames):
         """
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i, args.reference)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
             job_file_name = "%s_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -245,7 +248,7 @@ def create_job_fasta(jobrun, vcf_filenames):
         f3 = open(command_file, 'w+')
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i, args.reference)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
             job_file_name = "%s_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -272,7 +275,7 @@ def create_job_fasta(jobrun, vcf_filenames):
         f3 = open(command_file, 'w+')
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i, args.reference)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
             job_file_name = "%s_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -299,7 +302,7 @@ def create_job_fasta(jobrun, vcf_filenames):
 
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i, args.reference)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
             job_file_name = "%s_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -812,7 +815,7 @@ def generate_vcf_files():
         subprocess.call([sed_command], shell=True)
         f1.write(sed_command)
     print "The consensus commands are in : %s" % filename
-    sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk-master'])
+    sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
     os.system(sequence_lgth_cmd)
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
@@ -1049,8 +1052,8 @@ def DP_analysis_barplot():
         f_bar_perc.write(bar_perc_string)
 
 
-def extract_only_ref_variant_fasta():
-    create_job_fasta(args.jobrun, vcf_filenames)
+def extract_only_ref_variant_fasta(core_vcf_fasta_dir):
+    create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir)
 
 def extract_only_ref_variant_fasta_from_reference():
     ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir).readlines()
@@ -1073,13 +1076,14 @@ def extract_only_ref_variant_fasta_from_reference():
     fp.write(final_fasta_string)
     fp.close()
 
-def make_sure_path_exists(out_path):
-    try:
-        os.makedirs(out_path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            keep_logging('Errors in output folder path! please change the output path or analysis name.', 'Errors in output folder path! please change the output path or analysis name', logger, 'exception')
-            exit()
+# def make_sure_path_exists(out_path):
+#     try:
+#         os.makedirs(out_path)
+#     except OSError as exception:
+#         if exception.errno != errno.EEXIST:
+#             print "Errors in output folder path! please change the output path or analysis name."
+#             #keep_logging('Errors in output folder path! please change the output path or analysis name.', 'Errors in output folder path! please change the output path or analysis name', logger, 'exception')
+#             exit()
 
 """
 Pending inclusion
@@ -1154,7 +1158,15 @@ if __name__ == '__main__':
             line = args.filter2_only_snp_vcf_dir + line
             vcf_filenames.append(line)
         fp.close()
-
+    global config_file
+    if args.config:
+        config_file = args.config
+    else:
+        config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
+    global Config
+    Config = ConfigParser.ConfigParser()
+    Config.read(config_file)
+    print config_file
     if "1" in args.steps:
         print "Gathering SNP position information from each final *_no_proximate_snp.vcf file..."
         """
@@ -1170,6 +1182,12 @@ if __name__ == '__main__':
         #run_phaster(args.reference)
 
     if "2" in args.steps:
+        #Adhoc
+        data_matrix_dir = args.results_dir + '/data_matrix'
+        core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
+        make_sure_path_exists(data_matrix_dir)
+        make_sure_path_exists(core_vcf_fasta_dir)
+
         """ Generate SNP Filter Label Matrix """
         generate_paste_command()
 
@@ -1181,13 +1199,9 @@ if __name__ == '__main__':
 
         extract_only_ref_variant_fasta_from_reference()
 
-        extract_only_ref_variant_fasta()
+        extract_only_ref_variant_fasta(core_vcf_fasta_dir)
 
-        #Adhoc
-        data_matrix_dir = args.results_dir + '/data_matrix'
-        core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
-        make_sure_path_exists(data_matrix_dir)
-        make_sure_path_exists(core_vcf_fasta_dir)
+
 
         move_data_matrix_results = "mv %s/*.txt %s/temp* %s/All* %s/Only %s/*.R %s" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
         move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz %s/*.fa %s" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)

@@ -27,6 +27,8 @@ required.add_argument('-filter2_only_snp_vcf_filename', action='store', dest="fi
                     help='Name of filter2 only SNP vcf file')
 required.add_argument('-reference', action='store', dest="reference",
                     help='Path to Reference Fasta File')
+required.add_argument('-out_core', action='store', dest="out_core",
+                    help='Path to core results directory')
 args = parser.parse_args()
 
 
@@ -64,10 +66,10 @@ def extract_only_ref_variant_fasta():
     fp.write(final_fasta_string + '\n')
     fp.close()
 
-    print len(ffp)
-    print final_fasta_string
-    print "Count: %s " % count
-    print "Length: %s " % len(fasta_string)
+    # print len(ffp)
+    # print final_fasta_string
+    # print "Count: %s " % count
+    # print "Length: %s " % len(fasta_string)
 
 
 
