@@ -184,7 +184,7 @@ def pipeline(args, logger):
         elif steps_list[0] == "All":
             clean()
             out_sam = align_reads()
-            out_sorted_bam = post_align()
+            out_sorted_bam = post_align(out_sam)
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
@@ -212,6 +212,7 @@ def pipeline(args, logger):
         elif steps_list[0] == "align":
             #Check clean reads here
             out_sam = align_reads()
+            out_sorted_bam = post_align(out_sam)
             out_sorted_bam = post_align()
             #out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)

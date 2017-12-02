@@ -70,7 +70,7 @@ base_cmd: bcftools
 call_parameters: -vg
 
 [picard]
-picard_bin: /picard-tools-1.130/
+picard_bin: /picard-tools-2.5.0/
 base_cmd: picard.jar
 
 [gatk]
