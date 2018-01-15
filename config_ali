@@ -1,0 +1,771 @@
+# Set which tools to use in pipeline:
+[pipeline]
+# Options for Aligner:bwa / smalt / bowtie
+aligner: bwa
+# Options for variant_caller: samtoolswithpostalignbam / gatkhaplotypecaller /samtools
+variant_caller: samtools
+
+# Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
+[bin_path]
+binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
+
+[scheduler]
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00
+email: apirani@med.umich.edu
+queue: fluxod
+flux_account: esnitkin_fluxod
+notification: a
+
+# Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
+# Set parameter for Trimmomatic
+[Trimmomatic]
+trimmomatic_bin: /Trimmomatic/
+adaptor_filepath: adapters/TruSeq3-Nextera_PE_combined.fa
+seed_mismatches: 2
+palindrome_clipthreshold: 30
+simple_clipthreshold: 10
+minadapterlength: 8
+#change this to true and see the effect on alignment
+keep_both_reads: true
+window_size: 4
+window_size_quality: 20
+minlength: 40
+headcrop_length: 0
+colon: :
+targetlength: 125
+crop_length: 40
+f_p: forward_paired.fq.gz
+f_up: forward_unpaired.fq.gz
+r_p: reverse_paired.fq.gz
+r_up: reverse_unpaired.fq.gz
+
+[bwa]
+bwa_bin: /bwa-0.7.12/
+cores: 8
+base_cmd: bwa
+algorithm: mem
+index: index
+RG_header: -R
+Mark_splithits: -M
+
+[bowtie]
+bowtie_bin: /bowtie2-2.2.6/
+cores: 8
+build_cmd: bowtie2-build
+align_cmd: bowtie2
+parameters: -k 1 --non-deterministic --end-to-end
+
+[samtools]
+samtools_bin: /samtools-1.2/
+base_cmd: samtools
+#minimum mapping quality
+#change parameter S to -t SP and D to -t DP
+mpileup_parameters: -ug -f
+faiindex: faidx
+#-q30 -B -E -C50
+
+[bcftools]
+bcftools_bin: /bcftools-1.2/
+base_cmd: bcftools
+call_parameters: -vg
+
+[picard]
+picard_bin: /picard-tools-2.5.0/
+base_cmd: picard.jar
+
+[gatk]
+gatk_bin: /GenomeAnalysisTK-3.3-0/
+base_cmd: GenomeAnalysisTK.jar
+haplotype_parameters: -T HaplotypeCaller --genotyping_mode DISCOVERY
+#changes: 12th August
+gatk_filter1_parameter_expression: FQ < 40.00 && MQ > 20 && QUAL > 50 && DP > 15
+gatk_filter2_parameter_expression: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
+#changed gatk_filter2_parameter_expression DP 15 from 10 that was used in VRE samples.
+
+[vcftools]
+#vcftools_perl_bin: /vcftools_0.1.12b/perl/
+vcftools_bin: /vcftools_0.1.12b/bin/
+tabix_bin: /tabix-0.2.6/
+#vcftools_bin: /vcftools_0.1.12b/bin/
+vcftools_perl_bin: /vcftools_0.1.12b/perl/
+
+[qualimap]
+qualimap_bin: /qualimap_v2.1/
+base_cmd: qualimap
+
+[bedtools]
+bedtools_bin: /bedtools2-master/bin/
+base_cmd: bedtools
+version_for_coverage: /version_for_coverage/
+
+[bioawk]
+bioawk_bin: /bioawk-master/
+base_cmd: bioawk
+
+
+[SNP_filters]
+filter_criteria: snitkin_filters
+# Other Criterias: SPANDx_filters, loose_filters, snitkin_filters
+
+[snitkin_filters]
+avg_depth: no
+# If AVG_DEPTH is yes, the below DP threshold will be ignored. Instead, LOW_DEPTH and HIGH_DEPTH filter parameter will be used.
+# Filter variants with Depth less than the below threshold
+dp: 9
+# A value of 2 means that regions with less than half of the average coverage of the entire genome will fail
+low_depth: 2
+# A value of 5 means that regions with 5x depth greater than the average coverage will fail
+high_depth: 5
+# Filter variants with FQ(Consensus Quality) greater than the below threshold
+fq: 0.025
+fq2: 0.025
+# Filter variants with MQ(Root Mean Square Quality) less than the below threshold
+mq: 50
+# Filter variants with Variant QUAL less than the below threshold
+qual: 100
+# Filter Variants that are proximate to each other
+prox: 10
+
+
+#CLUSTER_SNP: 3
+#CLUSTER_WINDOW_SNP: 10
+#MLEAF_SNP: 0.95
+#QD_SNP: 10.0
+#FS_SNP: 10.0
+#HAPLO_SNP: 20.0
+
+########################################################################################################################
+
+# Reference Genome to be used for pipeline
+# Set path for already indexed reference genome
+
+# Most Frequently used reference genomes
+
+# Name of the reference genome. Provide this value with -index_name argument.
+[KPNIH1]
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+
+# Name of the reference genome. Provide this value with -index_name argument.
+[aus]
+# Name of reference genome fasta file.
+Ref_Name: Efae_aus0004_genome.fa
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/aus/
+
+[MRSA_USA_300]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_USA_300.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300/
+
+[MRSA_USA_100]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_USA_100_1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_100/
+
+[CDIFF_630]
+# Name of reference genome fasta file.
+Ref_Name: cdiff_630.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630/
+
+[CFT073]
+# Name of reference genome fasta file.
+Ref_Name: EscherichiacoliCFT073.fna
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CFT073
+
+[paris]
+# Name of reference genome fasta file.
+Ref_Name: Paris.fna
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/legionella/paris/
+
+
+#########################################################################
+#Name of the reference genome. Provide this value with -index_name option.
+[KPC_264]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_264_contigs_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_264/
+
+## Efaecalis and Efaecium Reference Genomes
+# Name of the reference genome. Provide this value with -index_name argument.
+[EPI51]
+# Name of reference genome fasta file.
+Ref_Name: Efae_EPI51_060509_genome.fa
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/EPI51/
+
+# Name of the reference genome. Provide this value with -index_name argument.
+[EnGen0178]
+# Name of reference genome fasta file.
+Ref_Name: EnGen0178_genome.fa
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/EnGen0178/
+
+# Name of the reference genome. Provide this value with -index_name argument.
+[EnGen0377]
+# Name of reference genome fasta file.
+Ref_Name: EnGen0377_genome.fa
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/EnGen0377/
+
+[ECNIH3]
+# Name of reference genome fasta file.
+Ref_Name: ECNIH3.fa
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference//ECNIH3/
+
+[ECNIH2]
+# Name of reference genome fasta file.
+Ref_Name: ECNIH2.fa
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference//ECNIH2/
+
+[Efaecalis_V583]
+# Name of reference genome fasta file.
+Ref_Name: Efaecalis_V583.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference//Efaecalis_V583//
+
+[Efaecium_Aus0085]
+# Name of reference genome fasta file.
+Ref_Name: Efaecium_Aus0085.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference//Efaecium_Aus0085/
+
+## MRSA Reference Genomes
+
+
+[MRSA_8058]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_8058.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_8058
+
+[6338]
+# Name of reference genome fasta file.
+Ref_Name: 6338_R1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/6338
+
+[8061]
+# Name of reference genome fasta file.
+Ref_Name: 8061_R1.fasta 
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/8061
+
+[KP_mrsa_41]
+# Name of reference genome fasta file.
+Ref_Name: KP_mrsa_41_1.fasta 
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KP_mrsa_41
+
+[KP_mrsa_67]
+# Name of reference genome fasta file.
+Ref_Name: KP_mrsa_67_1.fasta 
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KP_mrsa_67
+
+[KP_mrsa_41_2]
+# Name of reference genome fasta file.
+Ref_Name: KP_mrsa_41.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_MRSA_analysis/ISmapper/2016_04_19_analysis_2/KP_mrsa_41_analysis/
+
+
+
+## Cdiff Reference Genomes
+
+[H102]
+# Name of reference genome fasta file.
+Ref_Name: PCMP_H102_R1_l500_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H102/
+
+[H128]
+# Name of reference genome fasta file.
+Ref_Name: PCMP_H128_R1_l500_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H128/ 
+
+
+[H159]
+# Name of reference genome fasta file.
+Ref_Name: PCMP_H159_R1_l500_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H159/
+
+
+[H298]
+# Name of reference genome fasta file.
+Ref_Name: PCMP_H298_R1_l500_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H298/
+
+[H304]
+# Name of reference genome fasta file.
+Ref_Name: PCMP_H304_R1_l500_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H304/
+
+
+[H358]
+# Name of reference genome fasta file.
+Ref_Name: PCMP_H358_R1_l500_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H358/
+
+########################################################################################################################
+
+
+# KPC Cluster Specific Reference Genomes
+
+[313]
+# Name of reference genome fasta file.
+Ref_Name: 313_R1_001_final_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_108]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_108_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_110]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_110_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_157]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_157_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_212]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_212_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_216]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_216_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_233]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_233_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_412]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_412_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_48]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_48_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_52]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_52_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_586]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_586_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_653]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_653_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+##Ecoli Reference Genomes
+
+[Ecoli_CD306]
+# Name of reference genome fasta file.
+Ref_Name: Ecoli_CD306.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Ecoli_CD306
+
+[Escherichia_coli_K_12]
+# Name of reference genome fasta file.
+Ref_Name: Escherichia_coli_K_12.fna
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Nursing_home/e_coli/Escherichia_coli_K_12/
+##Ecoli NH cluster-based Reference Genomes
+
+[3425-5015-0-R2X]
+# Name of reference genome fasta file.
+Ref_Name: 3425-5015-0-R2X_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3425-5015-0-R2X
+
+[3940-B014-14-RX-TIP14]
+# Name of reference genome fasta file.
+Ref_Name: 3940-B014-14-RX-TIP14__ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3940-B014-14-RX-TIP14
+
+[1677-J011-1-OX-TIP14]
+# Name of reference genome fasta file.
+Ref_Name: 1677-J011-1-OX-TIP14_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/1677-J011-1-OX-TIP14
+
+
+
+##Saureus NH cluster-based Reference Genomes
+[3850-B013-90-R-TIPmmrsa]
+# Name of reference genome fasta file.
+Ref_Name: 3850-B013-90-R-TIPmmrsa_ordered.fasta 
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3850-B013-90-R-TIPmmrsa
+
+[3933-A018-14-W-TIPmmrsa]
+# Name of reference genome fasta file.
+Ref_Name: 3933-A018-14-W-TIPmmrsa_ordered.fasta                                   
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3933-A018-14-W-TIPmmrsa
+
+[803-A001-120-N-MRSA-TIP]
+# Name of reference genome fasta file.
+Ref_Name: 803-A001-120-N-MRSA-TIP__ordered.fasta                                   
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/803-A001-120-N-MRSA-TIP
+
+##Efaecium NH cluster-based Reference Genomes
+[3399-4058-0-RVRE]
+# Name of reference genome fasta file.
+Ref_Name: 3399-4058-0-RVRE_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3399-4058-0-RVRE
+
+
+##Efaecium NH cluster-based Reference Genomes
+[3399-4058-0-RVRE_latest]
+# Name of reference genome fasta file.
+Ref_Name: 3399-4058-0-RVRE_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Nursing_home/efaecium/cluster_1_3399-4058-0-RVRE/
+
+
+
+##Efaecalis NH cluster-based Reference Genomes
+[1726-E049-14-O-TIPmvre]
+# Name of reference genome fasta file.
+Ref_Name: 1726-E049-14-O-TIPmvre_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/1726-E049-14-O-TIPmvre
+
+[3401-5015-0-H1VRE]
+# Name of reference genome fasta file.
+Ref_Name: 3401-5015-0-H1VRE_ordered.fasta                                     
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3401-5015-0-H1VRE
+
+[3954-F065-30-G-TIPmvre]
+# Name of reference genome fasta file.
+Ref_Name: 3954-F065-30-G-TIPmvre__ordered.fasta                                     
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3954-F065-30-G-TIPmvre
+
+[7605-4117-0-HVRE]
+# Name of reference genome fasta file.
+Ref_Name: 7605-4117-0-HVRE_ordered.fasta                                      
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/7605-4117-0-HVRE
+
+##Mmorgannii reference genome
+[Morganella_morganii_strain_FDAARGOS_63]
+# Name of reference genome fasta file.
+Ref_Name: Morganella_morganii_strain_FDAARGOS_63.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Nursing_home/mmorganii/Morganella_morganii_strain_FDAARGOS_63/
+
+##P mirabilis reference genome
+[Proteus_mirabilis_strain_FDAARGOS_60]
+# Name of reference genome fasta file.
+Ref_Name: Proteus_mirabilis_strain_FDAARGOS_60.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Nursing_home/pmirabilis/Proteus_mirabilis_strain_FDAARGOS_60/
+
+## P aeru reference genome
+[Pseudomonas_aeruginosa_FRD1]
+# Name of reference genome fasta file.
+Ref_Name: Pseudomonas_aeruginosa_FRD1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Nursing_home/paeru/Pseudomonas_aeruginosa_FRD1/
+
+
+
+
+
+#RNA Seq Reference Genomes
+
+[HM14]
+# Name of reference genome fasta file.
+Ref_Name: HM14.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM17]
+# Name of reference genome fasta file.
+Ref_Name: HM17.fasta       
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM1]
+# Name of reference genome fasta file.
+Ref_Name: HM1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM26]
+# Name of reference genome fasta file.
+Ref_Name: HM26.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM27]
+# Name of reference genome fasta file.
+Ref_Name: HM27.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM3]
+# Name of reference genome fasta file.
+Ref_Name: HM3.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM43]
+# Name of reference genome fasta file.
+Ref_Name: HM43.fasta                  
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM46]
+# Name of reference genome fasta file.
+Ref_Name: HM46.fasta                 
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM54]
+# Name of reference genome fasta file.
+Ref_Name: HM54.fasta                 
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM56]
+# Name of reference genome fasta file.
+Ref_Name: HM56.fasta                  
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM57]
+# Name of reference genome fasta file.
+Ref_Name: HM57.fasta                  
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM60]
+# Name of reference genome fasta file.
+Ref_Name: HM60.fasta                  
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM65]
+# Name of reference genome fasta file.
+Ref_Name: HM65.fasta                  
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM66]
+# Name of reference genome fasta file.
+Ref_Name: HM66.fasta                 
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM67]
+# Name of reference genome fasta file.
+Ref_Name: HM67.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM68]
+# Name of reference genome fasta file.
+Ref_Name: HM68.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM6]
+# Name of reference genome fasta file.
+Ref_Name: HM6.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM7]
+# Name of reference genome fasta file.
+Ref_Name: HM7.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+[HM86]
+# Name of reference genome fasta file.
+Ref_Name: HM86.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_RNA_seq/Reference_genomes/
+
+
+
+## Legionella Reference Genomes
+
+
+
+
+## KPC Ltach cluster
+
+[cluster_1_Rush_KPC_350_S8_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_350_S8__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_1_Rush_KPC_350_S8_
+
+[cluster_2_Rush_KPC_21_S35_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_21_S35__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_2_Rush_KPC_21_S35_/
+
+[cluster_3_Rush_KPC_159_S30_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_159_S30__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_3_Rush_KPC_159_S30_/
+
+[cluster_4_Rush_KPC_226_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_226_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_4_Rush_KPC_226_R1/
+
+[cluster_5_Rush_KPC_191_S49_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_191_S49__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_5_Rush_KPC_191_S49_/
+
+[cluster_6_Rush_KPC_418_S23_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_418_S23__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_6_Rush_KPC_418_S23_/
+
+[cluster_7_Rush_KPC_87_S3_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_87_S3__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_7_Rush_KPC_87_S3_/
+
+[cluster_8_Rush_KPC_110_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_110_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_8_Rush_KPC_110_R1/
+
+[cluster_9_Rush_KPC_162_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_162_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_9_Rush_KPC_162_R1/
+
+[cluster_10_Rush_KPC_340_S13_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_340_S13__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_10_Rush_KPC_340_S13_/
+
+[cluster_11_Rush_KPC_573_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_573_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_11_Rush_KPC_573_R1/
+
+[cluster_12_Rush_KPC_615_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_615_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_12_Rush_KPC_615_R1/
+
+[cluster_13_Rush_KPC_348_S25_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_348_S25__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_13_Rush_KPC_348_S25_/
+
+[cluster_14_Rush_KPC_216_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_216_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_14_Rush_KPC_216_R1/
+
+[cluster_15_Rush_KPC_108_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_108_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_15_Rush_KPC_108_R1/
+
+[cluster_16_Rush_KPC_52_R1]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_52_R1_final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_16_Rush_KPC_52_R1/
+
+[cluster_17_Rush_KPC_60_S27_]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_60_S27__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPC_LTACH_clusters/cluster_17_Rush_KPC_60_S27_/
+
+
+## Ecoli KO analysis
+[NC101-WT]
+# Name of reference genome fasta file.
+Ref_Name: NC101-WT__final_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/NC101-WT/
+
+
+[Ecoli_KO_Gaps]
+# Name of reference genome fasta file.
+Ref_Name: Gaps_annotations_ordered.fasta
+# path to the reference genome fasta file.
+Ref_Path: /scratch/esnitkin_fluxod/apirani/Project_Ecoli_KO/Analysis/2017_11_07_Ecoli_KO_Gap_variant_calling/
+
+
+
+[Ecoli_KO_colibactin]
+# Name of reference genome fasta file.
+Ref_Name: E_coli_colibactin_gene.fasta
+# path to the reference genome fasta file.
+Ref_Path: /scratch/esnitkin_fluxod/apirani/Project_Ecoli_KO/Analysis/2017_11_07_Ecoli_KO_colibactin_gene_variant_calling/

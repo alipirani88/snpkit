@@ -321,15 +321,16 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
                 command_array.append(lines)
         fpp.close()
         os.system("bash command_file")
-def create_job_DP(jobrun, vcf_filenames):
 
+def create_job_DP(jobrun, vcf_filenames):
     """
     Based on type of jobrun; generate jobs and run accordingly.
     :param jobrun:
     :param vcf_filenames:
     :return:
     """
-    if jobrun == "cluster":
+
+    if jobrun == "parallel-cluster":
         """
         Supports only PBS clusters for now.
         """
@@ -347,12 +348,13 @@ def create_job_DP(jobrun, vcf_filenames):
             print "Running: qsub %s" % i
             #os.system("qsub %s" % i)
 
+
     elif jobrun == "parallel-local":
         """
         Generate a Command list of each job and run it in parallel on different cores available on local system
         """
         command_array = []
-        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
 
 
@@ -383,15 +385,42 @@ def create_job_DP(jobrun, vcf_filenames):
             num_cores = multiprocessing.cpu_count()
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
-    elif jobrun == "parallel-single-cluster":
-        print "  "
+    elif jobrun == "cluster":
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
+
     else:
         """
         Generate a Command list of each job and run it on local system one at a time
         """
-        command_array = []
-        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        os.system("bash %s" % command_file)
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
 
 def generate_paste_command():
 
@@ -1197,37 +1226,63 @@ if __name__ == '__main__':
         """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
         generate_vcf_files()
 
+        """ Generate consensus fasta file from core vcf files """
         extract_only_ref_variant_fasta_from_reference()
 
+        """ Generate consensus fasta file with only reference and variant position bases """
         extract_only_ref_variant_fasta(core_vcf_fasta_dir)
 
+        """ Analyze the positions that were filtered out only due to insufficient depth"""
+        DP_analysis()
 
 
-        move_data_matrix_results = "mv %s/*.txt %s/temp* %s/All* %s/Only %s/*.R %s" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
-        move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz %s/*.fa %s" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+        print "Wait for individual cluster jobs to finish before running the third step"
+
+    if "3" in args.steps:
+        print "Step 3: Generate Reports and Results folder."
+
+        data_matrix_dir = args.results_dir + '/data_matrix'
+        core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
+
+        make_sure_path_exists(data_matrix_dir)
+        make_sure_path_exists(core_vcf_fasta_dir)
+
+        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
+        move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
 
         os.system(move_data_matrix_results)
         os.system(move_core_vcf_fasta_results)
 
-        print "Description of Results:\n" \
-              "1. bargraph_counts.txt and bargraph_percentage.txt: contains counts/percentage of unique positions filtered out due to different filter parameters for each sample. Run bargraph.R to plot bargraph statistics." \
-              "2. *_core.vcf.gz: core vcf files" \
-              "3. *.fa and *_variants.fa: core consensus fasta file and core consensus fasta with only variant positions."
+        # Check if the variant consensus files generated are of same length
+        count = 0
+        for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines(  ): count += 1
+        ref_variants = count - 1
+
+        variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
+
+        for f in variant_consensus_files:
+            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
+            proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
+            (out2, err2) = proc.communicate()
+
+            try:
+                int(out2) != int(ref_variants)
+            except OSError as exception:
+                if exception.errno != errno.EEXIST:
+                    print "Error generating variant consensus position file: %s\n" % f
 
 
-    if "3" in args.steps:
-        print "Step 3: Require Testing."
+        """ Generate DP barplots data """
+        #DP_analysis_barplot()
+
         """ Analyze the FQ values of all the unique variant """
         #FQ_analysis()
 
-        """
-        Require Testing.
-        """
-        # """ Analyze the positions that were filtered out only due to insufficient depth"""
-        #DP_analysis()
-        #
-        # """ Generate DP barplots data """
-        #DP_analysis_barplot()
+        print "\nResults for core pipeline can be found in: %s\n" \
+              "\nDescription of Results:\n" \
+              "\n1. data_matrix folder contains all the data matrices and other temporary files generated during the core pipeline. bargraph_counts.txt and bargraph_percentage.txt: contains counts/percentage of unique positions filtered out due to different filter parameters for each sample. Run bargraph.R to plot bargraph statistics." \
+              "\n2. core_snp_consensus contains all the core vcf and fasta files. *_core.vcf.gz: core vcf files, *.fa and *_variants.fa: core consensus fasta file and core consensus fasta with only variant positions." % (args.results_dir)
+
 
     if "4" in args.steps:
         print "Step 4: Require Testing."

@@ -40,15 +40,10 @@ def parser():
     return parser
 
 def file_exists(path1):
-
     if not os.path.isfile(path1):
         file_basename = os.path.basename(path1)
         keep_logging('The file {} does not exists. Please provide another file with full path or check the files path.\n'.format(file_basename), 'The input file {} does not exists. Please provide another file or check the files path.\n'.format(file_basename), logger, 'exception')
         exit()
-
-
-
-
 
 def make_sure_path_exists(out_path):
     try:
