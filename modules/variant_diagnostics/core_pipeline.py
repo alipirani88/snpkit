@@ -930,7 +930,7 @@ def DP_analysis():
     #os.system(sed_command)
     f2.write(sed_command + '\n')
     cmd = "bash %s" % paste_file
-    os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
+    # os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
 
     """
     Test this again
@@ -1015,6 +1015,7 @@ def DP_analysis():
     # #subprocess.check_call('%s' % cmd)
 
 def DP_analysis_barplot():
+    os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
     print "Generating DP barplots data..."
     c_reader = csv.reader(open('%s/filtered_DP_values.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
@@ -1239,7 +1240,7 @@ if __name__ == '__main__':
         print "Wait for individual cluster jobs to finish before running the third step"
 
     if "3" in args.steps:
-        print "Step 3: Generate Reports and Results folder."
+        print "\nStep 3: Generate Reports and Results folder.\n"
 
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
@@ -1247,7 +1248,7 @@ if __name__ == '__main__':
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
-        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
+        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
         move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
 
         os.system(move_data_matrix_results)
@@ -1273,7 +1274,7 @@ if __name__ == '__main__':
 
 
         """ Generate DP barplots data """
-        #DP_analysis_barplot()
+        DP_analysis_barplot()
 
         """ Analyze the FQ values of all the unique variant """
         #FQ_analysis()
