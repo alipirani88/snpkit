@@ -899,17 +899,21 @@ def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, refer
 def FQ_analysis():
     for i in vcf_filenames:
         filename_base = os.path.basename(i)
-        aln_mpileup_vcf_file = filename_base.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf_5bp_indel_removed.vcf')
+        aln_mpileup_vcf_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf_5bp_indel_removed.vcf')
         analysis = filename_base.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')
+        #print aln_mpileup_vcf_file
         grep_reference_file = "grep \'^##reference\' %s" % aln_mpileup_vcf_file
         proc = subprocess.Popen([grep_reference_file], stdout=subprocess.PIPE, shell=True)
         (out, err) = proc.communicate()
         out = out.strip()
         reference_file = out.split(':')
         gatk_filter2_final_vcf_file = gatk_filter2(aln_mpileup_vcf_file, temp_dir, analysis, reference_file[1])
+        #print gatk_filter2_final_vcf_file
         gatk_filter2_final_vcf_file_no_proximate_snp = remove_proximate_snps(gatk_filter2_final_vcf_file, temp_dir, analysis, reference_file[1])
-        grep_fq_field = "awk -F\'\t\' \'{print $8}\' %s | grep -o \'FQ=.*\' | sed \'s/FQ=//g\' | awk -F\';\' \'{print $1}\' > %s_FQ_values" % (gatk_filter2_final_vcf_file_no_proximate_snp, analysis)
+        grep_fq_field = "awk -F\'\\t\' \'{print $8}\' %s | grep -o \'FQ=.*\' | sed \'s/FQ=//g\' | awk -F\';\' \'{print $1}\' > %s/%s_FQ_values" % (gatk_filter2_final_vcf_file_no_proximate_snp, os.path.dirname(i), analysis)
         os.system(grep_fq_field)
+        #print grep_fq_field
+
 
 def DP_analysis():
     create_job_DP(args.jobrun, vcf_filenames)
@@ -931,88 +935,6 @@ def DP_analysis():
     f2.write(sed_command + '\n')
     cmd = "bash %s" % paste_file
     # os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
-
-    """
-    Test this again
-    """
-
-    # print "Analyzing positions that were filtered out due to Depth..."
-    # extract_DP_positions = "awk -F\'\\t\' \'{print $1}\' temp_Only_filtered_positions_for_closely_matrix_DP.txt | sed \'/^$/d\' > extract_DP_positions.txt"
-    # os.system(extract_DP_positions)
-    #
-    # for i in vcf_filenames:
-    #     filename_base = os.path.basename(i)
-    #     aln_mpileup_vcf_file = filename_base.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf_5bp_indel_removed.vcf')
-    #     analysis = filename_base.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')
-    #     grep_reference_file = "grep \'^##reference\' %s" % aln_mpileup_vcf_file
-    #     proc = subprocess.Popen([grep_reference_file], stdout=subprocess.PIPE, shell=True)
-    #     (out, err) = proc.communicate()
-    #     out = out.strip()
-    #     reference_file = out.split(':')
-    #     #gatk_filter2_final_vcf_file = gatk_filter2(aln_mpileup_vcf_file, temp_dir, analysis, reference_file[1])
-    #     #gatk_filter2_final_vcf_file_no_proximate_snp = remove_proximate_snps(gatk_filter2_final_vcf_file, temp_dir, analysis, reference_file[1])
-    #     DP_values_file = "%s/%s_DP_values" % (args.filter2_only_snp_vcf_dir, analysis)
-    #     f2=open(DP_values_file, 'w+')
-    #
-    #
-    #     with open("%s/temp_Only_filtered_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_filess:
-    #         csv_readerr = csv.reader(csv_filess, delimiter='\t')
-    #         next(csv_readerr, None)
-    #         for rows in csv_readerr:
-    #             #print rows
-    #             #grep_dp_field = "grep -wP \'^\S+\s+%s\s+\b\' %s | awk -F\'\\t\' \'{print $8}\' | grep -o \'DP=.*\' | sed \'s/DP=//g\' | awk -F\';\' \'{print $1}\'" % (rows[0], aln_mpileup_vcf_file)
-    #             grep_dp_field = "grep -w \'%s\' %s" % (rows[0], aln_mpileup_vcf_file)
-    #             awk_dp_field = "awk -F\'\t\' \'$2 == %s\' %s | awk -F\'\t\' \'{print $8}\' | awk -F\';\' \'{print $1}\' | sed \'s/DP=//g\'" % (rows[0], aln_mpileup_vcf_file)
-    #             #print grep_dp_field
-    #             #proc = subprocess.Popen([grep_dp_field], stdout=subprocess.PIPE, shell=True)
-    #             #(out2, err2) = proc.communicate()
-    #             #out_split = out.split('\n')
-    #             #out = out.strip()
-    #             proc = subprocess.Popen([awk_dp_field], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    #             (out2, err2) = proc.communicate()
-    #             #print out2.strip()
-    #             if out2:
-    #                 #print out2.strip()
-    #                 if "INDEL" in out2:
-    #                     #print awk_dp_field
-    #                     out2 == "NA"
-    #                 f2.write(out2.strip() + '\n')
-    #                 # if len(out_split) > 1:
-    #                 #     print out_split[0]
-    #                 # # for i in out:
-    #                 # #     print i
-    #                 # line_split = out.split('\t')
-    #                 # #print line_split
-    #                 # if line_split[1] == rows[0]:
-    #                 #     DP_field = line_split[7].split(';')
-    #                 #     DP_value = DP_field[0].replace('DP=', '')
-    #                 #print out
-    #             else:
-    #                 f2.write("NA\n")
-    #                 #print "NA"
-    #
-    # paste_command = "paste %s/extract_DP_positions.txt" % args.filter2_only_snp_vcf_dir
-    # for i in vcf_filenames:
-    #     label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_DP_values')
-    #     paste_command = paste_command + " " + label_file
-    #
-    # paste_file = args.filter2_only_snp_vcf_dir + "/paste_DP_files.sh"
-    # f2=open(paste_file, 'w+')
-    # paste_command = paste_command + " > %s/filtered_DP_values_temp.txt" % args.filter2_only_snp_vcf_dir
-    # #os.system(paste_command)
-    # f2.write(paste_command + '\n')
-    # cat_header = "cat %s/header.txt %s/filtered_DP_values_temp.txt > %s/filtered_DP_values.txt" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-    # #os.system(cat_header)
-    # f2.write(cat_header + '\n')
-    # sed_command = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/filtered_DP_values.txt" % (args.filter2_only_snp_vcf_dir)
-    # #os.system(sed_command)
-    # f2.write(sed_command + '\n')
-    # cmd = "bash %s" % paste_file
-    # os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
-    #
-    # #os.system(cmd) change
-    # #subprocess.call(["%s" % cmd], shell=True)
-    # #subprocess.check_call('%s' % cmd)
 
 def DP_analysis_barplot():
     os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
@@ -1106,18 +1028,60 @@ def extract_only_ref_variant_fasta_from_reference():
     fp.write(final_fasta_string)
     fp.close()
 
-# def make_sure_path_exists(out_path):
-#     try:
-#         os.makedirs(out_path)
-#     except OSError as exception:
-#         if exception.errno != errno.EEXIST:
-#             print "Errors in output folder path! please change the output path or analysis name."
-#             #keep_logging('Errors in output folder path! please change the output path or analysis name.', 'Errors in output folder path! please change the output path or analysis name', logger, 'exception')
-#             exit()
+
+def alignment_report(data_matrix_dir):
+    print "\nGenerating Alignment report...\n"
+    varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
+    report_string = ""
+    header = "Sample,QC-passed reads,Mapped reads,% mapped reads,mean depth,%_bases_above_5,%_bases_above_10,%_bases_above_15,unmapped_positions,READ_PAIR_DUPLICATES,READ_PAIR_OPTICAL_DUPLICATES,unmapped reads,% unmapped reads"
+    fp = open("%s/Report_alignment.txt" % (data_matrix_dir), 'w+')
+    fp.write(header + '\n')
+    for vcf in vcf_filenames:
+        sample = os.path.basename(vcf.replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
+        print sample
+        report_string = sample + ","
+        qc = (subprocess.check_output("grep \'QC-passed\' %s/%s/%s_alignment_stats | sed \'s/ + 0 in total (QC-passed reads + QC-failed reads)//g\'" % (varcall_dir, sample, sample), shell=True)).strip()
+        mapped = (subprocess.check_output("grep \'mapped (\' %s/%s/%s_alignment_stats | awk -F\' \' \'{print $1}\'" % (varcall_dir, sample, sample), shell=True)).strip()
+        replace = "%:-nan%)"
+        perc_mapped = (subprocess.check_output("grep \'mapped (\' %s/%s/%s_alignment_stats | awk -F\' \' \'{print $5}\' | sed \'s/%s//g\' | sed \'s/(//g\'" % (varcall_dir, sample, sample, replace), shell=True)).strip()
+        depth_of_coverage = (subprocess.check_output("awk -F\'\\t\' \'{OFS=\",\"};FNR==2{print $3,$7,$8,$9}\' %s/%s/%s_depth_of_coverage.sample_summary" % (varcall_dir, sample, sample), shell=True)).strip()
+        unmapped_positions = (subprocess.check_output("wc -l %s/%s/%s_unmapped.bed_positions | cut -d\' \' -f1" % (varcall_dir, sample, sample), shell=True)).strip()
+        opt_dup = (subprocess.check_output("awk -F\'\\t\' \'{OFS=\",\"};FNR==8{print $7,$8,$5}\' %s/%s/%s_markduplicates_metrics" % (varcall_dir, sample, sample), shell=True)).strip()
+        perc_unmapped = str(100 - float(perc_mapped))
+        myList = ','.join(map(str, (sample, qc, mapped, perc_mapped, depth_of_coverage, unmapped_positions, opt_dup, perc_unmapped)))
+        #print myList
+        fp.write(myList + '\n')
+    fp.close()
+    print "Alignment report can be found in %s/Report_alignment.txt" % data_matrix_dir
+
+
+
+def variant_report(data_matrix_dir):
+    print "\nGenerating Variants report...\n"
+    varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
+    report_string = ""
+    header = "Sample,Total Unique Variants,core SNPs,unmapped_positions,reference_allele,true_variant,Only_low_FQ,Only_DP,Only_low_MQ,other,unmapped_positions_perc,true_variant_perc,Only_low_FQ_perc,Only_DP_perc,Only_low_MQ_perc,other_perc"
+    fp = open("%s/Report_variants.txt" % (data_matrix_dir), 'w+')
+    fp.write(header + '\n')
+
+    for vcf in vcf_filenames:
+        sample = os.path.basename(vcf.replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
+        report_string = sample + ","
+        unmapped_positions = (subprocess.check_output("wc -l %s/core_temp_dir/unique_positions_file | cut -d\' \' -f1" % (varcall_dir), shell=True)).strip()
+        core_snps = (subprocess.check_output("wc -l %s/core_temp_dir/Only_ref_variant_positions_for_closely | cut -d\' \' -f1" % (varcall_dir), shell=True)).strip()
+        filtered_snp_count = (subprocess.check_output("grep -w \'^%s\' %s/core_temp_dir/bargraph_counts.txt | awk -F\'\\t\' \'{OFS=\",\"};{print $2,$3,$4,$5,$6,$7}\'" % (sample, varcall_dir), shell=True)).strip()
+        filtered_snp_perc = (subprocess.check_output("grep -w \'^%s\' %s/core_temp_dir/bargraph_percentage.txt | awk -F\'\\t\' \'{OFS=\",\"};{print $2,$3,$4,$5,$6,$7}\'" % (sample, varcall_dir), shell=True)).strip()
+        myList = ','.join(map(str, (sample, unmapped_positions, core_snps, filtered_snp_count, filtered_snp_perc)))
+        fp.write(myList + '\n')
+    fp.close()
+
 
 """
 Pending inclusion
 """
+
+
+    print "Variant call report can be found in %s/Report_variants.txt" % data_matrix_dir
 
 class FuncThread(threading.Thread):
     def __init__(self, target, *args):
@@ -1245,39 +1209,45 @@ if __name__ == '__main__':
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
 
-        make_sure_path_exists(data_matrix_dir)
-        make_sure_path_exists(core_vcf_fasta_dir)
+        # make_sure_path_exists(data_matrix_dir)
+        # make_sure_path_exists(core_vcf_fasta_dir)
+        #
+        # move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
+        # move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+        #
+        # os.system(move_data_matrix_results)
+        # os.system(move_core_vcf_fasta_results)
+        #
+        # # Check if the variant consensus files generated are of same length
+        # count = 0
+        # for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines(  ): count += 1
+        # ref_variants = count - 1
+        #
+        # variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
+        #
+        # for f in variant_consensus_files:
+        #     cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
+        #     proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
+        #     (out2, err2) = proc.communicate()
+        #
+        #     try:
+        #         int(out2) != int(ref_variants)
+        #     except OSError as exception:
+        #         if exception.errno != errno.EEXIST:
+        #             print "Error generating variant consensus position file: %s\n" % f
+        #
+        #
+        # """ Generate DP barplots data """
+        # DP_analysis_barplot()
+        #
+        # """ Analyze the FQ values of all the unique variant """
+        # FQ_analysis()
 
-        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
-        move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+        """ Generate alignment report """
+        alignment_report(data_matrix_dir)
 
-        os.system(move_data_matrix_results)
-        os.system(move_core_vcf_fasta_results)
-
-        # Check if the variant consensus files generated are of same length
-        count = 0
-        for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines(  ): count += 1
-        ref_variants = count - 1
-
-        variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
-
-        for f in variant_consensus_files:
-            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
-            proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
-            (out2, err2) = proc.communicate()
-
-            try:
-                int(out2) != int(ref_variants)
-            except OSError as exception:
-                if exception.errno != errno.EEXIST:
-                    print "Error generating variant consensus position file: %s\n" % f
-
-
-        """ Generate DP barplots data """
-        DP_analysis_barplot()
-
-        """ Analyze the FQ values of all the unique variant """
-        #FQ_analysis()
+        """ Generate core snps report """
+        #variant_report(data_matrix_dir)
 
         print "\nResults for core pipeline can be found in: %s\n" \
               "\nDescription of Results:\n" \
