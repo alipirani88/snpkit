@@ -16,7 +16,6 @@ from modules.logging_subprocess import *
 from modules.log_modules import *
 from argparse import RawTextHelpFormatter
 
-
 # Command Line Argument Parsing
 def parser():
     parser = argparse.ArgumentParser(description='\nVariant Calling pipeline for Illumina PE/SE data.\n', formatter_class=RawTextHelpFormatter)
@@ -39,6 +38,7 @@ def parser():
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option\nThe possible modes are: cluster/parallel-cluster/parallel-local/local\ncluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.\nparallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.\nparallel-local: Run variant call jobs for each sample in parallel locally.\nlocal: Run variant call jobs locally.\nMake Sure to check if the [scheduler] section in config file is set up correctly for your cluster.')
     return parser
 
+# Sanity checks and directory structure maintenance methods
 def file_exists(path1):
     if not os.path.isfile(path1):
         file_basename = os.path.basename(path1)
@@ -74,6 +74,7 @@ def get_filenames(dir, type, filenames, analysis, suffix):
                 list_of_files.append(line)
     return list_of_files
 
+# Methods to generate jobs for various pipeline tasks
 def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, config_file, logger):
     jobs_temp_dir = "%s/temp_jobs" % output_folder
     make_sure_path_exists(jobs_temp_dir)
@@ -135,7 +136,6 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                 first_part = first_part_split[0].replace('_L001', '')
                 first_part = re.sub("_S.*_", "", first_part)
 
-
             """ Have a standard filename preparation step"""
             # else:
             #     print "Using Standard second file naming convention"
@@ -143,7 +143,6 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
             #     first_part_split = filename_base.split('_R1.fastq.gz')
             #     first_part = first_part_split[0].replace('_L001', '')
             #     first_part = re.sub("_S.*_", "", first_part)
-
             second_file = args.dir + "/" + second_part
             job_name = jobs_temp_dir + "/" + first_part + ".pbs"
             if not steps:
@@ -157,7 +156,7 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                 job_title = "#PBS -N %s" % first_part
                 out.write(job_title+'\n')
                 out.write(Pbs_model_lines+'\n')
-                #out.write(cd_command+'\n')
+                #out.write(cd_command+'\n') ## changed it to automatically change to PBS working directory
                 out.write("#  Change to the directory you submitted from\nif [ -n \"$PBS_O_WORKDIR\" ]; then cd $PBS_O_WORKDIR; fi" + '\n')
                 out.write("echo $PBS_O_WORKDIR" + '\n')
                 out.write("cd %s/temp_jobs" % output_folder + '\n')
@@ -171,15 +170,13 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
     return list_of_jobs
 
 def generate_custom_vcf_file_list(filenames_array, logger):
-    keep_logging('Generating custom vcf files list for core steps %s', 'Generating custom vcf files list for core steps %s', logger, 'exception')
-    ##Change the email address; nodes and processor requirements accordingly
+    keep_logging('Generating custom vcf file list for core pipeline steps', 'Generating custom vcf files list for core pipeline steps', logger, 'exception')
     list_of_vcf_files = []
     for file in filenames_array:
         filename_base = os.path.basename(file)
         if "R1_001_final.fastq.gz" in filename_base or "R1.fastq.gz" in filename_base or "1_combine.fastq.gz" in filename_base or "1_sequence.fastq.gz" in filename_base or "_forward.fastq.gz" in filename_base or "R1_001.fastq.gz" in filename_base or "_1.fastq.gz" in filename_base or ".1.fastq.gz" in filename_base or "_R1.fastq.gz" in filename_base:
             # Forward reads file name and get analysis name from its name
             first_file = file
-            # Get the name of reverse reads files
             if "R1_001_final.fastq.gz" in filename_base:
                 first_part_split = filename_base.split('R1_001_final.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
@@ -228,8 +225,6 @@ def generate_custom_vcf_file_list(filenames_array, logger):
             list_of_vcf_files.append(first_part)
     return list_of_vcf_files
 
-
-
 def run_command(job):
     keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
     call("bash %s" % job, logger)
@@ -243,7 +238,6 @@ def run_command_list(command):
     return done
 
 def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, output_folder, logger):
-
     #Generate command list to run on single cluster or in parallel
     command_list = ""
     command_list_qsub = []
@@ -295,13 +289,15 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
             keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
             call("bash %s" % job, logger)
 
-
+# Pipeline individual task methods
 def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, config_file):
     file_exists(reference)
     core_prep_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
+
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
@@ -311,7 +307,6 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
         out.write("cd %s" % core_temp_dir + '\n')
         out.write(core_prep_pipeline+'\n')
     out.close()
-
     if cluster == "local":
         keep_logging('Running local mode: bash %s' % job_name, 'Running local mode: bash %s' % job_name, logger, 'info')
         call("bash %s" % job_name, logger)
@@ -335,8 +330,10 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
     file_exists(reference)
     core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
+
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
@@ -346,7 +343,6 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         out.write("cd %s" % core_temp_dir + '\n')
         out.write(core_pipeline+'\n')
     out.close()
-
     if cluster == "local":
         keep_logging('Running local mode: bash %s' % job_name, 'Running local mode: bash %s' % job_name, logger, 'info')
         call("bash %s" % job_name, logger)
@@ -396,10 +392,10 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
         qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         print qid.split('.')[0]
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
+### End of methods
 
-# Main Method
+# Start of Main Method/Pipeline
 if __name__ == '__main__':
-
     # Set up logging modules and config file
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()
@@ -435,15 +431,12 @@ if __name__ == '__main__':
         list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
         list_of_jobs = create_varcall_jobs(list_of_files, args.type, args.output_folder, args.index, args.steps, config_file, logger)
         run_varcall_jobs(list_of_jobs, cluster_mode, log_unique_time, args.analysis_name, args.output_folder, logger)
-        #pipeline(args, logger)
         keep_logging('End: Variant calling Pipeline', 'End: Variant calling Pipeline', logger, 'info')
 
     elif "core_prep" in args.steps:
         keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
         core_temp_dir = args.output_folder + "/core_temp_dir/"
         make_sure_path_exists(core_temp_dir)
-        # core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
-        # make_sure_path_exists(core_results_dir)
         keep_logging('Copying vcf files to %s' % core_temp_dir, 'Copying vcf files to %s' % core_temp_dir, logger, 'info')
         cp_command = "cp %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf.gz %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf.gz %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
         call(cp_command, logger)
@@ -506,8 +499,6 @@ if __name__ == '__main__':
             else:
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
-            #list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
-            #list_of_files = subprocess.check_output(list_cmd, shell=True)
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_vcf_files.splitlines():
                     out_fp.write(os.path.basename(file)+'\n')
@@ -525,35 +516,15 @@ if __name__ == '__main__':
         with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
             for line in out_fp:
                 list_of_vcf_files.append(line)
-
         for i in list_of_label_files:
             if os.stat(i).st_size == 0:
                 keep_logging('The file {} is empty. Please rerun core_prep step again.\n'.format(i), 'The file {} is empty. Please rerun core_prep step again.\n'.format(i), logger, 'exception')
                 exit()
-
-
-
-
-        # if len(list_of_label_files) == len(list_of_vcf_files):
-        #     for i in list_of_label_files:
-        #         if os.stat(i).st_size == 0:
-        #             keep_logging('The file {} is empty. Please rerun core_prep step again.\n'.format(i), 'The file {} is empty. Please rerun core_prep step again.\n'.format(i), logger, 'exception')
-        #             exit()
-        # else:
-        #     keep_logging('Problem in generating report. Rerun the report step\n', 'Problem in generating report. Rerun the report step\n', logger, 'exception')
-        #     exit()
-        # list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
-        # list_of_files = subprocess.check_output(list_cmd, shell=True)
-        # with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-        #     for file in list_of_files.splitlines():
-        #         out_fp.write(os.path.basename(file)+'\n')
-        # out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         run_report_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, core_results_dir, config_file)
 
     else:
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')
-
     time_taken = datetime.now() - start_time_2
     keep_logging('Logs were recorded in file with extension log.txt in output folder', 'Logs were recorded in file with extension log.txt in output folder', logger, 'info')
     keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')

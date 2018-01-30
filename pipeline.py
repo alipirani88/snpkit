@@ -7,7 +7,6 @@ import errno
 from datetime import datetime
 import ConfigParser
 from config_settings import ConfigSectionMap
-#from check_subroutines import *
 if sys.version_info < (3, 2):
     import subprocess32 as sp
 else:
@@ -19,7 +18,6 @@ from modules.gatk import gatk_DepthOfCoverage
 from modules.logging_subprocess import *
 from modules.log_modules import *
 from argparse import RawTextHelpFormatter
-
 
 # Command Line Argument Parsing
 def parser():
@@ -42,7 +40,7 @@ def parser():
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run pipeline on cluster/parallel-local/local. Make Sure to check if the [CLUSTER] section in config file is set up correctly.')
     return parser
 
-# Main Pipeline
+# Main Pipeline method
 def pipeline(args, logger):
     keep_logging('START: Pipeline', 'START: Pipeline', logger, 'info')
 
@@ -82,7 +80,6 @@ def pipeline(args, logger):
             trimmomatic(args.forward_raw, reverse_raw, args.output_folder, args.croplength, logger, Config)
         keep_logging('END: Pre-Processing Raw reads using Trimmomatic', 'END: Pre-Processing Raw reads using Trimmomatic', logger, 'info')
 
-
     ## 2. Stages: Alignment using BWA
     def align_reads():
         keep_logging('START: Mapping Reads using BWA', 'START: Mapping Reads using BWA', logger, 'info')
@@ -91,15 +88,12 @@ def pipeline(args, logger):
         keep_logging('END: Mapping Reads using BWA', 'END: Mapping Reads using BWA', logger, 'info')
         return out_sam
 
-
-
     # Run Depth of Coverage Module after read mapping and stop. Dont proceed to variant calling step.
     def coverage_depth_stats():
         gatk_DepthOfCoverage_file = gatk_DepthOfCoverage(out_sorted_bam, args.output_folder, args.analysis_name, reference, logger, Config)
         alignment_stats_file = alignment_stats(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         return gatk_DepthOfCoverage_file
 
-    ## Continue: 3. Stages: Post-Alignment using SAMTOOLS, PICARD etc
     ## 3. Stages: Post-Alignment using SAMTOOLS, PICARD etc
     def post_align(out_sam):
         keep_logging('START: Post-Alignment using SAMTOOLS, PICARD etc...', 'START: Post-Alignment using SAMTOOLS, PICARD etc...', logger, 'info')
@@ -133,7 +127,6 @@ def pipeline(args, logger):
             final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
             #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
             final_raw_vcf = remove_5_bp_snp_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
-            #final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             keep_logging('The final raw VCF file: {}'.format(final_raw_vcf), 'The final raw VCF file: {}'.format(final_raw_vcf), logger, 'debug')
             keep_logging('END: Variant Calling using Samtools without post-align bam input files.', 'END: Variant Calling using Samtools without post-align bam input files.', logger, 'info')
             return final_raw_vcf
@@ -141,7 +134,6 @@ def pipeline(args, logger):
             keep_logging('Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. samtoolswithpostalignbam 3. gatkhaplotypecaller', 'Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. samtoolswithpostalignbam 3. gatkhaplotypecaller', logger, 'info')
             exit()
         keep_logging('END: Variant Calling', 'END: Variant Calling', logger, 'info')
-
 
     ## 5. Stages: Variant Filteration
     def filter(gatk_depth_of_coverage_file):
@@ -154,12 +146,10 @@ def pipeline(args, logger):
         filter2_variants(final_raw_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
         keep_logging('END: Variant Filteration', 'END: Variant Filteration', logger, 'info')
 
-
     ## 6. Stages: Statistics
     def stats():
         keep_logging('START: Generating Statistics Reports', 'START: Generating Statistics Reports', logger, 'info')
         alignment_stats_file = alignment_stats(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
-        #gatk_DepthOfCoverage(out_sorted_bam, args.output_folder, args.analysis_name, reference, logger, Config)
         vcf_stats_file = vcf_stats(final_raw_vcf, args.output_folder, args.analysis_name, logger, Config)
         #qualimap_report = qualimap(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         keep_logging('END: Generating Statistics Reports', 'END: Generating Statistics Reports', logger, 'info')
@@ -194,7 +184,7 @@ def pipeline(args, logger):
             filter(gatk_depth_of_coverage_file)
             stats()
 
-        #####Individual steps
+    # Run individual variant calling steps: clean, align, post-align, varcall, filter, stats etc
     else:
 
         if steps_list[0] == "clean":
@@ -206,48 +196,42 @@ def pipeline(args, logger):
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf = varcall()
-            #final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             stats()
         elif steps_list[0] == "align":
-            #Check clean reads here
+            #Sanity Check clean reads here
             out_sam = align_reads()
             out_sorted_bam = post_align(out_sam)
             out_sorted_bam = post_align()
-            #out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf = varcall()
-            #final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             stats()
         elif steps_list[0] == "post-align":
-            #Check BAM file here
+            #Sanity Check BAM file here
             out_sam = "%s/%s_aln.sam" % (args.output_folder, args.analysis_name)
             out_sorted_bam = post_align(out_sam)
-            #out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf = varcall()
-            #final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             stats()
 
         elif steps_list[0] == "varcall":
-            #Check Post-aligned-BAM and Bed files here
+            #Sanity Check Post-aligned-BAM and Bed files here
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf = varcall()
-            #final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             stats()
 
         elif steps_list[0] == "filter":
-            #Check Post-varcall vcf and other files here
+            #Sanity Check Post-varcall vcf and other files here
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
@@ -256,20 +240,18 @@ def pipeline(args, logger):
             filter(gatk_depth_of_coverage_file)
             stats()
         elif steps_list[0] == "stats":
-            #check BAM and vcf files
+            #Sanity check BAM and vcf files
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
-
             stats()
-
         else:
             keep_logging('Seems like the Analysis Steps are not in sequential order. Please recheck the -steps argument and run the pipeline again', 'Seems like the Analysis Steps are not in sequential order. Please recheck the -steps argument and run the pipeline again', logger, 'exception')
 
 
-## Check Subroutines
+## Sanity checks and directory structure maintenance methods
 def usage():
     print "Usage: python pipeline.py [-h] -PE1 path-to-forward-PE-read -PE2 path-to-reverse-PE-read -o path-to-OUTPUT_FOLDER -analysis ANALYSIS_NAME -index INDEX_NAME_as_per_config_file \n"
 
@@ -283,7 +265,6 @@ def Validate_filename( name ):
         exit()
 
 def file_exists(path1, path2, reference):
-
     if not os.path.isfile(path1):
         file_basename = os.path.basename(path1)
         keep_logging('The input file {} does not exists. Please provide another file with full path or check the files path.\n'.format(file_basename), 'The input file {} does not exists. Please provide another file or check the files path.\n'.format(file_basename), logger, 'exception')
@@ -310,35 +291,25 @@ def file_exists(path1, path2, reference):
         ref_index_suffix4 = reference + ".4.ebwt"
         ref_index_suffix5 = reference + ".rev.1.bt2"
         ref_index_suffix6 = reference + ".rev.2.bt2"
-
-        print "Please change the aligner section in config file."
-
-        print "Different Aligner in config file"
-
     if not os.path.isfile(ref_index_suffix1):
-        # file_basename = os.path.basename(reference)
         keep_logging('The reference index files given below does not exists:\n {}\n {}\n {}\n {}\n {}'.format(ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4, ref_index_suffix5), 'The reference index files given below does not exists:\n {}\n {}\n {}\n {}\n {}'.format(ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4, ref_index_suffix5), logger, 'warning')
         create_index(reference, ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4, ref_index_suffix5)
     else:
         keep_logging('Index file already exists.', 'Index file already exists.', logger, 'info')
 
-    ############################################
     ref_fai_index = reference + ".fai"
     if not os.path.isfile(ref_fai_index):
-        # file_basename = os.path.basename(reference)
         keep_logging('The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index), 'The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index), logger, 'warning')
         create_fai_index(reference, ref_fai_index)
     else:
         keep_logging('Samtools fai Index file already exists.', 'Samtools fai Index file already exists.', logger, 'info')
-    ############################################
+
     dict_name = os.path.splitext(os.path.basename(reference))[0] + ".dict"
     if not os.path.isfile(ConfigSectionMap(args.index, Config)['ref_path'] + "/" + dict_name):
         keep_logging('The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name), 'The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name), logger, 'warning')
         picard_seqdict(dict_name, reference)
     else:
         keep_logging('The reference seq dict file required for GATK and PICARD exists.', 'The reference seq dict file required for GATK and PICARD exists.', logger, 'info')
-
-
 
 def java_check():
     keep_logging('Checking Java Availability...', 'Checking Java Availability...', logger, 'info')
@@ -430,16 +401,7 @@ def picard_seqdict(dict_name, reference):
         keep_logging('Error in Picard Sequence Dictionary creation step. Exiting.', 'Error in Picard Sequence Dictionary creation step. Exiting.', logger, 'exception')
         sys.exit(1)
 
-
-
-
-
-
-
-
-###
-
-# Main Method
+# Start of Main Method/Pipeline
 if __name__ == '__main__':
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()

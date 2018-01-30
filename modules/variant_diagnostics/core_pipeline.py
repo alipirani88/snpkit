@@ -1024,7 +1024,7 @@ def extract_only_ref_variant_fasta_from_reference():
 
     pattern = re.compile(r'\s+')
     fasta_string = re.sub(pattern, '', fasta_string)
-    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '')) + fasta_string
+    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '')) + fasta_string + "\n"
     fp = open("%s/%s_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', ''))), 'w+')
     fp.write(final_fasta_string)
     fp.close()
