@@ -346,7 +346,7 @@ def create_job_DP(jobrun, vcf_filenames):
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             print "Running: qsub %s" % i
-            #os.system("qsub %s" % i)
+            os.system("qsub %s" % i)
 
 
     elif jobrun == "parallel-local":
@@ -386,6 +386,7 @@ def create_job_DP(jobrun, vcf_filenames):
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "cluster":
+        """ Test pending """
         command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
         for i in vcf_filenames:
@@ -1074,14 +1075,11 @@ def variant_report(data_matrix_dir):
         myList = ','.join(map(str, (sample, unmapped_positions, core_snps, filtered_snp_count, filtered_snp_perc)))
         fp.write(myList + '\n')
     fp.close()
-
+    print "Variant call report can be found in %s/Report_variants.txt" % data_matrix_dir
 
 """
 Pending inclusion
 """
-
-
-    print "Variant call report can be found in %s/Report_variants.txt" % data_matrix_dir
 
 class FuncThread(threading.Thread):
     def __init__(self, target, *args):
@@ -1209,45 +1207,45 @@ if __name__ == '__main__':
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
 
-        # make_sure_path_exists(data_matrix_dir)
-        # make_sure_path_exists(core_vcf_fasta_dir)
-        #
-        # move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
-        # move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
-        #
-        # os.system(move_data_matrix_results)
-        # os.system(move_core_vcf_fasta_results)
-        #
-        # # Check if the variant consensus files generated are of same length
-        # count = 0
-        # for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines(  ): count += 1
-        # ref_variants = count - 1
-        #
-        # variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
-        #
-        # for f in variant_consensus_files:
-        #     cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
-        #     proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
-        #     (out2, err2) = proc.communicate()
-        #
-        #     try:
-        #         int(out2) != int(ref_variants)
-        #     except OSError as exception:
-        #         if exception.errno != errno.EEXIST:
-        #             print "Error generating variant consensus position file: %s\n" % f
-        #
-        #
-        # """ Generate DP barplots data """
-        # DP_analysis_barplot()
-        #
-        # """ Analyze the FQ values of all the unique variant """
-        # FQ_analysis()
+        make_sure_path_exists(data_matrix_dir)
+        make_sure_path_exists(core_vcf_fasta_dir)
+
+        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
+        move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+
+        os.system(move_data_matrix_results)
+        os.system(move_core_vcf_fasta_results)
+
+        # Check if the variant consensus files generated are of same length
+        count = 0
+        for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines(  ): count += 1
+        ref_variants = count - 1
+
+        variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
+
+        for f in variant_consensus_files:
+            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
+            proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
+            (out2, err2) = proc.communicate()
+
+            try:
+                int(out2) != int(ref_variants)
+            except OSError as exception:
+                if exception.errno != errno.EEXIST:
+                    print "Error generating variant consensus position file: %s\n" % f
+
+
+        """ Generate DP barplots data """
+        DP_analysis_barplot()
+
+        """ Analyze the FQ values of all the unique variant """
+        FQ_analysis()
 
         """ Generate alignment report """
         alignment_report(data_matrix_dir)
 
         """ Generate core snps report """
-        #variant_report(data_matrix_dir)
+        variant_report(data_matrix_dir)
 
         print "\nResults for core pipeline can be found in: %s\n" \
               "\nDescription of Results:\n" \
