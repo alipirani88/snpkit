@@ -109,7 +109,7 @@ Rscript generate_diagnostics_plots.R
 
 barplot.pdf
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot.pdf)
+![click here](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot.pdf)
 
 barplot_DP.pdf 
 
