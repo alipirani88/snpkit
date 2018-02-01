@@ -84,9 +84,9 @@ Option ***report*** : This step will generate final core results directory and v
 ```
 
 core_snp_consensus directory contains the core consensus fasta and vcf files.
-data_matrix contains all the data matrix and reports that were generated during the variant diagnostics steps.  
+data_matrix contains all matrices and reports generated during report step.  
 
-data_matrix will contain various matrices that can be queried or plotted for diagnosing the pipeline results. All the matrices can be plotted using an R script provided in data_matric folder. (Note )
+As the name suggests, data_matrix will contain various matrices that can be queried or plotted for further diagnosing the variant call results. Alternatively, you can run a R script provided inside the data_matrix folder to generate the plots. 
 
 Require: ggplot2 and heatmap.3
 
@@ -100,13 +100,12 @@ Rscript generate_diagnostics_plots.R
 
 | Extension | Description |
 | --------- | ----------- |
-| . |  |
-| . |  |
-| . |  |
-| . |  |
-| . |  |
-| . |  |
-| . |  |
+| . barplot.pdf |  |
+| . barplot_DP.pdf |  |
+| . temp_Only_filtered_positions_for_closely_matrix_FQ.pdf |  |
+| . DP_position_analysis.pdf |  |
+| . temp_Only_filtered_positions_for_closely_matrix_DP.pdf |  |
+
 
 ## Command line options
 
