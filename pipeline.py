@@ -38,6 +38,7 @@ def parser():
                                                                      '2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. \nYou can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.\nThe order is required to be sequential. Also, while skipping any of the step make sure you have results already present in your output folder.\n'
                                                                      '3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps')
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run pipeline on cluster/parallel-local/local. Make Sure to check if the [CLUSTER] section in config file is set up correctly.')
+    #optional.add_argument('-noclean', action='store', dest="noclean", help='Do not clean up intermediate files. Default: OFF')
     return parser
 
 # Main Pipeline method
@@ -52,9 +53,11 @@ def pipeline(args, logger):
     keep_logging('Getting Reference Genome name from config file: {}'.format(reference), 'Getting Reference Genome name from config file: {}'.format(reference), logger, 'info')
 
     # Check FASTQ files
-    if args.type != "PE":
+    if args.type != "PE" and args.type != "BAM":
         reverse_raw = "None"
         file_exists(args.forward_raw, args.forward_raw, reference)
+    elif args.type != "PE" and args.type != "SE":
+        print "BAM type... continue"
     else:
         file_exists(args.forward_raw, args.reverse_raw, reference)
 

@@ -1039,7 +1039,7 @@ def alignment_report(data_matrix_dir):
     fp.write(header + '\n')
     for vcf in vcf_filenames:
         sample = os.path.basename(vcf.replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
-        print sample
+        #print sample
         report_string = sample + ","
         qc = (subprocess.check_output("grep \'QC-passed\' %s/%s/%s_alignment_stats | sed \'s/ + 0 in total (QC-passed reads + QC-failed reads)//g\'" % (varcall_dir, sample, sample), shell=True)).strip()
         mapped = (subprocess.check_output("grep \'mapped (\' %s/%s/%s_alignment_stats | awk -F\' \' \'{print $1}\'" % (varcall_dir, sample, sample), shell=True)).strip()
@@ -1204,17 +1204,25 @@ if __name__ == '__main__':
     if "3" in args.steps:
         print "\nStep 3: Generate Reports and Results folder.\n"
 
+        """ Generate DP barplots data """
+        DP_analysis_barplot()
+
+        """ Analyze the FQ values of all the unique variant """
+        FQ_analysis()
+
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
 
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
-        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, data_matrix_dir)
+        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
 
         os.system(move_data_matrix_results)
         os.system(move_core_vcf_fasta_results)
+
+        subprocess.call(["sed -i 's/title_here/%s/g' %s/generate_diagnostics_plots.R" % (os.path.basename(args.results_dir), data_matrix_dir)], shell=True)
 
         # Check if the variant consensus files generated are of same length
         count = 0
@@ -1235,11 +1243,11 @@ if __name__ == '__main__':
                     print "Error generating variant consensus position file: %s\n" % f
 
 
-        """ Generate DP barplots data """
-        DP_analysis_barplot()
-
-        """ Analyze the FQ values of all the unique variant """
-        FQ_analysis()
+        # """ Generate DP barplots data """
+        # DP_analysis_barplot()
+        #
+        # """ Analyze the FQ values of all the unique variant """
+        # FQ_analysis()
 
         """ Generate alignment report """
         alignment_report(data_matrix_dir)
