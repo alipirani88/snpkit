@@ -44,7 +44,7 @@ Note: Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fast
 ## Steps
 
 
-There are three main steps to generate core SNPs which should be provided with -steps argument.
+There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.
 
 **1. Variant Calling:** This step will run all the standard variant calling steps on sample read files residing in input reads directory. 
 The possible options are:
@@ -62,12 +62,27 @@ Note: The order of variant calling steps needs to be sequential to avoid any err
 **2. Preparing files for Core SNP extraction and diagnostics purposes:**
 
 
-Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for the last core step i.e generating the .
+Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for the last core step i.e generating the consensus fasta file out of core snps. This can be a time consuming step depending on how closely related the samples are to the reference genome.  
 
 
 **3. Generate Core SNP consensus and data matrix for diagnostics plots:**
 
 Option ***core*** : This step will generate core SNP consensus fasta file and a consensus fasta of only core variant positions. Various data matrices will generated at this step that can be used later for diagnostics purposes. 
+
+**4. Generate report for the pipeline:**
+
+Option ***core*** : This step will generate the results directory and various reports for summarizing the alignment and core SNP results. All the final results will be saved into date_time_core_results directory inside the output folder. 
+
+```
+
+2018_01_13_13_18_03_core_results
+├── core_snp_consensus
+└── data_matrix
+
+```
+
+core_snp_consensus directory contains the core consensus fasta and vcf files.
+data_matrix contains all the data matrix and reports that were generated during the variant diagnostics steps.  
 
 
 ## Command line options
