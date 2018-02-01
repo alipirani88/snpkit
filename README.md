@@ -73,7 +73,7 @@ Option ***core*** : This step will generate core SNP consensus fasta file and a 
 
 **4. Generate report for the pipeline:**
 
-Option ***core*** : This step will generate the results directory and various reports for summarizing the alignment and core SNP results. All the final results will be saved into date_time_core_results directory inside the output folder. 
+Option ***report*** : This step will generate final core results directory and various reports that will summarize the alignment and core SNP results. All the final results will be saved into date_time_core_results directory inside the output folder. 
 
 ```
 
@@ -86,6 +86,27 @@ Option ***core*** : This step will generate the results directory and various re
 core_snp_consensus directory contains the core consensus fasta and vcf files.
 data_matrix contains all the data matrix and reports that were generated during the variant diagnostics steps.  
 
+data_matrix will contain various matrices that can be queried or plotted for diagnosing the pipeline results. All the matrices can be plotted using an R script provided in data_matric folder. (Note )
+
+Require: ggplot2 and heatmap.3
+
+```
+
+module load R
+
+Rscript generate_diagnostics_plots.R 
+
+```
+
+| Extension | Description |
+| --------- | ----------- |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
+| . |  |
 
 ## Command line options
 
