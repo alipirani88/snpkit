@@ -156,7 +156,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 The above command will run variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the [config]() file or check the help menu of the pipeline.
 
-The results of variant calling will be placed in an individual folder for each sample. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
+The results of variant calling will be placed in an individual folder generated for each sample in output directory. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
 
 - Run core_prep step to generate files for core SNP calling.
 
@@ -241,14 +241,10 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 If you decide to exclude some samples from core snp analysis step (step 3), there is a way to do that without running the entire pipeline. 
 
-Go to your output directory /Path/test_output_core/ and remove files that start with exclusion sample prefix from a directory named core_temp_dir
-
-example: To remove ERR134615 from analysis:
 
 ```
-rm /Path/test_output_core/core_temp_dir/ERR134615*
 
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster -filenames filenames_custom
 
 ```
 
