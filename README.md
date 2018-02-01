@@ -100,7 +100,7 @@ Rscript generate_diagnostics_plots.R
 
 | Extension | Description |
 | --------- | ----------- |
-| . barplot.pdf |  |
+| . barplot.pdf |  Distribution of filter-pass variant positions(not just core) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
 | . barplot_DP.pdf |  |
 | . temp_Only_filtered_positions_for_closely_matrix_FQ.pdf |  |
 | . DP_position_analysis.pdf |  |
