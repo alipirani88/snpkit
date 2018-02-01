@@ -113,7 +113,7 @@ barplot.pdf
 
 barplot_DP.pdf 
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot_DP.pdf)
+![click here](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot_DP.pdf)
 
 ## Command line options
 
