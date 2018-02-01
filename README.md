@@ -51,24 +51,24 @@ The possible options are:
 
 Option ***All*** :  This will run all the variant calling steps starting from cleaning the reads to variant calling and generating intermediate files that will be used in later steps. 
 
-Option ***clean,align,post-align,varcall,filter,stats*** :  This option will run variant calling steps starting from cleaning to variant calling.
+Option ***clean,align,post-align,varcall,filter,stats*** :  This option will run variant calling steps starting from cleaning to variant calling, variant filtering and generating stats.
+
 You can modify this argument to run a part of the pipeline. For example, if you want to restart the pipeline from alignment step, you can do it by supplying the following option: "align,post-align,varcall,filter,stats" which will skip the Trimmomatic cleaning part.
-The order of variant calling steps needs to be sequential to avoid any errors. 
 
 
-
-Note, while skipping any of the steps, make sure the results for skipped steps are already present in your output folder.
+Note: The order of variant calling steps needs to be sequential to avoid any errors. While skipping any of the steps, make sure the results for skipped steps are already present in your output folder.
 
 
 **2. Preparing files for Core SNP extraction and diagnostics purposes:**
 
 
-Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the data required for the last core step.
+Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for the last core step i.e generating the .
 
 
 **3. Generate Core SNP consensus and data matrix for diagnostics plots:**
 
 Option ***core*** : This step will generate core SNP consensus fasta file and a consensus fasta of only core variant positions. Various data matrices will generated at this step that can be used later for diagnostics purposes. 
+
 
 ## Command line options
 
