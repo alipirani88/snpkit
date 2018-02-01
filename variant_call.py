@@ -502,7 +502,7 @@ if __name__ == '__main__':
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_vcf_files.splitlines():
+                for file in list_of_vcf_files:
                     out_fp.write(os.path.basename(file)+'\n')
             out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
