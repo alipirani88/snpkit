@@ -44,9 +44,7 @@ Note: Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fast
 ## Steps
 
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/pipeline.png)
-
-There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.
+There are three main steps to generate core SNPs which should be provided with -steps argument.
 
 **1. Variant Calling:** This step will run all the standard variant calling steps on sample read files residing in input reads directory. 
 The possible options are:
@@ -64,56 +62,13 @@ Note: The order of variant calling steps needs to be sequential to avoid any err
 **2. Preparing files for Core SNP extraction and diagnostics purposes:**
 
 
-Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for the last core step i.e generating the consensus fasta file out of core snps. This can be a time consuming step depending on how closely related the samples are to the reference genome.  
+Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for the last core step i.e generating the .
 
 
 **3. Generate Core SNP consensus and data matrix for diagnostics plots:**
 
 Option ***core*** : This step will generate core SNP consensus fasta file and a consensus fasta of only core variant positions. Various data matrices will generated at this step that can be used later for diagnostics purposes. 
 
-**4. Generate report for the pipeline:**
-
-Option ***report*** : This step will generate final core results directory and various reports that will summarize the alignment and core SNP results. All the final results will be saved into date_time_core_results directory inside the output folder. 
-
-```
-
-2018_01_13_13_18_03_core_results
-├── core_snp_consensus
-└── data_matrix
-
-```
-
-core_snp_consensus directory contains the core consensus fasta and vcf files.
-data_matrix contains all matrices and reports generated during report step.  
-
-As the name suggests, data_matrix will contain various matrices that can be queried or plotted for further diagnosing the variant call results. Alternatively, you can run a R script provided inside the data_matrix folder to generate the plots. 
-
-Require: ggplot2 and heatmap.3
-
-```
-
-module load R
-
-Rscript generate_diagnostics_plots.R 
-
-```
-
-| Extension | Description |
-| --------- | ----------- |
-| . barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
-| . barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
-| . temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
-| . DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
-| . temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low DP values |
-
-
-barplot.pdf
-
-![click here](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot.pdf)
-
-barplot_DP.pdf 
-
-![click here](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot_DP.pdf)
 
 ## Command line options
 
@@ -186,7 +141,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 The above command will run variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the [config]() file or check the help menu of the pipeline.
 
-The results of variant calling will be placed in an individual folder generated for each sample in output directory. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
+The results of variant calling will be placed in an individual folder for each sample. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
 
 - Run core_prep step to generate files for core SNP calling.
 
@@ -271,10 +226,14 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 If you decide to exclude some samples from core snp analysis step (step 3), there is a way to do that without running the entire pipeline. 
 
+Go to your output directory /Path/test_output_core/ and remove files that start with exclusion sample prefix from a directory named core_temp_dir
+
+example: To remove ERR134615 from analysis:
 
 ```
+rm /Path/test_output_core/core_temp_dir/ERR134615*
 
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster -filenames filenames_custom
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
 
 ```
 

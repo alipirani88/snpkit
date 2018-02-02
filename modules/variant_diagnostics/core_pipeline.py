@@ -1181,22 +1181,22 @@ if __name__ == '__main__':
         make_sure_path_exists(core_vcf_fasta_dir)
 
         """ Generate SNP Filter Label Matrix """
-        generate_paste_command()
+        #generate_paste_command()
 
         """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-        generate_position_label_data_matrix()
+        #generate_position_label_data_matrix()
 
         """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
         generate_vcf_files()
 
         """ Generate consensus fasta file from core vcf files """
-        extract_only_ref_variant_fasta_from_reference()
+        #extract_only_ref_variant_fasta_from_reference()
 
         """ Generate consensus fasta file with only reference and variant position bases """
-        extract_only_ref_variant_fasta(core_vcf_fasta_dir)
+        #extract_only_ref_variant_fasta(core_vcf_fasta_dir)
 
         """ Analyze the positions that were filtered out only due to insufficient depth"""
-        DP_analysis()
+        #DP_analysis()
 
 
         print "Wait for individual cluster jobs to finish before running the third step"
@@ -1208,7 +1208,7 @@ if __name__ == '__main__':
         DP_analysis_barplot()
 
         """ Analyze the FQ values of all the unique variant """
-        FQ_analysis()
+        #FQ_analysis()
 
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
