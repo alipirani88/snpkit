@@ -83,12 +83,9 @@ Possible options for -cluster option(Supported system: pbs):
 Command line options
 --------------------
 
-``
+::
 
-usage: variant_call.py [-h] -type TYPE -readsdir DIR -outdir OUTPUT_FOLDER
-                       -index INDEX [-steps STEPS] -analysis ANALYSIS_NAME
-                       [-config CONFIG] [-suffix SUFFIX]
-                       [-filenames FILENAMES] [-cluster CLUSTER]
+	usage: variant_call.py [-h] -type TYPE -readsdir DIR -outdir OUTPUT_FOLDER -index INDEX [-steps STEPS] -analysis ANALYSIS_NAME [-config CONFIG] [-suffix SUFFIX] [-filenames FILENAMES] [-cluster CLUSTER]
 
 Variant Calling pipeline for Illumina PE/SE data.
 
