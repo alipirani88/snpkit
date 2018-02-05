@@ -25,18 +25,6 @@ Require: ggplot2 and heatmap.3
 
 
 
-.. figure::  image/barplot.png
-   :align:   center
-
-   Distribution of all the filter-pass variant positions in samples
-
-
-.. figure::  image/barplot_DP.png 
-   :align:   center
-
-   Distribution of depth for all the filter-pass variant positions in samples
-
-
 Variant Calling
 ---------------
 
@@ -73,3 +61,18 @@ Pending...
 | . |  |
 | . |  |
 | . |  |
+
+
+Diagnostics plots
+-----------------
+
+.. figure::  image/barplot.png
+   :align:   center
+
+   Distribution of all the filter-pass variant positions in samples
+
+
+.. figure::  image/barplot_DP.png
+   :align:   center
+
+   Distribution of depth for all the filter-pass variant positions in samples
