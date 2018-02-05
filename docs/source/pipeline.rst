@@ -6,7 +6,7 @@ Pipeline
 Steps
 -----
 
-.. figure::  images/pipeline.png
+.. figure::  image/pipeline.png
    :align:   center
 
    Variant calling and core SNP diagnostics pipeline
