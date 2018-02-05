@@ -89,7 +89,29 @@ Diagnostics plots
    Distribution of all the filter-pass variant positions in samples
 
 
+
 .. figure::  image/barplot_DP.png
    :align:   center
 
    Distribution of depth for all the filter-pass variant positions in samples
+
+
+
+.. figure::  image/DP_position_analysis.png
+   :align:   center
+
+   same information as in barplot_DP.pdf but shown in heatmap format
+
+
+
+.. figure::  image/temp_Only_filtered_positions_for_closely_matrix_DP.png
+   :align:   center
+
+   Heatmap spanning reference genome and shows positions that were filtered out due to low DP values
+
+
+
+.. figure::  image/temp_Only_filtered_positions_for_closely_matrix_FQ.png
+   :align:   center
+
+   Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values
