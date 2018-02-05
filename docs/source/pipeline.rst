@@ -6,12 +6,10 @@ Pipeline
 Steps
 -----
 
-.. image:: https://github.com/alipirani88/variant_calling_pipeline/blob/master/pipeline.png
-   :height: 100px
-   :width: 200 px
-   :scale: 50 %
-   :alt: alternate text
-   :align: right
+.. figure::  images/pipeline.png
+   :align:   center
+
+   Variant calling and core SNP diagnostics pipeline
 
 There are three main steps to generate core SNPs which can be provided with "steps" argument and should be run in sequential order.
 
