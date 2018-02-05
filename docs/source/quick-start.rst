@@ -6,7 +6,7 @@ Quickstart
 Input
 -----
 
-Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize this config file and provide it with the -config argument. Detailed information in section [Customizing Config file](#customizing-config-file)
+Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example `config https://github.com/alipirani88/variant_calling_pipeline/blob/master/config`_ file with default parameters are included in the pipeline folder. You can customize this config file and provide it with the -config argument. Detailed information in section [Customizing Config file](#customizing-config-file)
 
 .. note::
 
@@ -15,7 +15,7 @@ Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fastq.gz),
 Run pipeline on Compute cluster
 -------------------------------
 
-The variant calling can be run in parallel on each sample using the -cluster argument. Set the pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. For more details, check out UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website.
+The variant calling can be run in parallel on each sample using the -cluster argument. Set the pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. For more details, check out UMICH `flux http://arc-ts.umich.edu/systems-and-services/flux/`_ website.
 
 
 Possible options for -cluster option(Supported system: pbs):
@@ -38,7 +38,7 @@ Assuming you want to generate core snps for more than a few hundred samples and 
 	nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
 
 
-See option resources in scheduler section of [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information in section [Customizing Config file](#customizing-config-file)
+See option resources in scheduler section of `config https://github.com/alipirani88/variant_calling_pipeline/blob/master/config`_ file. Detailed information in section [Customizing Config file](#customizing-config-file)
 
 1. Run variant calling step (All) on a set of PE reads with default parameters
 
