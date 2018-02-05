@@ -21,13 +21,7 @@ Variant Calling and core SNP diagnostics Pipeline
    config
    logs
    
-
-
-`Canu <http://github.com/marbl/canu>`_ is a fork of the Celera Assembler designed for high-noise single-molecule sequencing (such as
-the PacBio RSII or Oxford Nanopore MinION).
-
 This `pipeline <https://github.com/alipirani88/variant_calling_pipeline>`_ calls variants on PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used to to build a phylogeny or as an input for Gubbins/Beast analysis.
-
 
 Install
 =========

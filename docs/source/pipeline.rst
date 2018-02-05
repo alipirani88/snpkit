@@ -1,7 +1,10 @@
 .. _pipeline:
 
+Pipeline
+========
+
 Steps
-=====
+-----
 
 .. image:: https://github.com/alipirani88/variant_calling_pipeline/blob/master/pipeline.png
    :height: 100px
@@ -10,7 +13,7 @@ Steps
    :alt: alternate text
    :align: right
 
-There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.
+There are three main steps to generate core SNPs which can be provided with \-steps argument and should be run in sequential order.
 
 **1. Variant Calling:** This step will run all the standard variant calling steps on sample read files residing in input reads directory. 
 The possible options are:
