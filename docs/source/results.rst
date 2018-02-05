@@ -33,10 +33,13 @@ Require: ggplot2 and heatmap.3
 | . temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low DP values |
 
 
+
+
 .. figure::  image/barplot.pdf
    :align:   center
 
    Distribution of all the filter-pass variant positions in samples
+
 
 
 .. figure::  image/barplot_DP.pdf 
