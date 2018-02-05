@@ -102,6 +102,7 @@ Required arguments:
   -analysis     Unique analysis name that will be used as prefix to saving results and log files.
 
 Optional arguments:
+
   -config       Path to Config file, Make sure to check config settings before running pipeline
   -suffix       Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz
   -filenames    fastq filenames with one single-end filename per line. if the type is set to PE, it will detect the second paired-end filename with the suffix from first filename.
@@ -110,7 +111,7 @@ Optional arguments:
 
 Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster(Time and memory efficient). The default pbs resources used for parallel jobs are: 
 
-
+::
 	nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
 
 
@@ -118,7 +119,7 @@ See option resources in scheduler section of [config](https://github.com/alipira
 
 - Run variant calling step (All) on a set of PE reads with default parameters
 
-
+::
 	python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps All -cluster parallel-cluster
 
 
@@ -130,7 +131,7 @@ The results of variant calling will be placed in an individual folder generated 
 
 Run this steps to generate various intermediate files that will be used for generating core SNPs.
 
-
+::
 	python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core_prep -cluster parallel-cluster
 
 
@@ -141,13 +142,13 @@ Since this step compares multiple files simultaneously and involves multiple I/O
 
 example:
 
-
+::
 	nodes=1:ppn=4,mem=47000mb,walltime=24:00:00
 
 
 Replace the resources option in scheduler section of config file with the above line before running the command.
 
-
+::
 	python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
 
 
