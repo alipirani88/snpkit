@@ -42,6 +42,21 @@ Require: ggplot2 and heatmap.3
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .. figure::  image/barplot_DP.pdf 
    :align:   center
 
