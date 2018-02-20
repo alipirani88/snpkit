@@ -21,7 +21,7 @@ Variant Calling and core SNP diagnostics Pipeline
    config
    logs
    
-This `pipeline <https://github.com/alipirani88/variant_calling_pipeline>`_ calls variants on PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used to to build a phylogeny or as an input for Gubbins/Beast analysis.
+VCR is a `pipeline <https://github.com/alipirani88/variant_calling_pipeline>`_ that calls variants from PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used as an input for downstream post-analysis.
 
 Install
 =========

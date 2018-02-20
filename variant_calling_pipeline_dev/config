@@ -1,0 +1,210 @@
+# This config file will help you set custom tools and their parameters for the pipeline
+# In the below [pipeline] section, set the two main tools that will be used for variant calling. Supports bwa and samtools and fully tested. Also supports bowtie and GATK, but not fully tested.
+[pipeline]
+# Options for Aligner: bwa / smalt / bowtie
+aligner: bwa
+# Options for variant_caller: samtoolswithpostalignbam / gatkhaplotypecaller /samtools
+variant_caller: samtools
+
+# Set bin folder path. Please make sure all the installations and executables are placed in this bin folder. Also make sure the path for individual tools are working properly.
+[bin_path]
+binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
+
+# If you are using a grid system to run jobs, change the below parameters accordingly. Supports only pbs torque system.
+[scheduler]
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
+email: USERNAME@med.umich.edu
+queue: XXX
+flux_account: XXX
+notification: XXX
+
+# Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
+# Set parameter for Trimmomatic
+[Trimmomatic]
+trimmomatic_bin: /Trimmomatic/
+adaptor_filepath: adapters/TruSeq3-Nextera_PE_combined.fa
+seed_mismatches: 2
+palindrome_clipthreshold: 30
+simple_clipthreshold: 10
+minadapterlength: 8
+#change this to true and see the effect on alignment
+keep_both_reads: true
+window_size: 4
+window_size_quality: 20
+minlength: 40
+headcrop_length: 0
+colon: :
+targetlength: 125
+crop_length: 40
+f_p: forward_paired.fq.gz
+f_up: forward_unpaired.fq.gz
+r_p: reverse_paired.fq.gz
+r_up: reverse_unpaired.fq.gz
+
+[bwa]
+bwa_bin: /bwa-0.7.12/
+cores: 8
+base_cmd: bwa
+algorithm: mem
+index: index
+RG_header: -R
+Mark_splithits: -M
+
+[bowtie]
+bowtie_bin: /bowtie2-2.2.6/
+cores: 8
+build_cmd: bowtie2-build
+align_cmd: bowtie2
+parameters: -k 1 --non-deterministic --end-to-end
+
+[samtools]
+samtools_bin: /samtools-1.2/
+base_cmd: samtools
+#minimum mapping quality
+#change parameter S to -t SP and D to -t DP
+mpileup_parameters: -ug -f
+faiindex: faidx
+#-q30 -B -E -C50
+
+[bcftools]
+bcftools_bin: /bcftools-1.2/
+base_cmd: bcftools
+call_parameters: -vg
+
+[picard]
+picard_bin: /picard-tools-2.5.0/
+base_cmd: picard.jar
+
+[gatk]
+gatk_bin: /GenomeAnalysisTK-3.3-0/
+base_cmd: GenomeAnalysisTK.jar
+haplotype_parameters: -T HaplotypeCaller --genotyping_mode DISCOVERY
+#changes: 12th August
+gatk_filter1_parameter_expression: FQ < 40.00 && MQ > 20 && QUAL > 50 && DP > 15
+gatk_filter2_parameter_expression: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
+#changed gatk_filter2_parameter_expression DP 15 from 10 that was used in VRE samples.
+
+[vcftools]
+#vcftools_perl_bin: /vcftools_0.1.12b/perl/
+vcftools_bin: /vcftools_0.1.12b/bin/
+tabix_bin: /tabix-0.2.6/
+#vcftools_bin: /vcftools_0.1.12b/bin/
+vcftools_perl_bin: /vcftools_0.1.12b/perl/
+
+[qualimap]
+qualimap_bin: /qualimap_v2.1/
+base_cmd: qualimap
+
+[bedtools]
+bedtools_bin: /bedtools2-master/bin/
+base_cmd: bedtools
+version_for_coverage: /version_for_coverage/
+
+[bioawk]
+bioawk_bin: /bioawk-master/
+base_cmd: bioawk
+
+[fasttree]
+fasttree_bin: /Fasttree_2.1.10/
+#For Multithread fasttree; use FastTreeMP executable file
+base_cmd: FastTree
+
+[raxml]
+raxml_bin: /raxml/
+# Other raxml executable available to use: raxmlHPC-PTHREADS,raxmlHPC-PTHREADS-SSE3,raxmlHPC-SSE3
+base_cmd: raxmlHPC-SSE3
+parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
+
+[gubbins]
+# Change this path to wherever gubbins is located/installed. Right now, installed using conda from anaconda3 package installed in bin_group.
+gubbins_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
+base_cmd: run_gubbins.py
+
+[SNP_filters]
+filter_criteria: snitkin_filters
+# Other Criterias: SPANDx_filters, loose_filters, snitkin_filters
+
+[snitkin_filters]
+avg_depth: no
+# If AVG_DEPTH is yes, the below DP threshold will be ignored. Instead, LOW_DEPTH and HIGH_DEPTH filter parameter will be used.
+# Filter variants with Depth less than the below threshold
+dp: 9
+# A value of 2 means that regions with less than half of the average coverage of the entire genome will fail
+low_depth: 2
+# A value of 5 means that regions with 5x depth greater than the average coverage will fail
+high_depth: 5
+# Filter variants with FQ(Consensus Quality) greater than the below threshold
+fq: 0.025
+fq2: 0.025
+# Filter variants with MQ(Root Mean Square Quality) less than the below threshold
+mq: 50
+# Filter variants with Variant QUAL less than the below threshold
+qual: 100
+# Filter Variants that are proximate to each other
+prox: 10
+
+
+#CLUSTER_SNP: 3
+#CLUSTER_WINDOW_SNP: 10
+#MLEAF_SNP: 0.95
+#QD_SNP: 10.0
+#FS_SNP: 10.0
+#HAPLO_SNP: 20.0
+
+
+##SNP annotations
+[snpeff]
+snpeff_bin: /snpEff/
+base_cmd: snpEff.jar
+snpeff_parameters: -d -no-downstream -no-upstream
+dataDir: /data/
+########################################################################################################################
+
+# Reference Genome to be used for pipeline
+# Set path for already indexed reference genome
+
+# Most Frequently used reference genomes
+
+# Name of the reference genome. Provide this value with -index_name argument.
+[KPNIH1]
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+
+# Name of the reference genome. Provide this value with -index_name argument.
+[aus]
+# Name of reference genome fasta file.
+Ref_Name: Efae_aus0004_genome.fa
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/aus/
+
+[MRSA_USA_300]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_USA_300.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300/
+
+[MRSA_USA_100]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_USA_100_1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_100/
+
+[CDIFF_630]
+# Name of reference genome fasta file.
+Ref_Name: cdiff_630.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630/
+
+[CFT073]
+# Name of reference genome fasta file.
+Ref_Name: EscherichiacoliCFT073.fna
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CFT073
+
+[paris]
+# Name of reference genome fasta file.
+Ref_Name: Paris.fna
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/legionella/paris/
