@@ -141,6 +141,10 @@ def pipeline(args, logger):
     ## 5. Stages: Variant Filteration
     def filter(gatk_depth_of_coverage_file):
         keep_logging('START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
+        if not os.path.isfile(gatk_depth_of_coverage_file):
+            file_basename = os.path.basename(gatk_depth_of_coverage_file)
+            keep_logging('The input file {} does not exists. Please provide another file with full path or check the files path.\n'.format(file_basename), 'The input file {} does not exists. Please provide another file or check the files path.\n'.format(file_basename), logger, 'exception')
+            exit()
         Avg_dp_cmd = "grep \'^Total\' %s | awk -F\'\t\' \'{print $3}\'" % gatk_depth_of_coverage_file
         proc = sp.Popen([Avg_dp_cmd], stdout=sp.PIPE, shell=True)
         (out, err) = proc.communicate()

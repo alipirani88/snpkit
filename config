@@ -104,6 +104,21 @@ version_for_coverage: /version_for_coverage/
 bioawk_bin: /bioawk-master/
 base_cmd: bioawk
 
+[fasttree]
+fasttree_bin: /Fasttree_2.1.10/
+#For Multithread fasttree; use FastTreeMP executable file
+base_cmd: FastTree
+
+[raxml]
+raxml_bin: /raxml/
+# Other raxml executable available to use: raxmlHPC-PTHREADS,raxmlHPC-PTHREADS-SSE3,raxmlHPC-SSE3
+base_cmd: raxmlHPC-SSE3
+parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
+
+[gubbins]
+# Change this path to wherever gubbins is located/installed. Right now, installed using conda from anaconda3 package installed in bin_group.
+gubbins_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
+base_cmd: run_gubbins.py
 
 [SNP_filters]
 filter_criteria: snitkin_filters
@@ -136,6 +151,13 @@ prox: 10
 #FS_SNP: 10.0
 #HAPLO_SNP: 20.0
 
+
+##SNP annotations
+[snpeff]
+snpeff_bin: /snpEff/
+base_cmd: snpEff.jar
+snpeff_parameters: -d -no-downstream -no-upstream
+dataDir: /data/
 ########################################################################################################################
 
 # Reference Genome to be used for pipeline

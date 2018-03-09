@@ -353,6 +353,80 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H358/
 ########################################################################################################################
 
 
+# KPC Cluster Specific Reference Genomes
+
+[313]
+# Name of reference genome fasta file.
+Ref_Name: 313_R1_001_final_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_108]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_108_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_110]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_110_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_157]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_157_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_212]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_212_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_216]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_216_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_233]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_233_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_412]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_412_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_48]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_48_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_52]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_52_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_586]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_586_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
+[Rush_KPC_653]
+# Name of reference genome fasta file.
+Ref_Name: Rush_KPC_653_R1_l500_contigs.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Ali/Project_KPC_LTACH_analysis/Analysis/Project_KPC_all_KPC_2008+Hiseq+Latest/2017-01-17-Variant-Calling_Strain_Specific/data/reference/
+
 ##Ecoli Reference Genomes
 
 [Ecoli_CD306]
@@ -728,122 +802,6 @@ Ref_Path: /scratch/esnitkin_fluxod/apirani/Project_Ecoli_KO/Analysis/2017_11_07_
 
 
 ##LTACH latest clusters
-[cluster_1_Rush_KPC_194]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_194_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_1_Rush_KPC_194/
-
-[cluster_2_Rush_KPC_350]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_350_S8_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_2_Rush_KPC_350/
-
-[cluster_3_Rush_KPC_586]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_586_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_3_Rush_KPC_586/
-
-[cluster_4_Rush_KPC_227]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_227_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_4_Rush_KPC_227/
-
-[cluster_5_Rush_KPC_108]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_108_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_5_Rush_KPC_108/
-
-[cluster_6_Rush_KPC_113]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_113_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_6_Rush_KPC_113/
-
-[cluster_7_Rush_KPC_157]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_157_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_7_Rush_KPC_157/
-
-[cluster_8_Rush_KPC_21]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_21_S35_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_8_Rush_KPC_21/
-
-[cluster_9_Rush_KPC_48]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_48_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_9_Rush_KPC_48/
-
-[cluster_10_Rush_KPC_52]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_52_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_10_Rush_KPC_52/
-
-[cluster_11_Rush_KPC_216]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_216_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_11_Rush_KPC_216/
-
-[cluster_12_Rush_KPC_790]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_790_S58_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_12_Rush_KPC_790/
-
-[cluster_13_Rush_KPC_233]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_233_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_13_Rush_KPC_233/
-
-[cluster_14_Rush_KPC_340]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_340_S13_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_14_Rush_KPC_340/
-
-[cluster_15_Rush_KPC_38]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_38_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_15_Rush_KPC_38/
-
-[cluster_16_Rush_KPC_430]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_430_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_16_Rush_KPC_430/
-
-[cluster_17_Rush_KPC_615]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_615_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_17_Rush_KPC_615/
-
-[cluster_18_Rush_KPC_574]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_574_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_18_Rush_KPC_574/
-
-[cluster_19_Rush_KPC_60]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_60_S27_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_19_Rush_KPC_60/
-
-[cluster_20_Rush_KPC_85]
-# Name of reference genome fasta file.
-Ref_Name: Rush_KPC_85_contigs_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_20_Rush_KPC_85/
+/home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_1_Rush_KPC_194/Rush_KPC_194_contigs_ordered.fasta
+/home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_2_Rush_KPC_350/Rush_KPC_350_S8_contigs_ordered.fasta
+/home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_8_Rush_KPC_21/Rush_KPC_21_S35_contigs_ordered.fasta
