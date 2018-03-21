@@ -27,11 +27,13 @@ parser.add_argument('-tmp_dir', action='store', dest="tmp_dir",
                     help='Names of temporary directory')
 args = parser.parse_args()
 
+indel_file = (args.filter2_only_snp_vcf_file).replace('_final.vcf_no_proximate_snp.vcf', '_indel_final.vcf')
+
 """Set variables and set up the tmp directories"""
 dir = args.filter2_only_snp_vcf_dir
 unique_positions_file = args.unique_position_file
 os.system("mkdir %s" % args.tmp_dir)
-os.system("cp %s %s/%s" % (args.filter2_only_snp_vcf_file, args.tmp_dir, os.path.basename(args.filter2_only_snp_vcf_file)))
+os.system("cp %s %s/%s" % (indel_file, args.tmp_dir, os.path.basename(indel_file)))
 
 """ Generate unique positions array"""
 position_array_sort = []
@@ -42,19 +44,19 @@ for line in f:
 f.close()
 
 """ Prepare output label file """
-file = args.tmp_dir + "/" + os.path.basename(args.filter2_only_snp_vcf_file)
+file = args.tmp_dir + "/" + os.path.basename(indel_file)
 print "Processing %s" % file
-out_file_name = args.filter2_only_snp_vcf_file + "_positions_label"
+out_file_name = indel_file + "_indel_positions_label"
 
 """ Get the prefix for all the arrays """
 array_name = os.path.basename(out_file_name)
 
 #Changed 8 March
 """ Generate proximate, unmapped, variant positions array"""
-ori_unmapped_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "unmapped.bed_positions")
-ori_proximate_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "filter2_final.vcf_no_proximate_snp.vcf_positions_array")
-ori_variant_position_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "filter2_final.vcf_no_proximate_snp.vcf")
-ori_mpileup_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "aln_mpileup_raw.vcf_5bp_indel_removed.vcf")
+ori_unmapped_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "unmapped.bed_positions")
+ori_proximate_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "filter2_final.vcf_no_proximate_snp.vcf_positions_array")
+ori_variant_position_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "filter2_indel_final.vcf")
+ori_mpileup_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "aln_mpileup_raw.vcf")
 
 current_unmapped_file = args.tmp_dir + "/%s" % (os.path.basename(ori_unmapped_file))
 current_proximate_file = args.tmp_dir + "/%s" % (os.path.basename(ori_proximate_file))
@@ -103,8 +105,10 @@ fp2.close()
 #os.system(bgzip_cmd)
 #os.system(tabix_cmd)
 
+
+
 """ Load Cyvcf objects """
-vcf_final_file = VCF(args.filter2_only_snp_vcf_file + ".gz")
+vcf_final_file = VCF(indel_file + ".gz")
 mpileup_file = VCF(ori_mpileup_file + ".gz")
 
 reference_genome = vcf_final_file.seqnames[0]
@@ -112,7 +116,7 @@ reference_genome = vcf_final_file.seqnames[0]
 positions_final_vcf = defaultdict(list)
 positions_mpileup_vcf = defaultdict(list)
 
-for variants in VCF(args.filter2_only_snp_vcf_file + ".gz"):
+for variants in VCF(indel_file + ".gz"):
     positions_final_vcf[int(variants.POS)].append(variants.INFO.get('DP'))
 
 for variants in VCF(ori_mpileup_file + ".gz"):

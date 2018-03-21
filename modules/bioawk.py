@@ -10,7 +10,6 @@ def bioawk_make_reference_size(reference, logger, Config):
     command = base_cmd + " -c fastx '{ print $name, length($seq) }' < %s > %s.size" % (reference, reference)    
     try:
         call(command, logger)
-        #print ""
     except sp.CalledProcessError:
         keep_logging('Error in Bioawk step. Exiting.', 'Error in Bioawk step. Exiting.', logger, 'exception')
         sys.exit(1)

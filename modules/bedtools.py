@@ -6,24 +6,18 @@ from modules.bioawk import *
 from modules.logging_subprocess import *
 from modules.log_modules import *
 
-
 def bedtools(out_sorted_bam, out_path, analysis, logger, Config):
     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bedtools", Config)['bedtools_bin'] + "/" + ConfigSectionMap("bedtools", Config)['base_cmd']
     cmd = "%s genomecov -ibam %s -bga | awk '$4==0' > %s/%s_unmapped.bed" % (base_cmd, out_sorted_bam, out_path, analysis)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
-        #print ""
     except sp.CalledProcessError:
         keep_logging('Error in Bedtools unmapped step. Exiting.', 'Error in Bedtools unmapped step. Exiting.', logger, 'exception')
         sys.exit(1)
     final_bed_unmapped_file = "%s/%s_unmapped.bed" % (out_path, analysis)
     only_unmapped_positions_file = parse_bed_file(final_bed_unmapped_file)
     return only_unmapped_positions_file
-
-
-
-
 
 def parse_bed_file(final_bed_unmapped_file):
     unmapped_positions_array = []
@@ -51,7 +45,6 @@ def bedgraph_coverage(out_sorted_bam, out_path, analysis, reference, logger, Con
     keep_logging(makewindows_cmd, makewindows_cmd, logger, 'debug')
     try:
         call(makewindows_cmd, logger)
-        #print ""
     except sp.CalledProcessError:
         keep_logging('Error in Bedtools Make Windows step. Exiting.', 'Error in Bedtools Make Windows step. Exiting.', logger, 'exception')
         sys.exit(1)
@@ -60,16 +53,6 @@ def bedgraph_coverage(out_sorted_bam, out_path, analysis, reference, logger, Con
     keep_logging(bedcoverage_command, bedcoverage_command, logger, 'debug')
     try:
         call(bedcoverage_command, logger)
-        #print ""
     except sp.CalledProcessError:
         keep_logging('Error in Bedtools coverage step. Exiting.', 'Error in Bedtools coverage step. Exiting.', logger, 'exception')
         sys.exit(1)
-
-
-
-
-
-
-
-
-

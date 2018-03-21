@@ -144,7 +144,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             print "Running: qsub %s" % i
-            #os.system("qsub %s" % i)
+            os.system("qsub %s" % i)
 
     elif jobrun == "parallel-local":
         """
@@ -1057,12 +1057,17 @@ def variant_annotation():
         annotate_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
                            (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], raw_vcf, raw_vcf)
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
+        final_vcf = i + ".gz"
+        annotate_final_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], final_vcf, final_vcf)
+        annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
     if args.numcores:
         num_cores = int(num_cores)
     else:
         num_cores = multiprocessing.cpu_count()
+    print "here"
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
-
+    results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
 
 
 def alignment_report(data_matrix_dir):
@@ -1255,6 +1260,11 @@ if __name__ == '__main__':
 
         tmp_dir = "/tmp/temp_%s/" %log_unique_time
 
+        bgzip_cmd = "for i in %s/*.vcf; do bgzip -c $i > $i%s; done" % (args.filter2_only_snp_vcf_dir, ".gz")
+        tabix_cmd = "for i in %s/*.vcf.gz; do tabix $i; done" % (args.filter2_only_snp_vcf_dir)
+        os.system(bgzip_cmd)
+        os.system(tabix_cmd)
+
         """ Get the cluster option; create and run jobs based on given parameter """
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
 
@@ -1263,28 +1273,28 @@ if __name__ == '__main__':
 
     if "2" in args.steps:
         # #Adhoc
-        # data_matrix_dir = args.results_dir + '/data_matrix'
-        # core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
-        # make_sure_path_exists(data_matrix_dir)
-        # make_sure_path_exists(core_vcf_fasta_dir)
+        data_matrix_dir = args.results_dir + '/data_matrix'
+        core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
+        make_sure_path_exists(data_matrix_dir)
+        make_sure_path_exists(core_vcf_fasta_dir)
 
-        # """ Generate SNP Filter Label Matrix """
-        generate_paste_command()
-        #
-        # """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-        generate_position_label_data_matrix()
-        #
-        # """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
-        generate_vcf_files()
-        #
-        # """ Generate consensus fasta file from core vcf files """
-        extract_only_ref_variant_fasta_from_reference()
-        #
-        # """ Generate consensus fasta file with only reference and variant position bases """
-        extract_only_ref_variant_fasta(core_vcf_fasta_dir)
-        #
-        # """ Analyze the positions that were filtered out only due to insufficient depth"""
-        DP_analysis()
+        # # """ Generate SNP Filter Label Matrix """
+        # generate_paste_command()
+        # #
+        # # """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
+        # generate_position_label_data_matrix()
+        # #
+        # # """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
+        # generate_vcf_files()
+        # #
+        # # """ Generate consensus fasta file from core vcf files """
+        # extract_only_ref_variant_fasta_from_reference()
+        # #
+        # # """ Generate consensus fasta file with only reference and variant position bases """
+        # extract_only_ref_variant_fasta(core_vcf_fasta_dir)
+        # #
+        # # """ Analyze the positions that were filtered out only due to insufficient depth"""
+        # DP_analysis()
 
         """ Run snpEff annotation step """
         variant_annotation()
@@ -1343,10 +1353,10 @@ if __name__ == '__main__':
                     keep_logging('Error generating variant consensus position file: %s' % f, 'Error generating variant consensus position file: %s' % f, logger, 'exception')
 
         """ Generate DP barplots data """
-        DP_analysis_barplot()
+        #DP_analysis_barplot()
 
         """ Analyze the FQ values of all the unique variant """
-        FQ_analysis()
+        #FQ_analysis()
 
         """ Generate alignment report """
         alignment_report(data_matrix_dir)
@@ -1393,18 +1403,3 @@ if __name__ == '__main__':
     if args.remove_temp:
         del_command = "rm -r %s" % temp_dir
         os.system(del_command)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

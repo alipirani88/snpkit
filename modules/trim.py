@@ -27,7 +27,6 @@ def trim(input1, input2, out_path, crop, logger, Config):
             keep_logging(cmdstring, cmdstring, logger, 'debug')
             try:
                 call(cmdstring, logger)
-                print ""
             except sp.CalledProcessError:
                     keep_logging('Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                     sys.exit(1)

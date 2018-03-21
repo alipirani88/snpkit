@@ -185,6 +185,7 @@ Ref_Name: MRSA_USA_300.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300/
 
+
 [MRSA_USA_100]
 # Name of reference genome fasta file.
 Ref_Name: MRSA_USA_100_1.fasta

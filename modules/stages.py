@@ -1,7 +1,5 @@
 __author__ = 'alipirani'
 
-#from config_settings import ConfigSectionMap
-#from check_subroutines import *
 from modules.trim import *
 import os
 import gzip
@@ -16,22 +14,18 @@ from modules.remove_5_bp_snp_indel import *
 from modules.qualimap import *
 from modules.bowtie import *
 
-## Prepare ReadGroup option for BWA alignment ##
+""" Prepare ReadGroup option for BWA alignment """
 def prepare_readgroup(forward_read, aligner, logger):
     keep_logging('Preparing ReadGroup Info', 'Preparing ReadGroup Info', logger, 'info')
     samplename = os.path.basename(forward_read)
     if forward_read.endswith(".gz"):
-        ###
-
-
-	#output = gzip.open(forward_read, 'rb')
+        #output = gzip.open(forward_read, 'rb')
         #firstLine = output.readline()
         #split_field = re.split(r":",firstLine)
         #id_name = split_field[1]
         #id_name = id_name.strip()
         #split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
         #return split_field
-
         output = gzip.open(forward_read, 'rb')
         firstLine = output.readline()
         if ":" in firstLine:
@@ -42,29 +36,26 @@ def prepare_readgroup(forward_read, aligner, logger):
             split_field = "--rg-id %s --rg SM:%s --rg LB:1 --rg PL:Illumina" % (split_field[1], samplename)
         elif aligner == "bwa":
             split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
-            
+
         ###Pending
         elif "/" in firstLine:
             split_field = re.split(r"/",firstLine)
-            #id_name = "1"
             id_name = split_field[1].rstrip()
             id_name = id_name.rstrip()
             #id_name = split_field[1].rstrip()
             #id_name = id_name.rstrip()
             split_field = "\"" + "@RG" + "\\tID:" + id_name + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
         else:
-	    id_name = "1"
-	    split_field = "\"" + "@RG" + "\\tID:" + id_name + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
-	return split_field
+            id_name = "1"
+            split_field = "\"" + "@RG" + "\\tID:" + id_name + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
+        return split_field
 
     elif forward_read.endswith(".fastq"):
-        ###
         output = open(forward_read, 'r')
         firstLine = output.readline()
         split_field = re.split(r":",firstLine)
         split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
         return split_field
-
 
     elif forward_read.endswith(".fq"):
         ###
@@ -73,15 +64,12 @@ def prepare_readgroup(forward_read, aligner, logger):
         split_field = re.split(r":",firstLine)
         split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
         return split_field
-## End ##
 
-
-## Raw data Pre-processing using Trimmomatic ##
+""" Raw data Pre-processing using Trimmomatic """
 def trimmomatic(input1, input2, out_path, crop, logger, Config):
     trim(input1, input2, out_path, crop, logger, Config)
-## End ##
 
-## bwa, smalt, bowtie: Alignment ##
+""" bwa, smalt, bowtie: Alignment """
 def align(out_path, ref_index, split_field, analysis, files_to_delete, logger, Config, type):
     reference = ConfigSectionMap(ref_index, Config)['ref_path'] + "/" + ConfigSectionMap(ref_index, Config)['ref_name']
     forward_clean = out_path + "/" + ConfigSectionMap("Trimmomatic", Config)['f_p']
@@ -103,12 +91,10 @@ def align(out_path, ref_index, split_field, analysis, files_to_delete, logger, C
         base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bowtie", Config)['bowtie_bin'] + "/" + ConfigSectionMap("bowtie", Config)['align_cmd']
         out_file = align_bowtie(base_cmd,forward_clean, reverse_clean, forward_unpaired, reverse_unpaired, out_path, reference, split_field, analysis, files_to_delete, logger, Config, type, parameters)
         return out_file
-
         exit()
         usage()
-## End ##
 
-## samtools: Post-Alignment SAM/BAM conversion, sort, index ##
+""" samtools: Post-Alignment SAM/BAM conversion, sort, index """
 def prepare_bam(out_sam, out_path, analysis, files_to_delete, logger, Config):
     out_bam = samtobam(out_sam, out_path, analysis, files_to_delete, logger, Config)
     out_sort_bam = sort_bam(out_bam, out_path, analysis, logger, Config)
@@ -121,9 +107,8 @@ def prepare_bam(out_sam, out_path, analysis, files_to_delete, logger, Config):
         exit()
     else:
         return out_sort_bam
-## End ##
 
-## samtools, gatk: Variant calling ##
+""" samtools, gatk: Variant calling """
 def variant_calling(out_finalbam, out_path, index, analysis, logger, Config):
     variant_caller = eval(ConfigSectionMap("pipeline", Config)['variant_caller'])
     final_raw_vcf = variant_caller(out_finalbam, out_path, index, analysis, logger, Config)
@@ -132,9 +117,8 @@ def variant_calling(out_finalbam, out_path, index, analysis, logger, Config):
         exit()
     else:
         return final_raw_vcf
-## End ##
 
-## Statistics Report ##
+""" Statistics Report """
 def alignment_stats(out_sorted_bam, out_path, analysis, logger, Config):
     alignment_stats_file = flagstat(out_sorted_bam, out_path, analysis, logger, Config)
     keep_logging('The Alignments Stats file from Samtools: {}'.format(alignment_stats_file), 'The Alignments Stats file from Samtools: {}'.format(alignment_stats_file), logger, 'debug')
@@ -147,9 +131,8 @@ def vcf_stats(final_raw_vcf, out_path, analysis, logger, Config):
 def qualimap(out_sorted_bam, out_path, analysis, logger, Config):
     qualimap_report = bamqc(out_sorted_bam, out_path, analysis, logger, Config)
     return qualimap_report
-## END ##
 
-## Variant Filteration ##
+""" Variant Filteration """
 def filter2_variants(final_raw_vcf, out_path, analysis, ref_index, logger, Config, Avg_dp):
     reference = ConfigSectionMap(ref_index, Config)['ref_path'] + "/" + ConfigSectionMap(ref_index, Config)['ref_name']
     gatk_filter2_final_vcf_file = gatk_filter2(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp)
@@ -163,22 +146,32 @@ def filter2_variants(final_raw_vcf, out_path, analysis, ref_index, logger, Confi
     keep_logging('The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
     keep_logging('The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), 'The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), logger, 'debug')
     keep_logging('The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
-## END ##
 
-## Generate different VCF's ##
+def filter2_indels(final_raw_indel_vcf, out_path, analysis, ref_index, logger, Config, Avg_dp):
+    reference = ConfigSectionMap(ref_index, Config)['ref_path'] + "/" + ConfigSectionMap(ref_index, Config)['ref_name']
+    gatk_filter2_final_vcf_file = gatk_filter2_indel(final_raw_indel_vcf, out_path, analysis, reference, logger, Config, Avg_dp)
+    # gatk_filter2_final_vcf_file_no_proximate_snp = remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
+    # keep_logging('The vcf file with no proximate snp: {}'.format(gatk_filter2_final_vcf_file_no_proximate_snp), 'The vcf file with no proximate snp: {}'.format(gatk_filter2_final_vcf_file_no_proximate_snp), logger, 'debug')
+    # gatk_vcf2fasta_filter2_file = gatk_vcf2fasta_filter2(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
+    # gatk_vcf2fasta_filter2_file_no_proximate = gatk_vcf2fasta_filter2(gatk_filter2_final_vcf_file_no_proximate_snp, out_path, analysis, reference, logger, Config)
+    # vcftools_vcf2fasta_filter2_file = vcftools_vcf2fasta_filter2(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
+    # vcftools_vcf2fasta_filter2_file_no_proximate = vcftools_vcf2fasta_filter2(gatk_filter2_final_vcf_file_no_proximate_snp, out_path, analysis, reference, logger, Config)
+    # keep_logging('The final Consensus Fasta file: {}'.format(gatk_vcf2fasta_filter2_file), 'The final Consensus Fasta file: {}'.format(gatk_vcf2fasta_filter2_file), logger, 'debug')
+    # keep_logging('The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
+    # keep_logging('The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), 'The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), logger, 'debug')
+    # keep_logging('The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
+
+
+
+""" Unused Methods """
+
+""" Generate different VCF's """
 def raw_only_snp_vcf(final_raw_vcf, out_path, analysis, ref_index):
     print "\n################## Generating different VCF ##################\n"
     reference = ConfigSectionMap(ref_index)['ref_path'] + "/" + ConfigSectionMap(ref_index)['ref_name']
     only_snp_raw_vcf_file = only_snp_raw_vcf(final_raw_vcf, out_path, analysis, reference)
     print "\nThe final raw vcf file(only SNP): %s" % only_snp_raw_vcf_file
-## End: Generate different VCF's ##
 
-
-
-
-
-
-## Unused
 ## Variant Filteration ##
 def filter1_variants(final_raw_vcf, out_path, analysis, ref_index):
     reference = ConfigSectionMap(ref_index)['ref_path'] + "/" + ConfigSectionMap(ref_index)['ref_name']
@@ -201,7 +194,6 @@ def remove_files(analysis, out_path, out_sam, out_sorted_bam):
     if os.path.isfile(out_sorted_bam):
         raw_bam_file = "%s/%s_aln.bam" % (out_path, analysis)
         os.remove(raw_bam_file)
-## END ##
 
 ## picard, gatk: Mark Duplicates; Indel Realignment ##
 def post_align_bam(out_sorted_bam, out_path, reference, analysis):
@@ -224,7 +216,3 @@ def post_align_bam(out_sorted_bam, out_path, reference, analysis):
     else:
         print "\n################## END: Picard, GATK: Mark Duplicates; Indel Realignment. #############\n"
         return out_indel_realign_bam
-## End ##
-
-
-

@@ -98,10 +98,10 @@ with open(current_proximate_file, 'rU') as fp2:
 fp2.close()
 
 """ Prepare cyvcf vcf files """
-bgzip_cmd = "for i in %s/*.vcf; do bgzip -c $i > $i%s; done" % (args.filter2_only_snp_vcf_dir, ".gz")
-tabix_cmd = "for i in %s/*.vcf.gz; do tabix $i; done" % (args.filter2_only_snp_vcf_dir)
-os.system(bgzip_cmd)
-os.system(tabix_cmd)
+#bgzip_cmd = "for i in %s/*.vcf; do bgzip -c $i > $i%s; done" % (args.filter2_only_snp_vcf_dir, ".gz")
+#tabix_cmd = "for i in %s/*.vcf.gz; do tabix $i; done" % (args.filter2_only_snp_vcf_dir)
+#os.system(bgzip_cmd)
+#os.system(tabix_cmd)
 
 """ Load Cyvcf objects """
 vcf_final_file = VCF(args.filter2_only_snp_vcf_file + ".gz")
