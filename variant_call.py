@@ -16,7 +16,7 @@ from modules.logging_subprocess import *
 from modules.log_modules import *
 from argparse import RawTextHelpFormatter
 
-# Command Line Argument Parsing
+""" Command Line Argument Parsing """
 def parser():
     parser = argparse.ArgumentParser(description='\nVariant Calling pipeline for Illumina PE/SE data.\n', formatter_class=RawTextHelpFormatter)
     required = parser.add_argument_group('Required arguments')
@@ -43,7 +43,7 @@ def parser():
     optional.add_argument('-debug_mode', action='store', dest="debug_mode", help='yes/no for debug mode')
     return parser
 
-# Sanity checks and directory structure maintenance methods
+""" Sanity checks and directory structure maintenance methods """
 def file_exists(path1):
     if not os.path.isfile(path1):
         file_basename = os.path.basename(path1)
@@ -79,7 +79,7 @@ def get_filenames(dir, type, filenames, analysis, suffix):
                 list_of_files.append(line)
     return list_of_files
 
-# Methods to generate jobs for various pipeline tasks
+""" Methods to generate jobs for various pipeline tasks """
 def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, config_file, logger):
     jobs_temp_dir = "%s/temp_jobs" % output_folder
     make_sure_path_exists(jobs_temp_dir)
@@ -294,7 +294,7 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
             keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
             call("bash %s" % job, logger)
 
-# Pipeline individual task methods
+""" Pipeline individual task methods """
 def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, config_file):
     file_exists(reference)
     if args.debug_mode == "yes":
@@ -334,7 +334,6 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
         print qid.split('.')[0]
     keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
-
 def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     file_exists(reference)
     if args.debug_mode == "yes":
@@ -372,8 +371,6 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         print qid.split('.')[0]
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
-
-
 def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     file_exists(reference)
     if args.debug_mode == "yes":
@@ -410,8 +407,6 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
         print qid.split('.')[0]
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
-
-
 def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     if args.debug_mode == "yes":
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
@@ -446,9 +441,12 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         print qid.split('.')[0]
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
-### End of methods
 
-# Start of Main Method/Pipeline
+
+
+
+
+""" Start of Main Method/Pipeline """
 if __name__ == '__main__':
     # Set up logging modules and config file
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

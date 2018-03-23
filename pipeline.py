@@ -130,7 +130,7 @@ def pipeline(args, logger):
             final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
             #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
             final_raw_vcf = remove_5_bp_snp_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
-            #final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
+            final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             keep_logging('The final raw VCF file: {}'.format(final_raw_vcf), 'The final raw VCF file: {}'.format(final_raw_vcf), logger, 'debug')
             keep_logging('END: Variant Calling using Samtools without post-align bam input files.', 'END: Variant Calling using Samtools without post-align bam input files.', logger, 'info')
             return final_raw_vcf, final_raw_indel_vcf
@@ -142,6 +142,7 @@ def pipeline(args, logger):
     ## 5. Stages: Variant Filteration
     def filter(gatk_depth_of_coverage_file):
         keep_logging('START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
+        final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
         final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
         if not os.path.isfile(gatk_depth_of_coverage_file):
             file_basename = os.path.basename(gatk_depth_of_coverage_file)

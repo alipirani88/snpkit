@@ -1649,9 +1649,11 @@ def annotated_snp_matrix():
     os.system("for i in %s/*_filter2_indel_final.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir)
     os.system("for i in %s/*_filter2_indel_final.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir)
 
+    files = ' '.join(vcf_filenames)
+    print files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")
 
-    os.system("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s/*.vcf_no_proximate_snp.vcf_ANN.vcf.gz" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-    os.system("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s/*_filter2_indel_final.vcf_ANN.vcf.gz" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+    os.system("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")))
+    os.system("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_indel_final.vcf_ANN.vcf.gz")))
 
     os.system("bgzip -c %s/Final_vcf_no_proximate_snp.vcf > %s/Final_vcf_no_proximate_snp.vcf.gz" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
     os.system("tabix %s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
@@ -1668,13 +1670,15 @@ def annotated_snp_matrix():
             position_label[row[0]] = ','.join(row[1:])
     csv_file.close()
 
+    position_indel_label = OrderedDict()
     with open("%s/All_indel_label_final_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
         print "Reading All label positions file: %s/All_indel_label_final_sorted.txt \n" % args.filter2_only_snp_vcf_dir
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
             if row[0] not in position_label.keys():
-                position_label[row[0]] = ','.join(row[1:])
+                position_indel_label[row[0]] = ','.join(row[1:])
             else:
+                position_indel_label[row[0]] = ','.join(row[1:])
                 print "Warning: position %s already present as a SNP" % row[0]
     csv_file.close()
 
@@ -1751,7 +1755,9 @@ def annotated_snp_matrix():
             i_split = i.split('|')
             ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
             tag = str(i_split[3]).replace('CHR_START-', '')
+            tag = str(tag).replace('-CHR_END', '')
             if "-" in tag:
+                print tag
                 extra_tags = ""
                 tag_split = tag.split('-')
                 for i in tag_split:
@@ -1812,7 +1818,7 @@ def annotated_snp_matrix():
     for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         print_string = ""
 
-        code_string = position_label[str(variants.POS)]
+        code_string = position_indel_label[str(variants.POS)]
         code_string = code_string.replace('reference_allele', '0')
         code_string = code_string.replace('reference_unmapped_position', '-1')
         code_string = code_string.replace('LowFQ_QUAL_DP_proximate_SNP', '2')
@@ -1858,7 +1864,10 @@ def annotated_snp_matrix():
             i_split = i.split('|')
             ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
             tag = str(i_split[3]).replace('CHR_START-', '')
+            tag = str(tag).replace('-CHR_END', '')
+            tag = str(tag).replace('&', '-')
             if "-" in tag:
+                print tag
                 extra_tags = ""
                 tag_split = tag.split('-')
                 for i in tag_split:
@@ -2097,6 +2106,8 @@ if __name__ == '__main__':
             line = args.filter2_only_snp_vcf_dir + line
             vcf_filenames.append(line)
         fp.close()
+    #print sorted(vcf_filenames)
+
     global config_file
     if args.config:
         config_file = args.config
@@ -2145,9 +2156,9 @@ if __name__ == '__main__':
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
-        core_prep_snp(core_vcf_fasta_dir)
-
-        core_prep_indel(core_vcf_fasta_dir)
+        # core_prep_snp(core_vcf_fasta_dir)
+        #
+        # core_prep_indel(core_vcf_fasta_dir)
 
         annotated_snp_matrix()
 
