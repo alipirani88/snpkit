@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Bonus Ducks &mdash; vcr 0.0.1 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="vcr 0.0.1 documentation" href="index.html"/>
+        <link rel="prev" title="Quickstart" href="quick-start.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> vcr</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="command-line-options.html">Command line options</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="command-line-options.html#required-arguments">Required arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command-line-options.html#optional-arguments">Optional arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command-line-options.html#compute-cluster-options">Compute cluster options</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#run-pipeline-on-compute-cluster">Run pipeline on Compute cluster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#run-pipeline">Run pipeline</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Bonus Ducks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#run-only-a-part-of-variant-calling-step">Run only a part of variant calling step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-variant-calling-step-on-selected-samples-provided-in-filenames-txt">Run variant calling step on selected samples provided in filenames.txt.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-core-prep-and-core-steps-on-selected-files">Run core_prep and core steps on selected files</a></li>
+</ul>
+</li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">vcr</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Bonus Ducks</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/bonus-ducks.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="bonus-ducks">
+<span id="id1"></span><h1>Bonus Ducks<a class="headerlink" href="#bonus-ducks" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="run-only-a-part-of-variant-calling-step">
+<h2>Run only a part of variant calling step<a class="headerlink" href="#run-only-a-part-of-variant-calling-step" title="Permalink to this headline">¶</a></h2>
+<p>OPTIONAL: In case, you want to rerun the above analysis with different variant call/filter parameters (i.e skip the read cleaning, alignment and post-alignment steps), you can do it as follows:</p>
+<p>NOTE: OPTIONAL</p>
+<div class="highlight-python"><div class="highlight"><pre>python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats -cluster parallel-cluster
+</pre></div>
+</div>
+</div>
+<div class="section" id="run-variant-calling-step-on-selected-samples-provided-in-filenames-txt">
+<h2>Run variant calling step on selected samples provided in filenames.txt.<a class="headerlink" href="#run-variant-calling-step-on-selected-samples-provided-in-filenames-txt" title="Permalink to this headline">¶</a></h2>
+<p>filenames.txt should contain fastq filenames with one single-end filename per line.</p>
+<div class="highlight-python"><div class="highlight"><pre>python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats -cluster parallel-cluster -filenames filenames.txt
+</pre></div>
+</div>
+</div>
+<div class="section" id="run-core-prep-and-core-steps-on-selected-files">
+<h2>Run core_prep and core steps on selected files<a class="headerlink" href="#run-core-prep-and-core-steps-on-selected-files" title="Permalink to this headline">¶</a></h2>
+<p>If you decide to exclude some samples from core snp analysis step (step 3), there is a way to do that without running the entire pipeline.</p>
+<div class="highlight-python"><div class="highlight"><pre>python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster -filenames filenames_custom
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="quick-start.html" class="btn btn-neutral" title="Quickstart"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Ali Pirani.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
