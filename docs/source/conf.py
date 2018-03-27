@@ -20,6 +20,17 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import sys
+import os
+import shlex
+from recommonmark.parser import CommonMarkParser
+#from recommonmark.transform import AutoStructify
+#sys.path.insert(0, os.path.abspath('..'))
+source_parsers = {
+    '.md': CommonMarkParser,
+}
+
+source_suffix = ['.rst', '.md']
 
 # -- General configuration ------------------------------------------------
 
