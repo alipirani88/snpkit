@@ -6,12 +6,12 @@ CVC is a pipeline that calls variants from PE/SE reads provided in a directory a
 .. toctree::
    :maxdepth: 10
 
+   quick-start
    installation
    input
    steps
    command-line-options
    run-pipeline-on-compute-cluster
-   quick-start
    output-files
    customizing-config-file
    log

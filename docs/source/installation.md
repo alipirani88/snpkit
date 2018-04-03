@@ -1,16 +1,18 @@
 Installation
 ============
 
-Pending.
-
-Ignore this if you are in snitkin lab. The dependencies are already installed in lab bin_group folder:
+The dependencies for the pipeline are installed in variant_calling_bin folder under lab bin_group directory:
 
 ```
+
 /nfs/esnitkin/bin_group/variant_calling_bin/.
-```
-
-Use the python version installed in:
 
 ```
+
+Use anaconda python2 version installed in bin_group folder to run pipeline:
+
+```
+
 /nfs/esnitkin/bin_group/anaconda2/bin/python
+
 ```
