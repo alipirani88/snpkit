@@ -99,11 +99,28 @@
             
   <div class="section" id="core-variant-calling-and-diagnostics-pipeline">
 <h1>Core Variant Calling and diagnostics Pipeline<a class="headerlink" href="#core-variant-calling-and-diagnostics-pipeline" title="Permalink to this headline">¶</a></h1>
-<p>CVC is a pipeline that calls variants from PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used as an input for downstream post-analysis.</p>
+<p>CVC pipeline calls variants from Illumina PE/SE raw data and generates core SNP consensus fasta files that can be used as an input for downstream phylogenetic analysis.</p>
 <div class="toctree-wrapper compound">
 <ul class="simple">
 </ul>
 </div>
+<p>![alt tag](image/pipeline.png)</p>
+</div>
+<div class="section" id="steps">
+<h1>Steps<a class="headerlink" href="#steps" title="Permalink to this headline">¶</a></h1>
+<p>There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.</p>
+<p><strong>1. Variant Calling:</strong> This step will run all the standard variant calling steps on sample read files residing in input reads directory.
+The possible options are:</p>
+<p>Option <strong>*All*</strong> :  This will run all the variant calling steps starting from cleaning the reads to variant calling and generating intermediate files that will be used in later steps.</p>
+<p>Option <strong>*clean,align,post-align,varcall,filter,stats*</strong> :  This option will run variant calling steps starting from cleaning to variant calling, variant filtering and generating stats.</p>
+<p>You can modify this argument to run a part of the pipeline. For example, if you want to restart the pipeline from alignment step, you can do it by supplying the following option: &#8220;align,post-align,varcall,filter,stats&#8221; which will skip the Trimmomatic cleaning part.</p>
+<p>Note: The order of variant calling steps needs to be sequential to avoid any errors. While skipping any of the steps, make sure the results for skipped steps are already present in your output folder.</p>
+<p><strong>2. Preparing files for Core SNP extraction and diagnostics purposes:</strong></p>
+<p>Option <strong>*core_prep*</strong> : Run this step before running the last core steps. This will prepare all the intermediate data required for the last core step i.e generating the consensus fasta file out of core snps. This can be a time consuming step depending on how closely related the samples are to the reference genome.</p>
+<p><strong>3. Generate Core SNP consensus and data matrix for diagnostics plots:</strong></p>
+<p>Option <strong>*core*</strong> : This step will generate core SNP consensus fasta file and a consensus fasta of only core variant positions. Various data matrices will generated at this step that can be used later for diagnostics purposes.</p>
+<p><strong>4. Generate report for the pipeline:</strong></p>
+<p>Option <strong>*report*</strong> : This step will generate final core results directory and various reports that will summarize the alignment and core SNP results.</p>
 </div>
 
 
