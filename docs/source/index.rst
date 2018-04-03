@@ -20,7 +20,7 @@ CVC pipeline calls variants from Illumina PE/SE raw data and generates core SNP 
    bonus-ducks
 
 
-![alt tag](image/pipeline.png)
+![alt tag](pipeline.png)
 
 Steps
 =====
