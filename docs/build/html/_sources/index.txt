@@ -20,10 +20,13 @@ CVC pipeline calls variants from Illumina PE/SE raw data and generates core SNP 
    bonus-ducks
 
 
-![alt tag](pipeline.png)
+
 
 Steps
-=====
+-----
+
+![alt tag](pipeline.png)
+
 
 There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.
 
