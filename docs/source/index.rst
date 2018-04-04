@@ -1,9 +1,7 @@
 Core Variant Calling and diagnostics Pipeline
-=================================================
+=============================================
 
 CVC pipeline calls variants from Illumina PE/SE raw data and generates core SNP consensus fasta files that can be used as an input for downstream phylogenetic analysis.
-
-
 
 .. toctree::
    :maxdepth: 10
@@ -18,14 +16,16 @@ CVC pipeline calls variants from Illumina PE/SE raw data and generates core SNP 
    customizing-config-file
    log
    bonus-ducks
-
-
-
-
+   
 Steps
 -----
 
-![alt tag](pipeline.png)
+.. image:: pipeline.png
+   :height: 100px
+   :width: 200 px
+   :scale: 50 %
+   :alt: alternate text
+   :align: right
 
 
 There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.
