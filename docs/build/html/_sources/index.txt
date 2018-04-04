@@ -21,9 +21,9 @@ Steps
 -----
 
 .. image:: pipeline.png
-   :height: 500 px
-   :width: 500 px
-   :scale: 100 %
+   :height: 1000 px
+   :width: 1000 px
+   :scale: 150 %
    :alt: alternate text
    :align: center
 
