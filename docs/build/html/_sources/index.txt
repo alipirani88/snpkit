@@ -21,11 +21,11 @@ Steps
 -----
 
 .. image:: pipeline.png
-   :height: 100px
-   :width: 200 px
-   :scale: 50 %
+   :height: 500 px
+   :width: 500 px
+   :scale: 100 %
    :alt: alternate text
-   :align: right
+   :align: center
 
 
 There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.
