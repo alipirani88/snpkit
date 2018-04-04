@@ -23,7 +23,7 @@ Steps
 .. image:: pipeline.png
    :height: 1000 px
    :width: 1000 px
-   :scale: 150 %
+   :scale: 200 %
    :alt: alternate text
    :align: center
 
