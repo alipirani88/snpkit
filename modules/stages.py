@@ -32,10 +32,10 @@ def prepare_readgroup(forward_read, aligner, logger):
             split_field = re.split(r":",firstLine)
             id_name = split_field[1].rstrip()
             id_name = id_name.rstrip()
-        if aligner == "bowtie":
-            split_field = "--rg-id %s --rg SM:%s --rg LB:1 --rg PL:Illumina" % (split_field[1], samplename)
-        elif aligner == "bwa":
-            split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
+        # if aligner == "bowtie":
+        #     split_field = "--rg-id %s --rg SM:%s --rg LB:1 --rg PL:Illumina" % (split_field[1], samplename)
+        # elif aligner == "bwa":
+        #     split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
 
         ###Pending
         elif "/" in firstLine:
@@ -48,6 +48,10 @@ def prepare_readgroup(forward_read, aligner, logger):
         else:
             id_name = "1"
             split_field = "\"" + "@RG" + "\\tID:" + id_name + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
+        if aligner == "bowtie":
+            split_field = "--rg-id %s --rg SM:%s --rg LB:1 --rg PL:Illumina" % (split_field[1], samplename)
+        elif aligner == "bwa":
+            split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
         return split_field
 
     elif forward_read.endswith(".fastq"):

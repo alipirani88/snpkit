@@ -43,6 +43,30 @@ def parser():
     optional.add_argument('-debug_mode', action='store', dest="debug_mode", help='yes/no for debug mode')
     return parser
 
+
+class set_global_variable():
+    # Set up logging modules and config file
+    args = parser().parse_args()
+    start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    start_time_2 = datetime.now()
+    log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    if args.config:
+        config_file = args.config
+    else:
+        config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
+    logs_folder = args.output_folder + "/Logs"
+    # logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
+    files_to_delete = []
+    Config = ConfigParser.ConfigParser()
+    Config.read(config_file)
+
+
+
+
+
+
+
+
 """ Sanity checks and directory structure maintenance methods """
 def file_exists(path1):
     if not os.path.isfile(path1):
@@ -78,6 +102,62 @@ def get_filenames(dir, type, filenames, analysis, suffix):
                 line = dir + "/" + line
                 list_of_files.append(line)
     return list_of_files
+
+def generate_custom_vcf_file_list(filenames_array, logger):
+    keep_logging('Generating custom vcf file list for core pipeline steps', 'Generating custom vcf files list for core pipeline steps', logger, 'exception')
+    list_of_vcf_files = []
+    for file in filenames_array:
+        filename_base = os.path.basename(file)
+        if "R1_001_final.fastq.gz" in filename_base or "R1.fastq.gz" in filename_base or "1_combine.fastq.gz" in filename_base or "1_sequence.fastq.gz" in filename_base or "_forward.fastq.gz" in filename_base or "R1_001.fastq.gz" in filename_base or "_1.fastq.gz" in filename_base or ".1.fastq.gz" in filename_base or "_R1.fastq.gz" in filename_base:
+            # Forward reads file name and get analysis name from its name
+            first_file = file
+            if "R1_001_final.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('R1_001_final.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif "_R1.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('_R1.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif "R1.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('R1.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif "1_combine.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('1_combine.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif "1_sequence.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('1_sequence.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif "_forward.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('_forward.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif "R1_001.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('R1_001.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif "_1.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('_1.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            elif ".1.fastq.gz" in filename_base:
+                first_part_split = filename_base.split('.1.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
+            list_of_vcf_files.append(first_part)
+    return list_of_vcf_files
 
 """ Methods to generate jobs for various pipeline tasks """
 def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, config_file, logger):
@@ -174,62 +254,6 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
     list_of_jobs = glob.glob("%s/*.pbs" % jobs_temp_dir)
     return list_of_jobs
 
-def generate_custom_vcf_file_list(filenames_array, logger):
-    keep_logging('Generating custom vcf file list for core pipeline steps', 'Generating custom vcf files list for core pipeline steps', logger, 'exception')
-    list_of_vcf_files = []
-    for file in filenames_array:
-        filename_base = os.path.basename(file)
-        if "R1_001_final.fastq.gz" in filename_base or "R1.fastq.gz" in filename_base or "1_combine.fastq.gz" in filename_base or "1_sequence.fastq.gz" in filename_base or "_forward.fastq.gz" in filename_base or "R1_001.fastq.gz" in filename_base or "_1.fastq.gz" in filename_base or ".1.fastq.gz" in filename_base or "_R1.fastq.gz" in filename_base:
-            # Forward reads file name and get analysis name from its name
-            first_file = file
-            if "R1_001_final.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('R1_001_final.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif "_R1.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('_R1.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif "R1.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('R1.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif "1_combine.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('1_combine.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif "1_sequence.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('1_sequence.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif "_forward.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('_forward.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif "R1_001.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('R1_001.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif "_1.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('_1.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            elif ".1.fastq.gz" in filename_base:
-                first_part_split = filename_base.split('.1.fastq.gz')
-                first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
-                first_part = first_part + "_filter2_final.vcf_no_proximate_snp.vcf"
-            list_of_vcf_files.append(first_part)
-    return list_of_vcf_files
-
 def run_command(job):
     keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
     call("bash %s" % job, logger)
@@ -304,8 +328,8 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
 
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
 
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
@@ -342,8 +366,8 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
 
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
@@ -378,8 +402,8 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
     else:
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
@@ -413,8 +437,8 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
     else:
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core_tree" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
@@ -442,32 +466,15 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         print qid.split('.')[0]
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
+
 """ Start of Main Method/Pipeline """
 if __name__ == '__main__':
-    # Set up logging modules and config file
-    start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    start_time_2 = datetime.now()
+    print set_global_variable.log_unique_time
     args = parser().parse_args()
-    global config_file
-    global log_unique_time
     if args.output_folder != '':
         args.output_folder += '/'
+    make_sure_path_exists(set_global_variable.logs_folder)
     make_sure_path_exists(args.output_folder)
-    log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-    if args.config:
-        config_file = args.config
-    else:
-        config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
-    global logger
-    logs_folder = args.output_folder + "/Logs"
-    make_sure_path_exists(logs_folder)
-    # logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
-    global Config
-    global files_to_delete
-    files_to_delete = []
-    Config = ConfigParser.ConfigParser()
-    Config.read(config_file)
-
 
     # Run pipeline steps
     if "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps:
@@ -613,7 +620,6 @@ if __name__ == '__main__':
         proc = subprocess.Popen(["ls -1ad *_core_results | tail -n1"], stdout=subprocess.PIPE, shell=True)
         (out2, err2) = proc.communicate()
         core_results_dir = args.output_folder + "/" + out2.strip()
-        print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
         with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
@@ -628,6 +634,8 @@ if __name__ == '__main__':
         time_taken = datetime.now() - start_time_2
         keep_logging('Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, logger, 'info')
         keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
+
+
     else:
         logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')

@@ -56,31 +56,13 @@ optional.add_argument('-debug_mode', action='store', dest="debug_mode",
                     help='yes/no for debug mode')
 args = parser.parse_args()
 
-def make_sure_path_exists(out_path):
-    """
-    Make sure the output folder exists or create at given path
-    :param out_path:
-    :return:
-    """
-    try:
-        os.makedirs(out_path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            print "Errors in output folder path! please change the output path or analysis name\n"
-            exit()
 
-def run_command(i):
-    print "Running: %s" % i
-    os.system(i)
-    done = "done: %s" % i
-    return done
-
-""" core_prep methods """
 def create_positions_filestep(vcf_filenames):
 
     """
     Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters
     from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
+
     """
 
     filter2_only_snp_position_files_array = []
@@ -100,7 +82,6 @@ def create_positions_filestep(vcf_filenames):
         csv_file.close()
 
     """ Create position array containing unique positiones from positions file """
-
     position_array = []
     for filess in filter2_only_snp_position_files_array:
         f = open(filess, 'r+')
@@ -121,11 +102,13 @@ def create_positions_filestep(vcf_filenames):
         exit()
     return unique_position_file
 
+
 def create_indel_positions_filestep(vcf_filenames):
 
     """
     Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters
     from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
+
     """
 
     filter2_only_indel_position_files_array = []
@@ -165,6 +148,28 @@ def create_indel_positions_filestep(vcf_filenames):
         print "ERROR: No unique positions found. Check if vcf files are empty?"
         exit()
     return unique_indel_position_file
+
+
+
+def make_sure_path_exists(out_path):
+    """
+    Make sure the output folder exists or create at given path
+    :param out_path:
+    :return:
+    """
+    try:
+        os.makedirs(out_path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            print "Errors in output folder path! please change the output path or analysis name\n"
+            exit()
+
+def run_command(i):
+    print "Running: %s" % i
+    os.system(i)
+    done = "done: %s" % i
+    return done
+
 
 def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
 
@@ -226,37 +231,8 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "cluster":
-        #command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        #os.system("bash %s" % command_file)
-        command_array = []
         command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
-            job_file_name = "%s.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        if args.numcores:
-            num_cores = int(num_cores)
-        else:
-            num_cores = multiprocessing.cpu_count()
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
+        os.system("bash %s" % command_file)
     elif jobrun == "local":
         """
         Generate a Command list of each job and run it on local system one at a time
@@ -316,7 +292,7 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
             print "Running: qsub %s" % i
             os.system("qsub %s" % i)
 
-    elif jobrun == "parallel-local" or jobrun == "cluster":
+    elif jobrun == "parallel-local":
         """
         Generate a Command list of each job and run it in parallel on different cores available on local system
         """
@@ -349,9 +325,9 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
             num_cores = multiprocessing.cpu_count()
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
-    # elif jobrun == "cluster":
-    #     command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-    #     os.system("bash %s" % command_file)
+    elif jobrun == "cluster":
+        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
+        os.system("bash %s" % command_file)
     elif jobrun == "local":
         """
         Generate a Command list of each job and run it on local system one at a time
@@ -384,6 +360,216 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
         fpp.close()
         #print "Running local mode: bash %s" % command_file
         os.system("bash %s" % command_file)
+
+def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
+
+    """
+    Based on type of jobrun; generate jobs and run accordingly.
+    :param jobrun:
+    :param vcf_filenames:
+    :return:
+    """
+    if jobrun == "parallel-cluster":
+        """
+        Supports only PBS clusters for now.
+        """
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+            job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            print "Running: qsub %s" % i
+            os.system("qsub %s" % i)
+
+    elif jobrun == "parallel-local":
+        """
+        Generate a Command list of each job and run it in parallel on different cores available on local system
+        """
+        command_array = []
+        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+            job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        if args.numcores:
+            num_cores = int(num_cores)
+        else:
+            num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
+
+    elif jobrun == "cluster":
+        command_array = []
+        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+            job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        os.system("bash %s/command_file" % args.filter2_only_snp_vcf_dir)
+    else:
+        """
+        Generate a Command list of each job and run it on local system one at a time
+        """
+        command_array = []
+        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+
+
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+            job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+
+
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        os.system("bash command_file")
+
+def create_job_DP(jobrun, vcf_filenames):
+    """
+    Based on type of jobrun; generate jobs and run accordingly.
+    :param jobrun:
+    :param vcf_filenames:
+    :return:
+    """
+
+    if jobrun == "parallel-cluster":
+        """
+        Supports only PBS clusters for now.
+        """
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            print "Running: qsub %s" % i
+            os.system("qsub %s" % i)
+
+
+    elif jobrun == "parallel-local":
+        """
+        Generate a Command list of each job and run it in parallel on different cores available on local system
+        """
+        command_array = []
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+
+
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+
+
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        print len(command_array)
+        if args.numcores:
+            num_cores = int(num_cores)
+        else:
+            num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
+
+    elif jobrun == "cluster":
+        """ Test pending """
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
+
+    else:
+        """
+        Generate a Command list of each job and run it on local system one at a time
+        """
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
 
 def generate_paste_command():
 
@@ -464,6 +650,7 @@ def generate_paste_command():
     remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir
     os.system(remove_unwanted_text)
 
+
 def generate_indel_paste_command():
 
     """ Generate SNP Filter Label Matrix """
@@ -542,6 +729,7 @@ def generate_indel_paste_command():
     subprocess.call(["sed -i 's/HighFQ/6/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir
     os.system(remove_unwanted_text)
+
 
 def generate_position_label_data_matrix():
 
@@ -1124,216 +1312,6 @@ def generate_indel_position_label_data_matrix():
     print "Running: Generating Barplot statistics data matrices..."
     barplot_indel_stats()
 
-""" core methods """
-def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
-
-    """
-    Based on type of jobrun; generate jobs and run accordingly.
-    :param jobrun:
-    :param vcf_filenames:
-    :return:
-    """
-    if jobrun == "parallel-cluster":
-        """
-        Supports only PBS clusters for now.
-        """
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-            job_file_name = "%s_fasta.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            print "Running: qsub %s" % i
-            os.system("qsub %s" % i)
-
-    elif jobrun == "parallel-local" or jobrun == "cluster":
-        """
-        Generate a Command list of each job and run it in parallel on different cores available on local system
-        """
-        command_array = []
-        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-            job_file_name = "%s_fasta.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        if args.numcores:
-            num_cores = int(num_cores)
-        else:
-            num_cores = multiprocessing.cpu_count()
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
-    # elif jobrun == "cluster":
-    #     command_array = []
-    #     command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
-    #     f3 = open(command_file, 'w+')
-    #     for i in vcf_filenames:
-    #         job_name = os.path.basename(i)
-    #         job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-    #         job_file_name = "%s_fasta.pbs" % (i)
-    #         f1=open(job_file_name, 'w+')
-    #         f1.write(job_print_string)
-    #         f1.close()
-    #     pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
-    #     pbs_scripts = glob.glob(pbs_dir)
-    #     for i in pbs_scripts:
-    #         f3.write("bash %s\n" % i)
-    #     f3.close()
-    #     with open(command_file, 'r') as fpp:
-    #         for lines in fpp:
-    #             lines = lines.strip()
-    #             command_array.append(lines)
-    #     fpp.close()
-    #     os.system("bash %s/command_file" % args.filter2_only_snp_vcf_dir)
-    else:
-        """
-        Generate a Command list of each job and run it on local system one at a time
-        """
-        command_array = []
-        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-            job_file_name = "%s_fasta.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-
-
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        os.system("bash command_file")
-
-def create_job_DP(jobrun, vcf_filenames):
-    """
-    Based on type of jobrun; generate jobs and run accordingly.
-    :param jobrun:
-    :param vcf_filenames:
-    :return:
-    """
-
-    if jobrun == "parallel-cluster":
-        """
-        Supports only PBS clusters for now.
-        """
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-            job_file_name = "%s_DP.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            print "Running: qsub %s" % i
-            os.system("qsub %s" % i)
-
-
-    elif jobrun == "parallel-local" or jobrun == "cluster" :
-        """
-        Generate a Command list of each job and run it in parallel on different cores available on local system
-        """
-        command_array = []
-        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-            job_file_name = "%s_DP.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-
-
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        print len(command_array)
-        if args.numcores:
-            num_cores = int(num_cores)
-        else:
-            num_cores = multiprocessing.cpu_count()
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
-    # elif jobrun == "cluster":
-    #     """ Test pending """
-    #     command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
-    #     f3 = open(command_file, 'w+')
-    #     for i in vcf_filenames:
-    #         job_name = os.path.basename(i)
-    #         job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-    #         job_file_name = "%s_DP.pbs" % (i)
-    #         f1=open(job_file_name, 'w+')
-    #         f1.write(job_print_string)
-    #         f1.close()
-    #     pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-    #     pbs_scripts = glob.glob(pbs_dir)
-    #     for i in pbs_scripts:
-    #         f3.write("bash %s\n" % i)
-    #     f3.close()
-    #     os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
-
-    else:
-        """
-        Generate a Command list of each job and run it on local system one at a time
-        """
-        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-            job_file_name = "%s_DP.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
 
 def generate_vcf_files():
     base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
@@ -1440,6 +1418,7 @@ def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, refer
         f2.write(position_print_string)
     return gatk_filter2_final_vcf_file_no_proximate_snp
 
+
 def FQ_analysis():
     for i in vcf_filenames:
         filename_base = os.path.basename(i)
@@ -1457,6 +1436,7 @@ def FQ_analysis():
         grep_fq_field = "awk -F\'\\t\' \'{print $8}\' %s | grep -o \'FQ=.*\' | sed \'s/FQ=//g\' | awk -F\';\' \'{print $1}\' > %s/%s_FQ_values" % (gatk_filter2_final_vcf_file_no_proximate_snp, os.path.dirname(i), analysis)
         os.system(grep_fq_field)
         #print grep_fq_field
+
 
 def DP_analysis():
     create_job_DP(args.jobrun, vcf_filenames)
@@ -1545,6 +1525,7 @@ def DP_analysis_barplot():
             fifteenorabove_perc = 0
         bar_perc_string = "%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), reference_position_perc, oneto5_perc, sixto10_perc, elevento14_perc, fifteenorabove_perc)
         f_bar_perc.write(bar_perc_string)
+
 
 def extract_only_ref_variant_fasta(core_vcf_fasta_dir):
     create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir)
@@ -1778,9 +1759,8 @@ def annotated_snp_matrix():
             #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
             tag = str(i_split[3]).replace('CHR_START-', '')
             tag = str(tag).replace('-CHR_END', '')
-
             if "-" in tag:
-                print tag
+                #print tag
                 extra_tags = ""
                 tag_split = tag.split('-')
                 for i in tag_split:
@@ -1789,10 +1769,7 @@ def annotated_snp_matrix():
                 for i in tag_split:
                     extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
                 ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
-            elif tag == "":
-                print list(set(ann_array))
             else:
-                print tag
                 extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
                 # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
                 ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
@@ -1875,9 +1852,9 @@ def annotated_snp_matrix():
             code_string = code_string.replace('VARIANT', '3')
 
         if "protein_coding" in variants.INFO.get('ANN'):
-            snp_type = "Coding INDEL"
+            snp_type = "Coding SNP"
         else:
-            snp_type = "Non-coding INDEL"
+            snp_type = "Non-coding SNP"
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT))
 
         ann_array = (variants.INFO.get('ANN')).split(',')
@@ -1892,7 +1869,6 @@ def annotated_snp_matrix():
             tag = str(i_split[3]).replace('CHR_START-', '')
             tag = str(tag).replace('-CHR_END', '')
             tag = str(tag).replace('&', '-')
-            print tag
             if "-" in tag:
                 #print tag
                 extra_tags = ""
@@ -1931,39 +1907,7 @@ def annotated_snp_matrix():
     fp_code.close()
     fp_allele.close()
 
-def core_prep_snp(core_vcf_fasta_dir):
-    """ Run snpEff annotation step """
-    #variant_annotation()
 
-    """ Generate SNP Filter Label Matrix """
-    #generate_paste_command()
-
-    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-    #generate_position_label_data_matrix()
-
-    """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
-    generate_vcf_files()
-
-    """ Generate consensus fasta file from core vcf files """
-    #extract_only_ref_variant_fasta_from_reference()
-
-    """ Generate consensus fasta file with only reference and variant position bases """
-    #extract_only_ref_variant_fasta(core_vcf_fasta_dir)
-
-    """ Analyze the positions that were filtered out only due to insufficient depth"""
-    DP_analysis()
-
-def core_prep_indel(core_vcf_fasta_dir):
-    """ Run snpEff annotation step """
-    #indel_annotation()
-
-    """ Generate SNP Filter Label Matrix """
-    generate_indel_paste_command()
-
-    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-    generate_indel_position_label_data_matrix()
-
-""" report methods """
 def alignment_report(data_matrix_dir):
     print "\nGenerating Alignment report...\n"
     varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
@@ -1989,6 +1933,8 @@ def alignment_report(data_matrix_dir):
     fp.close()
     print "Alignment report can be found in %s/Report_alignment.txt" % data_matrix_dir
 
+
+
 def variant_report(data_matrix_dir):
     print "\nGenerating Variants report...\n"
     varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
@@ -2009,7 +1955,7 @@ def variant_report(data_matrix_dir):
     fp.close()
     print "Variant call report can be found in %s/Report_variants.txt" % data_matrix_dir
 
-""" tree methods """
+
 def fasttree(tree_dir, input_fasta, cluster):
     keep_logging('Running Fasttree on input: %s' % input_fasta, 'Running Fasttree on input: %s' % input_fasta, logger, 'info')
     fasttree_cmd = "%s/%s/%s -nt %s > %s/%s_FastTree.tree" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("fasttree", Config)['fasttree_bin'], ConfigSectionMap("fasttree", Config)['base_cmd'], input_fasta, tree_dir, (os.path.basename(input_fasta)).replace('.fa', ''))
@@ -2042,6 +1988,7 @@ def raxml(tree_dir, input_fasta):
         f1.close()
         os.system("qsub %s" % job_file_name)
 
+
 def gubbins(gubbins_dir, input_fasta):
     print "\nRunning Gubbins on input: %s\n" % input_fasta
     os.system("cd %s" % ConfigSectionMap("gubbins", Config)['gubbins_bin'])
@@ -2049,11 +1996,45 @@ def gubbins(gubbins_dir, input_fasta):
     print gubbins_cmd
     os.system(gubbins_cmd)
 
+def core_prep_snp(core_vcf_fasta_dir):
+
+    """ Run snpEff annotation step """
+    variant_annotation()
+
+    """ Generate SNP Filter Label Matrix """
+    generate_paste_command()
+
+    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
+    generate_position_label_data_matrix()
+
+    """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
+    generate_vcf_files()
+
+    """ Generate consensus fasta file from core vcf files """
+    extract_only_ref_variant_fasta_from_reference()
+
+    """ Generate consensus fasta file with only reference and variant position bases """
+    extract_only_ref_variant_fasta(core_vcf_fasta_dir)
+
+    """ Analyze the positions that were filtered out only due to insufficient depth"""
+    DP_analysis()
+
+def core_prep_indel(core_vcf_fasta_dir):
+
+    """ Run snpEff annotation step """
+    indel_annotation()
+
+    # """ Generate SNP Filter Label Matrix """
+    generate_indel_paste_command()
+
+    # """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
+    generate_indel_position_label_data_matrix()
+
 
 
 """
 Pending inclusion
-
+"""
 
 class FuncThread(threading.Thread):
     def __init__(self, target, *args):
@@ -2093,12 +2074,13 @@ def parse_phaster(reference_genome):
         print phaster_unzip_cmd
         # for key, value in get_data.items():
         #     print get_data["zip"][0]
-
+"""
 Pending inclusion
 """
 
 
-""" Core Pipeline: Main Function"""
+
+#Main Steps
 if __name__ == '__main__':
 
     """Start Timer"""
@@ -2128,6 +2110,7 @@ if __name__ == '__main__':
             line = args.filter2_only_snp_vcf_dir + line
             vcf_filenames.append(line)
         fp.close()
+    #print sorted(vcf_filenames)
 
     global config_file
     if args.config:
@@ -2138,6 +2121,8 @@ if __name__ == '__main__':
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
     keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
+
+
 
     ### Start the core SNP pipeline steps
     """ core_prep step """
@@ -2166,6 +2151,7 @@ if __name__ == '__main__':
         """ Find ProPhage region in reference genome """
         #run_phaster(args.reference)
 
+
     """ core step """
     if "2" in args.steps:
         # #Adhoc
@@ -2174,11 +2160,11 @@ if __name__ == '__main__':
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
-        core_prep_snp(core_vcf_fasta_dir)
+        #core_prep_snp(core_vcf_fasta_dir)
 
         #core_prep_indel(core_vcf_fasta_dir)
 
-        #annotated_snp_matrix()
+        annotated_snp_matrix()
 
         keep_logging('Wait for individual cluster jobs to finish before running the third step', 'Wait for individual cluster jobs to finish before running the third step', logger, 'info')
 
@@ -2186,10 +2172,10 @@ if __name__ == '__main__':
     if "3" in args.steps:
         keep_logging('Step 3: Generate Reports and Results folder.', 'Step 3: Generate Reports and Results folder.', logger, 'info')
         """ Generate DP barplots data """
-        #DP_analysis_barplot()
+        DP_analysis_barplot()
 
         """ Analyze the FQ values of all the unique variant """
-        #FQ_analysis()
+        FQ_analysis()
 
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'

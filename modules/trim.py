@@ -37,8 +37,8 @@ def trim(input1, input2, out_path, crop, logger, Config):
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:
-                    keep_logging('Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
-                    sys.exit(1)
+                keep_logging('Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
+                sys.exit(1)
             keep_logging('End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
     else:
         keep_logging('Pre-processing SE reads using Trimmomatic.', 'Pre-processing SE reads using Trimmomatic.', logger, 'info')

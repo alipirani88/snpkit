@@ -139,7 +139,7 @@ mq: 50
 # Filter variants with Variant QUAL less than the below threshold
 qual: 100
 # Filter Variants that are proximate to each other
-prox: 10
+prox: 3
 
 
 #CLUSTER_SNP: 3
