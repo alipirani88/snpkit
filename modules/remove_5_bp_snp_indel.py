@@ -65,6 +65,7 @@ def prepare_indel(raw_vcf_file, out_path, analysis, reference, logger, Config):
 # Remove SNPS that are within 10 bp in proximity to each other
 def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config):
     filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
+    print "The proximate filter criteria is: %s" % str(ConfigSectionMap(filter_criteria, Config)['prox'])
     all_position = []
     remove_proximate_position_array = []
     gatk_filter2_final_vcf_file_no_proximate_snp = gatk_filter2_final_vcf_file + "_no_proximate_snp.vcf"

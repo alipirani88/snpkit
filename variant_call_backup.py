@@ -43,7 +43,6 @@ def parser():
     optional.add_argument('-debug_mode', action='store', dest="debug_mode", help='yes/no for debug mode')
     return parser
 
-
 """ Sanity checks and directory structure maintenance methods """
 def file_exists(path1):
     if not os.path.isfile(path1):
@@ -305,19 +304,8 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
 
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
-    # Changed on 04/11/2018
-    # Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
-    #                   % (ConfigSectionMap("scheduler", Config)['email'],
-    #                      ConfigSectionMap("scheduler", Config)['notification'],
-    #                      ConfigSectionMap("scheduler", Config)['queue'],
-    #                      ConfigSectionMap("scheduler", Config)['flux_account'])
-
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
-                      % (ConfigSectionMap("scheduler", Config)['email'],
-                         ConfigSectionMap("scheduler", Config)['notification'],
-                         ConfigSectionMap("scheduler", Config)['resources'],
-                         ConfigSectionMap("scheduler", Config)['queue'],
-                         ConfigSectionMap("scheduler", Config)['flux_account'])
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
 
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
@@ -354,20 +342,9 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
-    # Changed on 11/04/2018
-    # Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
-    #                   % (ConfigSectionMap("scheduler", Config)['email'],
-    #                      ConfigSectionMap("scheduler", Config)['notification'],
-    #                      ConfigSectionMap("scheduler", Config)['queue'],
-    #                      ConfigSectionMap("scheduler", Config)['flux_account'])
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
 
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
-                      % (ConfigSectionMap("scheduler", Config)['email'],
-                         ConfigSectionMap("scheduler", Config)['notification'],
-                         ConfigSectionMap("scheduler", Config)['large_resources'],
-                         ConfigSectionMap("scheduler", Config)['queue'],
-                         ConfigSectionMap("scheduler", Config)['flux_account'])
-    
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
@@ -401,7 +378,7 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
     else:
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
@@ -419,12 +396,12 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
     elif cluster == "parallel-local":
         call("bash %s" % job_name, logger)
     elif cluster == "cluster":
-        #call("qsub %s" % job_name, logger)
+        call("qsub %s" % job_name, logger)
         keep_logging('Submitting single cluster Job: qsub %s' % job_name, 'Submitting single cluster Job: qsub %s' % job_name, logger, 'info')
-        qid = subprocess.check_output("bash %s" % job_name, shell=True)
+        qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         print qid.split('.')[0]
     elif cluster == "parallel-cluster":
-        #call("qsub %s" % job_name, logger)
+        call("qsub %s" % job_name, logger)
         keep_logging('Submitting parallel-cluster Job: qsub %s' % job_name, 'Submitting parallel-cluster Job: qsub %s' % job_name, logger, 'info')
         qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         print qid.split('.')[0]
@@ -454,12 +431,12 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
     elif cluster == "parallel-local":
         call("bash %s" % job_name, logger)
     elif cluster == "cluster":
-        #call("qsub %s" % job_name, logger)
+        call("qsub %s" % job_name, logger)
         keep_logging('Submitting single cluster Job: qsub %s' % job_name, 'Submitting single cluster Job: qsub %s' % job_name, logger, 'info')
         qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         print qid.split('.')[0]
     elif cluster == "parallel-cluster":
-        #call("qsub %s" % job_name, logger)
+        call("qsub %s" % job_name, logger)
         keep_logging('Submitting parallel-cluster Job: qsub %s' % job_name, 'Submitting parallel-cluster Job: qsub %s' % job_name, logger, 'info')
         qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         print qid.split('.')[0]
@@ -467,17 +444,12 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
 
 """ Start of Main Method/Pipeline """
 if __name__ == '__main__':
-
     # Set up logging modules and config file
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()
-
     args = parser().parse_args()
-
     global config_file
     global log_unique_time
-    print "here"
-    print "here"
     if args.output_folder != '':
         args.output_folder += '/'
     make_sure_path_exists(args.output_folder)
@@ -613,13 +585,8 @@ if __name__ == '__main__':
         keep_logging('START: Generating alignment and variant calling report', 'START: Generating alignment and variant calling report', logger, 'info')
         call("cp %s %s/%s_%s_config_copy.txt" % (config_file, report_logs_folder, log_unique_time, args.analysis_name), logger)
         core_temp_dir = args.output_folder + "/core_temp_dir/"
-        # core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
-        # make_sure_path_exists(core_results_dir)
-        proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output_folder], stdout=subprocess.PIPE, shell=True)
-        (out2, err2) = proc.communicate()
-        core_results_dir = out2.strip()
-        print core_results_dir
-
+        core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
+        make_sure_path_exists(core_results_dir)
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
         with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
@@ -643,10 +610,9 @@ if __name__ == '__main__':
         call("cp %s %s/%s_%s_config_copy.txt" % (config_file, tree_logs_folder, log_unique_time, args.analysis_name), logger)
         core_temp_dir = args.output_folder + "/core_temp_dir/"
         #core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
-        proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output_folder], stdout=subprocess.PIPE,
-                                shell=True)
+        proc = subprocess.Popen(["ls -1ad *_core_results | tail -n1"], stdout=subprocess.PIPE, shell=True)
         (out2, err2) = proc.communicate()
-        core_results_dir = out2.strip()
+        core_results_dir = args.output_folder + "/" + out2.strip()
         print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []

@@ -12,7 +12,8 @@ binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 
 # If you are using a grid system to run jobs, change the below parameters accordingly. Supports only pbs torque system.
 [scheduler]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
+large_resources: nodes=1:ppn=4,mem=47000mb,walltime=250:00:00
 email: USERNAME@med.umich.edu
 queue: XXX
 flux_account: XXX

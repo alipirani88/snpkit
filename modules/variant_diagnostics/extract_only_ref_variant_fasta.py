@@ -16,6 +16,7 @@ import errno
 from pyfasta import Fasta
 from datetime import datetime
 import threading
+from cyvcf2 import VCF
 
 
 parser = argparse.ArgumentParser(description='Extract Only reference and variant positions and generate a fasta file out of it.')
@@ -86,4 +87,55 @@ def extract_only_ref_variant_fasta():
     #     count += 1
     #     fasta_string = fasta_string + str(f.sequence({'chr': str(f.keys()[0]), 'start': int(lines), 'stop': int(lines)}))
 
-extract_only_ref_variant_fasta()
+#extract_only_ref_variant_fasta()
+
+def extract_only_ref_variant_fasta_alternate():
+    # Get reference genome ID
+    f = Fasta(args.reference)
+    if len(f.keys()) == 1:
+        ref_id = str(f.keys())
+
+    # Get Only_ref_variant positions list
+    only_ref_variant = []
+    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, "r")
+    for lines in ffp:
+        lines = lines.strip()
+        only_ref_variant.append(lines)
+    ffp.close()
+
+    core_vcf_file = args.filter2_only_snp_vcf_filename.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_core.vcf.gz')
+    # print core_vcf_file
+    core_vcf_pos_base = {}
+    for variants in VCF("%s" % core_vcf_file):
+        if len(variants.ALT) > 1:
+            core_vcf_pos_base[variants.POS] = variants.ALT[0]
+        else:
+            core_vcf_pos_base[variants.POS] = variants.ALT
+
+    ffp.close()
+    # print len(core_vcf_pos_base)
+    # test = "2024"
+    # print str(core_vcf_pos_base[int(test)][0])
+    fasta_string = ""
+    count = 0
+    for lines in only_ref_variant:
+        lines = lines.strip()
+        if int(lines) in core_vcf_pos_base.keys():
+            # print lines
+            fasta_string = fasta_string + str(core_vcf_pos_base[int(lines)][0])
+            count += 1
+        else:
+            fasta_string = fasta_string + str(f.sequence({'chr': str(f.keys()[0]), 'start': int(lines), 'stop': int(lines)}))
+            count += 1
+    pattern = re.compile(r'\s+')
+    fasta_string = re.sub(pattern, '', fasta_string)
+    final_fasta_string = ">%s\n" % os.path.basename(core_vcf_file.replace('_filter2_final.vcf_core.vcf.gz', '')) + fasta_string
+    fp = open("%s/%s_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(core_vcf_file.replace('_filter2_final.vcf_core.vcf.gz', ''))), 'w+')
+    fp.write(final_fasta_string + '\n')
+    fp.close()
+
+    # print final_fasta_string
+    print "Count: %s " % count
+    print "Length: %s " % len(fasta_string)
+
+extract_only_ref_variant_fasta_alternate()
