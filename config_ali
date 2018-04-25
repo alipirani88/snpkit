@@ -10,12 +10,12 @@ variant_caller: samtools
 binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 
 [scheduler]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
-large_resources: nodes=1:ppn=4,mem=47000mb,walltime=250:00:00
+resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
-queue: fluxod
-flux_account: esnitkin_fluxod
-notification: a
+queue: flux
+flux_account: esnitkin_flux
+notification: ae
 
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
 # Set parameter for Trimmomatic
@@ -119,6 +119,12 @@ parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
 gubbins_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
 base_cmd: run_gubbins.py
 
+[mummer]
+mummer_bin: /MUMmer3.23/
+nucmer_base_cmd: nucmer
+min_tandem_repeat_length: 20
+percent_id: 95
+
 [SNP_filters]
 filter_criteria: snitkin_filters
 # Other Criterias: SPANDx_filters, loose_filters, snitkin_filters
@@ -141,6 +147,14 @@ mq: 50
 qual: 100
 # Filter Variants that are proximate to each other
 prox: 10
+
+[functional_filters]
+apply_functional_filters: no
+find_phage_region: yes
+find_repetitive_region: yes
+mask_region: yes
+mask_file: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300//test_mask_file.bed
+mobile_elements: yes
 
 
 #CLUSTER_SNP: 3
@@ -196,6 +210,7 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/FPR3757/
 Ref_Name: MRSA_USA_100_1.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_100/
+Gff_Name: MRSA_USA_100.gff
 
 [CDIFF_630]
 # Name of reference genome fasta file.

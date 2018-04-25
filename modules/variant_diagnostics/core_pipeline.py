@@ -1,9 +1,12 @@
 from __future__ import division
+import sys
 import argparse
 import re
 import os
 import csv
 import subprocess
+## Hacky way yo append. Instead Add this path to PYTHONPATH Variable
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from collections import OrderedDict
 from collections import defaultdict
 from joblib import Parallel, delayed
@@ -22,8 +25,13 @@ import ConfigParser
 from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
+from tabix import *
 from Bio import SeqIO
+from phage_detection import *
+from find_repeats import *
+from mask_regions import *
 
+# Parse Command line Arguments
 parser = argparse.ArgumentParser(description='Parsing filtered VCF files and investigating Variants to determine the reason why it was filtered out from the final list')
 required = parser.add_argument_group('Required arguments')
 optional = parser.add_argument_group('Optional arguments')
@@ -56,24 +64,27 @@ optional.add_argument('-debug_mode', action='store', dest="debug_mode",
                     help='yes/no for debug mode')
 args = parser.parse_args()
 
+""" Sanity Check Methods"""
 def make_sure_path_exists(out_path):
     """
     Make sure the output folder exists or create at given path
-    :param out_path:
-    :return:
+    :param: out_path
+    :return: null/exception
     """
     try:
         os.makedirs(out_path)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
-            print "Errors in output folder path! please change the output path or analysis name\n"
+            keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
+                         '\nErrors in output folder path! please change the output path or analysis name\n', logger,
+                         'info')
             exit()
 
 def make_sure_files_exists(vcf_file_array):
     """
     Make sure the variant call output files exists
-    :param vcf_file_array:
-    :return:
+    :param: vcf_file_array
+    :return: null or exception
     """
     not_found_files = []
     for files in vcf_filenames:
@@ -82,13 +93,13 @@ def make_sure_files_exists(vcf_file_array):
         ori_proximate_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
                                            "filter2_final.vcf_no_proximate_snp.vcf_positions_array")
         ori_variant_position_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                                  "filter2_final.vcf_no_proximate_snp.vcf.gz")
+                                                  "filter2_final.vcf_no_proximate_snp.vcf")
         ori_5bp_mpileup_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                             "aln_mpileup_raw.vcf_5bp_indel_removed.vcf.gz")
+                                             "aln_mpileup_raw.vcf_5bp_indel_removed.vcf")
         ori_mpileup_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
                                          "aln_mpileup_raw.vcf")
         ori_filter_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                        "filter2_final.vcf.gz")
+                                        "filter2_final.vcf")
         ori_indel_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
                                        "filter2_indel_final.vcf")
 
@@ -98,7 +109,6 @@ def make_sure_files_exists(vcf_file_array):
             continue
         else:
             not_found_files.append(files)
-            # keep_logging('Error finding variant calling output files: %s' % files, 'Error finding variant calling output files: %s' % files, logger, 'exception')
     if len(not_found_files) > 0:
         for i in not_found_files:
             keep_logging('Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
@@ -108,8 +118,8 @@ def make_sure_files_exists(vcf_file_array):
 def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_positions):
     """
     Make sure the variant call output files exists
-    :param vcf_file_array:
-    :return:
+    :param: vcf_file_array
+    :return: null or exception
     """
     not_found_files = []
     found_incomplete = []
@@ -145,10 +155,12 @@ def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_
                          'core_prep step failed for: %s. Rerun %s.pbs' % (tmp_file, i), logger, 'exception')
         exit()
 
-
 def run_command(i):
-    # print "Running: %s" % i
-    # os.system(i)
+    """
+    Function to run each command and is run as a part of python Parallel mutiprocessing method.
+    :param: command
+    :return: Done status
+    """
     call("%s" % i, logger)
     done = "Completed: %s" % i
     return done
@@ -157,8 +169,10 @@ def run_command(i):
 def create_positions_filestep(vcf_filenames):
 
     """
-    Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters
-    from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
+    Gather SNP positions from each final *_no_proximate_snp.vcf file (these are the positions that passed variant filter parameters
+    from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files. Use these *_no_proximate_snp.vcf_position files to generate a list of unique_position_file
+    :param: list of final vcf filenames i.e *.vcf_no_proximate_snp.vcf . These files are the final output of variant calling step for each sample.
+    :return: unique_position_file
     """
 
     filter2_only_snp_position_files_array = []
@@ -188,22 +202,24 @@ def create_positions_filestep(vcf_filenames):
         f.close()
     position_array_unique = set(position_array)
     position_array_sort = sorted(position_array_unique)
-    print "\nThe number of unique variant positions: " + str(len(position_array_sort)) + "\n"
+    keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort), '\nThe number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
     unique_position_file = "%s/unique_positions_file" % args.filter2_only_snp_vcf_dir
     f=open(unique_position_file, 'w+')
     for i in position_array_sort:
         f.write(i + "\n")
     f.close()
     if len(position_array_sort) == 0:
-        print "ERROR: No unique positions found. Check if vcf files are empty?"
+        keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
         exit()
     return unique_position_file
 
 def create_indel_positions_filestep(vcf_filenames):
 
     """
-    Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters
-    from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
+    Gather Indel positions from each final *_indel_final.vcf (these are the positions that passed variant filter parameters
+    from variant calling pipeline) and write to *_indel_final.vcf files. Use these *_indel_final.vcf_position files to generate a list of unique_position_file
+    :param: list of final vcf filenames i.e *_indel_final.vcf . These files are the final output of variant calling step for each sample.
+    :return: unique_indel_position_file
     """
 
     filter2_only_indel_position_files_array = []
@@ -233,21 +249,23 @@ def create_indel_positions_filestep(vcf_filenames):
         f.close()
     position_array_unique = set(position_array)
     position_array_sort = sorted(position_array_unique)
-    print "\nThe number of unique indel positions: " + str(len(position_array_sort)) + "\n"
+    keep_logging('\nThe number of unique indel positions:%s' % len(position_array_sort), '\nThe number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
     unique_indel_position_file = "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
     f=open(unique_indel_position_file, 'w+')
     for i in position_array_sort:
         f.write(i + "\n")
     f.close()
     if len(position_array_sort) == 0:
-        print "ERROR: No unique positions found. Check if vcf files are empty?"
+        keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
         exit()
     return unique_indel_position_file
 
 def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
 
     """
-    Based on type of jobrun; generate jobs and run accordingly.
+    This method takes the unique_position_file and list of final *_no_proximate_snp.vcf files and generates individual jobs/script.
+    Each of these jobs/scripts will generate a *label file. These label file for each sample contains a field description of each position in unique_position_file.
+    this fir
     :param jobrun:
     :param vcf_filenames:
     :return:
@@ -267,8 +285,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
-            print "Running: qsub %s" % i
-            # os.system("qsub %s" % i)
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
             call("qsub %s" % i, logger)
 
     elif jobrun == "parallel-local":
@@ -366,8 +383,6 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-        #print "Running local mode: bash %s" % command_file
-        #os.system("bash %s" % command_file)
         call("bash %s" % command_file, logger)
 
 def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
@@ -393,7 +408,7 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
-            print "Running: qsub %s" % i
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
             # os.system("qsub %s" % i)
             call("qsub %s" % i, logger)
 
@@ -463,8 +478,6 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-        #print "Running local mode: bash %s" % command_file
-        # os.system("bash %s" % command_file)
         call("bash %s" % command_file, logger)
 
 def generate_paste_command():
@@ -514,7 +527,6 @@ def generate_paste_command():
     call("bash %s/All_label_final_raw.sh" % args.filter2_only_snp_vcf_dir, logger)
     call("bash %s/temp_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
 
-    print "Finished pasting...DONE"
 
     """
     remove this lines
@@ -606,7 +618,7 @@ def generate_indel_paste_command():
     # os.system("bash %s/temp_indel_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir)
     call("bash %s/All_indel_label_final_raw.sh" % args.filter2_only_snp_vcf_dir, logger)
     call("bash %s/temp_indel_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
-    print "Finished pasting...DONE"
+    keep_logging('Finished pasting...DONE', 'Finished pasting...DONE', logger, 'info')
 
     """
     remove this lines
@@ -671,12 +683,12 @@ def generate_position_label_data_matrix():
         f3=open("%s/Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f4=open("%s/Only_filtered_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading All label positions file: %s/All_label_final_sorted_header.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
             for row in csv_reader:
                 position_label[row[0]] = row[1:]
-            print "Generating different list of Positions and heatmap data matrix... \n"
+            keep_logging('Generating different list of Positions and heatmap data matrix... \n', 'Generating different list of Positions and heatmap data matrix... \n', logger, 'info')
             print_string_header = "\t"
             for i in vcf_filenames:
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
@@ -725,7 +737,7 @@ def generate_position_label_data_matrix():
         for i in vcf_filenames:
             print_string_header = print_string_header + os.path.basename(i) + "\t"
         f33.write('\t' + print_string_header.strip() + '\n')
-        print "Reading temporary label positions file: %s/temp_label_final_raw.txt \n" % args.filter2_only_snp_vcf_dir
+        keep_logging('Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
         lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP', 'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP', 'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP', 'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP', 'HighFQ_DP_QUAL_proximate_SNP', 'HighFQ_QUAL_DP_proximate_SNP', 'HighFQ_proximate_SNP', '_proximate_SNP']
         ref_var = ['reference_allele', 'VARIANT']
         with open("%s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
@@ -747,7 +759,7 @@ def generate_position_label_data_matrix():
         temp_position_label_FQ = OrderedDict()
         f44=open("%s/temp_Only_filtered_positions_for_closely_matrix_FQ.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
 
@@ -804,7 +816,7 @@ def generate_position_label_data_matrix():
         temp_position_label_DP = OrderedDict()
         f44=open("%s/temp_Only_filtered_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
             for row in csv_reader:
@@ -855,7 +867,7 @@ def generate_position_label_data_matrix():
 
 
     def barplot_stats():
-        print "\nRead each Sample columns and calculate the percentage of each label to generate barplot statistics.\n"
+        keep_logging('\nRead each Sample columns and calculate the percentage of each label to generate barplot statistics.\n', '\nRead each Sample columns and calculate the percentage of each label to generate barplot statistics.\n', logger, 'info')
         """
         Read each Sample columns and calculate the percentage of each label to generate barplot statistics.
         This will give a visual explanation of how many positions in each samples were filtered out because of different reason
@@ -863,7 +875,7 @@ def generate_position_label_data_matrix():
 
         c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
         columns = list(zip(*c_reader))
-        print "Finished reading columns..."
+        keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
         counts = 1
         end = len(vcf_filenames) + 1
         f_bar_count = open("%s/bargraph_counts.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -928,13 +940,13 @@ def generate_position_label_data_matrix():
         bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"
         barplot_R_file = open("%s/bargraph.R" % args.filter2_only_snp_vcf_dir, 'w+')
         barplot_R_file.write(bargraph_R_script)
-        print "Run this R script to generate bargraph plot: %s/bargraph.R" % args.filter2_only_snp_vcf_dir
+        keep_logging('Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
     """ Methods Steps"""
-    print "Running: Generating data matrices..."
+    keep_logging('Running: Generating data matrices...', 'Running: Generating data matrices...', logger, 'info')
     generate_position_label_data_matrix_All_label()
-    print "Running: Changing variables in data matrices to codes for faster processing..."
+    keep_logging('Running: Changing variables in data matrices to codes for faster processing...', 'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
     temp_generate_position_label_data_matrix_All_label()
-    print "Running: Generating Barplot statistics data matrices..."
+    keep_logging('Running: Generating Barplot statistics data matrices...', 'Running: Generating Barplot statistics data matrices...', logger, 'info')
     barplot_stats()
 
 def generate_indel_position_label_data_matrix():
@@ -960,12 +972,12 @@ def generate_indel_position_label_data_matrix():
         f3=open("%s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f4=open("%s/Only_filtered_indel_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading All label positions file: %s/All_indel_label_final_sorted_header.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir, 'Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
             for row in csv_reader:
                 position_label[row[0]] = row[1:]
-            print "Generating different list of Positions and heatmap data matrix... \n"
+            keep_logging('Generating different list of Positions and heatmap data matrix...', 'Generating different list of Positions and heatmap data matrix...', logger, 'info')
             print_string_header = "\t"
             for i in vcf_filenames:
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
@@ -977,7 +989,6 @@ def generate_indel_position_label_data_matrix():
                 lll = ['0', '2', '3', '4', '5', '6', '7']
                 ref_var = ['1', '1TRUE']
                 if set(ref_var) & set(position_label[value]):
-                    print "here"
                     if set(lll) & set(position_label[value]):
                         print_string = ""
                         for i in position_label[value]:
@@ -1015,7 +1026,7 @@ def generate_indel_position_label_data_matrix():
         for i in vcf_filenames:
             print_string_header = print_string_header + os.path.basename(i) + "\t"
         f33.write('\t' + print_string_header.strip() + '\n')
-        print "Reading temporary label positions file: %s/temp_label_final_raw.txt \n" % args.filter2_only_snp_vcf_dir
+        keep_logging('Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir, 'Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir, logger, 'info')
         lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP', 'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP', 'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP', 'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP', 'HighFQ_DP_QUAL_proximate_SNP', 'HighFQ_QUAL_DP_proximate_SNP', 'HighFQ_proximate_SNP', '_proximate_SNP']
         ref_var = ['reference_allele', 'VARIANT']
         with open("%s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
@@ -1037,7 +1048,7 @@ def generate_indel_position_label_data_matrix():
         temp_position_label_FQ = OrderedDict()
         f44=open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_FQ.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
 
@@ -1094,7 +1105,7 @@ def generate_indel_position_label_data_matrix():
         temp_position_label_DP = OrderedDict()
         f44=open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
             for row in csv_reader:
@@ -1145,7 +1156,7 @@ def generate_indel_position_label_data_matrix():
 
 
     def barplot_indel_stats():
-        print "\nRead each Sample columns and calculate the percentage of each label to generate barplot statistics.\n"
+        keep_logging('Read each Sample columns and calculate the percentage of each label to generate barplot statistics.', 'Read each Sample columns and calculate the percentage of each label to generate barplot statistics.', logger, 'info')
         """
         Read each Sample columns and calculate the percentage of each label to generate barplot statistics.
         This will give a visual explanation of how many positions in each samples were filtered out because of different reason
@@ -1153,7 +1164,7 @@ def generate_indel_position_label_data_matrix():
 
         c_reader = csv.reader(open('%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
         columns = list(zip(*c_reader))
-        print "Finished reading columns..."
+        keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
         counts = 1
         end = len(vcf_filenames) + 1
         f_bar_count = open("%s/bargraph_indel_counts.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -1218,15 +1229,15 @@ def generate_indel_position_label_data_matrix():
         bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_indel_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"
         barplot_R_file = open("%s/bargraph_indel.R" % args.filter2_only_snp_vcf_dir, 'w+')
         barplot_R_file.write(bargraph_R_script)
-        print "Run this R script to generate bargraph plot: %s/bargraph_indel.R" % args.filter2_only_snp_vcf_dir
+        keep_logging('Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
 
 
     """ Methods Steps"""
-    print "Running: Generating data matrices..."
+    keep_logging('Running: Generating data matrices...', 'Running: Generating data matrices...', logger, 'info')
     generate_indel_position_label_data_matrix_All_label()
-    print "Running: Changing variables in data matrices to codes for faster processing..."
+    keep_logging('Running: Changing variables in data matrices to codes for faster processing...', 'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
     temp_generate_indel_position_label_data_matrix_All_label()
-    print "Running: Generating Barplot statistics data matrices..."
+    keep_logging('Running: Generating Barplot statistics data matrices...', 'Running: Generating Barplot statistics data matrices...', logger, 'info')
     barplot_indel_stats()
 
 """ core methods """
@@ -1253,7 +1264,7 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
-            print "Running: qsub %s" % i
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
             #os.system("qsub %s" % i)
             call("qsub %s" % i, logger)
 
@@ -1365,7 +1376,7 @@ def create_job_DP(jobrun, vcf_filenames):
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
-            print "Running: qsub %s" % i
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
             #os.system("qsub %s" % i)
             call("qsub %s" % i, logger)
 
@@ -1445,7 +1456,6 @@ def create_job_DP(jobrun, vcf_filenames):
         #os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
         call("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir, logger)
 
-
 def generate_vcf_files():
     base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
     filter2_files_array = []
@@ -1473,7 +1483,7 @@ def generate_vcf_files():
                         print_array.append(line)
         file_open.close()
         file_name = i + "_core.vcf"
-        print "Generating %s" % file_name
+        keep_logging('Generating %s' % file_name, 'Generating %s' % file_name, logger, 'info')
         filtered_out_vcf_files.append(file_name)
         f1 = open(file_name, 'w+')
         for ios in print_array:
@@ -1482,7 +1492,7 @@ def generate_vcf_files():
         f1.close()
 
     filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
-    print "\nGenerating Consensus...\n"
+    keep_logging('Generating Consensus...', 'Generating Consensus...', logger, 'info')
     for file in filtered_out_vcf_files:
         f1 = open(filename, 'a+')
         bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
@@ -1499,7 +1509,7 @@ def generate_vcf_files():
         sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
         subprocess.call([sed_command], shell=True)
         f1.write(sed_command)
-    print "The consensus commands are in : %s" % filename
+    keep_logging('The consensus commands are in : %s' % filename, 'The consensus commands are in : %s' % filename, logger, 'info')
     sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
     #os.system(sequence_lgth_cmd)
     call("%s" % sequence_lgth_cmd, logger)
@@ -1507,7 +1517,7 @@ def generate_vcf_files():
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
     gatk_filter2_command = "java -jar %s/%s/GenomeAnalysisTK.jar -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("gatk", Config)['gatk_bin'], reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
-    print "\n\nRunning Command: [%s]\n\n" % gatk_filter2_command
+    keep_logging('Running Command: [%s]' % gatk_filter2_command, 'Running Command: [%s]' % gatk_filter2_command, logger, 'info')
     #os.system(gatk_filter2_command)
     call("%s" % gatk_filter2_command, logger)
     filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (out_path, analysis, out_path, analysis)
@@ -1596,7 +1606,7 @@ def DP_analysis():
 def DP_analysis_barplot():
     #os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
     call("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir, logger)
-    print "Generating DP barplots data..."
+    keep_logging('Generating DP barplots data...', 'Generating DP barplots data...', logger, 'info')
     c_reader = csv.reader(open('%s/filtered_DP_values.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     counts = 1
@@ -1676,7 +1686,9 @@ def extract_only_ref_variant_fasta_from_reference():
         out = out.strip()
         fasta_string = fasta_string + out
         if not out:
-            print "Error extracting reference allele"
+            print lines
+            keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
+            exit()
 
     pattern = re.compile(r'\s+')
     fasta_string = re.sub(pattern, '', fasta_string)
@@ -1687,19 +1699,39 @@ def extract_only_ref_variant_fasta_from_reference():
 
 def prepare_snpEff_db(reference_basename):
     keep_logging('Preparing snpEff database requirements.', 'Preparing snpEff database requirements.', logger, 'info')
-    #os.system("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir))
-    call("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger)
+    if os.path.isfile("%s/%s/snpEff.config" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'])):
+        #os.system("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir))
+        keep_logging("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), "cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger, 'debug')
+        call("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger)
+    else:
+        keep_logging("Error: %s/%s/snpEff.config doesn't exists.\nExiting..." % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']),"Error: %s/%s/snpEff.config doesn't exists.\nExiting..." % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'exception')
+        exit()
     make_sure_path_exists("%s/%s/data/%s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]))
     make_sure_path_exists("%s/%s/data/genomes/" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
     #os.system("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
+    keep_logging("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     call("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
     with open("%s/snpEff.config" % args.filter2_only_snp_vcf_dir, "a") as conf_file:
         conf_file.write("\n\n##Building Custom Database###\n%s.genome\t: %s\n\n" % (reference_basename[0], reference_basename[0]))
     conf_file.close()
     #get the gff name from config file
-    call("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
+    if os.path.isfile("%s/%s.gff" % (os.path.dirname(args.reference), reference_basename[0])):
+        keep_logging("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]),
+                     "cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
+                                                               ConfigSectionMap("bin_path", Config)['binbase'],
+                                                               ConfigSectionMap("snpeff", Config)['snpeff_bin'],
+                                                               reference_basename[0]), logger, 'debug')
+        call("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
+    else:
+        keep_logging("Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]),
+                         "Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]), logger, 'exception')
+        exit()
+    keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
-
     keep_logging('Finished Preparing snpEff database requirements.', 'Finished Preparing snpEff database requirements.', logger, 'info')
 
 def variant_annotation():
@@ -1722,8 +1754,7 @@ def variant_annotation():
         num_cores = int(num_cores)
     else:
         num_cores = multiprocessing.cpu_count()
-    print "\n\nhere\n\n"
-    print annotate_final_vcf_cmd_array
+    #print annotate_vcf_cmd_array
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
 
@@ -1747,7 +1778,6 @@ def indel_annotation():
         num_cores = int(num_cores)
     else:
         num_cores = multiprocessing.cpu_count()
-    print annotate_final_vcf_cmd_array
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
 
@@ -1767,6 +1797,7 @@ def annotated_snp_matrix():
         handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'rU')
     else:
         raise IOError('%s/%s.gbf does not exist.' % (os.path.dirname(args.reference), reference_basename[0]))
+        exit()
     locus_tag_to_gene_name = {}
     locus_tag_to_product = {}
     #locus_tag_to_uniprot = {}
@@ -1789,18 +1820,18 @@ def annotated_snp_matrix():
 
 
     """ Merge Annotated final vcf file """
-    print "Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf" % args.filter2_only_snp_vcf_dir
-    # os.system("for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir)
-    # os.system("for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir)
-    # os.system("for i in %s/*_filter2_indel_final.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir)
-    # os.system("for i in %s/*_filter2_indel_final.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir)
+    keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf' % args.filter2_only_snp_vcf_dir, logger, 'info')
+    # call(
+    #     "for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir, logger)
+    # call("for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir, logger)
+    # call(
+    #     "for i in %s/*_filter2_indel_final.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir, logger)
+    # call("for i in %s/*_filter2_indel_final.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir, logger)
 
-    call(
-        "for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir, logger)
-    call("for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir, logger)
-    call(
-        "for i in %s/*_filter2_indel_final.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir, logger)
-    call("for i in %s/*_filter2_indel_final.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir, logger)
+    files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    tabix(files_for_tabix, "vcf", logger, Config)
+    files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    tabix(files_for_tabix, "vcf", logger, Config)
 
     files = ' '.join(vcf_filenames)
     print files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")
@@ -1821,18 +1852,21 @@ def annotated_snp_matrix():
                                                                                             "_filter2_final.vcf_no_proximate_snp.vcf",
                                                                                             "_filter2_indel_final.vcf_ANN.vcf.gz")), logger)
 
-    call("bgzip -c %s/Final_vcf_no_proximate_snp.vcf > %s/Final_vcf_no_proximate_snp.vcf.gz" % (
-    args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir), logger)
-    call("tabix %s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir, logger)
-    call("bgzip -c %s/Final_vcf_indel.vcf > %s/Final_vcf_indel.vcf.gz" % (
-    args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir), logger)
-    call("tabix %s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir, logger)
+    # call("bgzip -c %s/Final_vcf_no_proximate_snp.vcf > %s/Final_vcf_no_proximate_snp.vcf.gz" % (
+    # args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir), logger)
+    # call("tabix %s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir, logger)
+    # call("bgzip -c %s/Final_vcf_indel.vcf > %s/Final_vcf_indel.vcf.gz" % (
+    # args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir), logger)
+    # call("tabix %s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir, logger)
+
+    files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
+    tabix(files_for_tabix, "vcf", logger, Config)
 
 
 
     position_label = OrderedDict()
     with open("%s/All_label_final_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-        print "Reading All label positions file: %s/All_label_final_sorted.txt \n" % args.filter2_only_snp_vcf_dir
+        keep_logging('Reading All label positions file: %s/All_label_final_sorted.txt' % args.filter2_only_snp_vcf_dir, 'Reading All label positions file: %s/All_label_final_sorted.txt' % args.filter2_only_snp_vcf_dir, logger, 'info')
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
             position_label[row[0]] = ','.join(row[1:])
@@ -1840,14 +1874,14 @@ def annotated_snp_matrix():
 
     position_indel_label = OrderedDict()
     with open("%s/All_indel_label_final_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-        print "Reading All label positions file: %s/All_indel_label_final_sorted.txt \n" % args.filter2_only_snp_vcf_dir
+        keep_logging('Reading All label positions file: %s/All_indel_label_final_sorted.txt' % args.filter2_only_snp_vcf_dir, 'Reading All label positions file: %s/All_indel_label_final_sorted.txt' % args.filter2_only_snp_vcf_dir, logger, 'info')
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
             if row[0] not in position_label.keys():
                 position_indel_label[row[0]] = ','.join(row[1:])
             else:
                 position_indel_label[row[0]] = ','.join(row[1:])
-                print "Warning: position %s already present as a SNP" % row[0]
+                keep_logging('Warning: position %s already present as a SNP' % row[0], 'Warning: position %s already present as a SNP' % row[0], logger, 'info')
     csv_file.close()
 
     print_string_header = "\t"
@@ -2078,9 +2112,6 @@ def annotated_snp_matrix():
     fp_allele.close()
 
 def core_prep_snp(core_vcf_fasta_dir):
-    # """ Run snpEff annotation step """
-    # variant_annotation()
-
     """ Generate SNP Filter Label Matrix """
     generate_paste_command()
 
@@ -2100,9 +2131,6 @@ def core_prep_snp(core_vcf_fasta_dir):
     DP_analysis()
 
 def core_prep_indel(core_vcf_fasta_dir):
-    # """ Run snpEff annotation step """
-    # indel_annotation()
-
     """ Generate SNP Filter Label Matrix """
     generate_indel_paste_command()
 
@@ -2111,7 +2139,7 @@ def core_prep_indel(core_vcf_fasta_dir):
 
 """ report methods """
 def alignment_report(data_matrix_dir):
-    print "\nGenerating Alignment report...\n"
+    keep_logging('Generating Alignment report...', 'Generating Alignment report...', logger, 'info')
     varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
     report_string = ""
     header = "Sample,QC-passed reads,Mapped reads,% mapped reads,mean depth,%_bases_above_5,%_bases_above_10,%_bases_above_15,unmapped_positions,READ_PAIR_DUPLICATES,READ_PAIR_OPTICAL_DUPLICATES,unmapped reads,% unmapped reads"
@@ -2133,10 +2161,10 @@ def alignment_report(data_matrix_dir):
         #print myList
         fp.write(myList + '\n')
     fp.close()
-    print "Alignment report can be found in %s/Report_alignment.txt" % data_matrix_dir
+    keep_logging('Alignment report can be found in %s/Report_alignment.txt' % data_matrix_dir, 'Alignment report can be found in %s/Report_alignment.txt' % data_matrix_dir, logger, 'info')
 
 def variant_report(data_matrix_dir):
-    print "\nGenerating Variants report...\n"
+    keep_logging('Generating Variants report...', 'Generating Variants report...', logger, 'info')
     varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
     report_string = ""
     header = "Sample,Total Unique Variants,core SNPs,unmapped_positions,reference_allele,true_variant,Only_low_FQ,Only_DP,Only_low_MQ,other,unmapped_positions_perc,true_variant_perc,Only_low_FQ_perc,Only_DP_perc,Only_low_MQ_perc,other_perc"
@@ -2153,7 +2181,7 @@ def variant_report(data_matrix_dir):
         myList = ','.join(map(str, (sample, unmapped_positions, core_snps, filtered_snp_count, filtered_snp_perc)))
         fp.write(myList + '\n')
     fp.close()
-    print "Variant call report can be found in %s/Report_variants.txt" % data_matrix_dir
+    keep_logging('Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, 'Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, logger, 'info')
 
 """ tree methods """
 def fasttree(tree_dir, input_fasta, cluster):
@@ -2174,7 +2202,6 @@ def fasttree(tree_dir, input_fasta, cluster):
         f1.write(job_print_string)
         f1.close()
         call("qsub %s" % job_file_name, logger)
-
 
 def raxml(tree_dir, input_fasta):
     keep_logging('Running RAXML on input: %s' % input_fasta, 'Running RAXML on input: %s' % input_fasta, logger, 'info')
@@ -2197,11 +2224,11 @@ def raxml(tree_dir, input_fasta):
         call("qsub %s" % job_file_name, logger)
 
 def gubbins(gubbins_dir, input_fasta):
-    print "\nRunning Gubbins on input: %s\n" % input_fasta
+    keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta, logger,
+                 'info')
     call("cd %s" % ConfigSectionMap("gubbins", Config)['gubbins_bin'], logger)
     gubbins_cmd = "%s/%s --prefix %s/%s %s" % (ConfigSectionMap("gubbins", Config)['gubbins_bin'], ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir, (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
     call(gubbins_cmd, logger)
-
 
 
 """
@@ -2219,49 +2246,36 @@ class FuncThread(threading.Thread):
 def someOtherFunc(data, key):
     print "someOtherFunc was called : data=%s; key=%s" % (str(data), str(key))
 
-def run_phaster(reference_genome):
-    print "\nRunning Phaster on input reference genome: %s\n" % reference_genome
-    out_name = (os.path.basename(reference_genome)).split('.')
-    phaster_post_cmd = "wget --post-file=\"%s\" \"http://phaster.ca/phaster_api\" -O %s/%s" % (reference_genome, args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_post.json")
-
-    print "Running: %s\n" % phaster_post_cmd
-    #os.system(phaster_post_cmd)
-    with open('%s/%s' % (args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_post.json")) as json_data:
-        data = json.load(json_data)
-        print "Status: %s\njob_id: %s\n" % (data["status"], data["job_id"])
-
-def parse_phaster(reference_genome):
-    out_name = (os.path.basename(reference_genome)).split('.')
-    with open('%s/%s' % (args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_post.json")) as json_data:
-        data = json.load(json_data)
-        phaster_get_cmd = "wget \"http://phaster.ca/phaster_api?acc=%s\" -O %s/%s" % (data["job_id"], args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_get.json")
-        print phaster_get_cmd
-
-    with open('%s/%s' % (args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_get.json")) as json_get_data:
-        get_data = json.load(json_get_data)
-        print get_data["zip"]
-        phaster_zip_cmd = "wget \"http://%s\" -O %s/%s_phaster_get.zip" % (str(get_data["zip"]), args.filter2_only_snp_vcf_dir, str(out_name[0]))
-        phaster_unzip_cmd = "unzip %s/%s_phaster_get.zip" % (args.filter2_only_snp_vcf_dir, str(out_name[0]))
-        print phaster_zip_cmd
-        print phaster_unzip_cmd
-        # for key, value in get_data.items():
-        #     print get_data["zip"][0]
-
 Pending inclusion
 """
 
 
-""" Core Pipeline: Main Function"""
 if __name__ == '__main__':
+    """
+    Main Function for Variant Calling Core Pipeline 
+    :param:
+    :return:
+    
+    This function runs "core_prep" step to generate intermediate files required for extracting core variants at "core" step. 
+    Using these core variants, a "report" step will generate the final reports and output results of the pipeline as well as runs "tree" step to generate fasttree and raxml results 
+    using the core variants consensus in Date_Time_core_results folder.
+    Steps:
+    1. core_prep
+    2. core
+    3. report
+    4. tree
+    """
 
-    """Start Timer"""
+
+    # Start Timer to use it for generating folder names and Log prefixes.
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()
     log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
     global logger
     analysis_name_log = "step_" + str(args.steps)
     logger = generate_logger(args.filter2_only_snp_vcf_dir, analysis_name_log, log_unique_time)
-    keep_logging('The Script started at: %s' % start_time, 'The Script started at: %s' % start_time, logger, 'info')
+    keep_logging('test log', 'test log', logger, 'info')
+    keep_logging('\nThe Script started at: %s' % start_time, '\nThe Script started at: %s' % start_time, logger, 'info')
     print_details = "This step will parse final vcf files(*_no_proximate_snp.vcf) generated at the end of Variant Calling Pipeline. At the end of this step, the following results will be generated and placed in output directory:\n\n" \
           "1. Final Core SNP Positions list(Variant positions that were not filtered out in any of the samples and passed all the filters)\n" \
           "2. SNP Positions that were filtered out with labels indicating the reason (Depth, FQ, MQ, Unmapped in one or other samples, Proximate SNPS, Quality of Variant) why they were filtered out.\n" \
@@ -2269,10 +2283,20 @@ if __name__ == '__main__':
           "4. Final Consensus fasta file using only Core SNP Positions\n"
     keep_logging('%s' % print_details, '%s' % print_details, logger, 'info')
 
-    """ Create Temp Directory for storing unwanted temp files generated while running script """
+    # Create temporary Directory core_temp_dir/temp for storing temporary intermediate files. Check if core_temp_dir contains all the required files to run these pipeline.
     temp_dir = args.filter2_only_snp_vcf_dir + "/temp"
     make_sure_path_exists(temp_dir)
+    filter2_only_snp_vcf_filenames = args.filter2_only_snp_vcf_filenames
+    vcf_filenames = []
+    with open(filter2_only_snp_vcf_filenames) as fp:
+        for line in fp:
+            line = line.strip()
+            line = args.filter2_only_snp_vcf_dir + line
+            vcf_filenames.append(line)
+        fp.close()
+    make_sure_files_exists(vcf_filenames)
 
+    # Read filenames. Core variants and final results will be extracted considering only these files.
     filter2_only_snp_vcf_filenames = args.filter2_only_snp_vcf_filenames
     vcf_filenames = []
     with open(filter2_only_snp_vcf_filenames) as fp:
@@ -2282,8 +2306,7 @@ if __name__ == '__main__':
             vcf_filenames.append(line)
         fp.close()
 
-    make_sure_files_exists(vcf_filenames)
-
+    # Read Config file into Config object that will be used to extract configuration settings set up in config file.
     global config_file
     if args.config:
         config_file = args.config
@@ -2294,35 +2317,41 @@ if __name__ == '__main__':
     Config.read(config_file)
     keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
 
-    ### Start the core SNP pipeline steps
-    """ core_prep step """
+    # Start Variant Calling Core Pipeline steps based on steps argument supplied.
     if "1" in args.steps:
+        """ 
+        core_prep step
+        """
+
+        # Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
         keep_logging('Gathering SNP position information from each final *_no_proximate_snp.vcf file...', 'Gathering SNP position information from each final *_no_proximate_snp.vcf file...', logger, 'info')
 
-        """
-        Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters
-        from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
-        """
+        # Extract All the unique SNO and Indel position list from final filtered *_no_proximate_snp.vcf files.
         unique_position_file = create_positions_filestep(vcf_filenames)
-
         unique_indel_position_file = create_indel_positions_filestep(vcf_filenames)
 
-        tmp_dir = "/tmp/temp_%s/" %log_unique_time
-        
-        bgzip_cmd = "for i in %s/*.vcf; do bgzip -c $i > $i%s; done" % (args.filter2_only_snp_vcf_dir, ".gz")
-        tabix_cmd = "for i in %s/*.vcf.gz; do tabix -f $i; done" % (args.filter2_only_snp_vcf_dir)
-        call(bgzip_cmd, logger)
-        call(tabix_cmd, logger)
+        # bgzip and tabix all the vcf files in core_temp_dir.
+        files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
+        tabix(files_for_tabix, "vcf", logger, Config)
 
-        """ Get the cluster option; create and run jobs based on given parameter """
+        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+            keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+                         'info')
+            if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                # Submit Phaster jobs to find ProPhage region in reference genome.
+                run_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
+
+        # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
+        tmp_dir = "/tmp/temp_%s/" % log_unique_time
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
-
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
-        """ Find ProPhage region in reference genome """
-        #run_phaster(args.reference)
 
-    """ core step """
     if "2" in args.steps:
+        """ 
+        core step 
+        """
+
+        # Set variables; check if the output from core_prep steps (*label files) exists and was completed without any errors.
         snp_unique_positions_file = args.filter2_only_snp_vcf_dir + "/unique_positions_file"
         indel_unique_positions_file = args.filter2_only_snp_vcf_dir + "/unique_indel_positions_file"
         uniq_snp_positions = sum(1 for line in open('%s' % snp_unique_positions_file))
@@ -2330,68 +2359,90 @@ if __name__ == '__main__':
         if not os.path.isfile(snp_unique_positions_file) and not os.path.isfile(indel_unique_positions_file):
             keep_logging('Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.','Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.', logger,'exception')
             exit()
-
         make_sure_label_files_exists(vcf_filenames, uniq_snp_positions, uniq_indel_positions)
 
+        # Set up Report and results directories to transfer the final results.
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
+        # Parse Phaster results file to extract phage region.
+        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+            keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+                         'info')
+            functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
+            f1 = open(functional_class_filter_positions, 'w+')
+            if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                phage_region_positions = parse_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
+                with open(phage_region_positions, 'rU') as fp:
+                    for line in fp:
+                        f1.write(line)
+                fp.close()
+            if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
+                # Find repeat regions in reference genome
+                repeat_region_positions = nucmer_repeat(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
+                with open(repeat_region_positions, 'rU') as fp:
+                    for line in fp:
+                        f1.write(line)
+                fp.close()
+            if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
+                # Mask custom region/Positions
+                if ConfigSectionMap("functional_filters", Config)['mask_file']:
+                    mask_file = ConfigSectionMap("functional_filters", Config)['mask_file']
+                    mask_positions_file = mask_regions(mask_file, args.filter2_only_snp_vcf_dir, logger, Config)
+                    with open(mask_positions_file, 'rU') as fp:
+                        for line in fp:
+                            f1.write(line)
+                    fp.close()
+            f1.close()
+        # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
         core_prep_snp(core_vcf_fasta_dir)
 
         core_prep_indel(core_vcf_fasta_dir)
 
+        # Annotate core variants. Generate SNP and Indel matrix.
         annotated_snp_matrix()
 
-        keep_logging('Wait for individual cluster jobs to finish before running the third step', 'Wait for individual cluster jobs to finish before running the third step', logger, 'info')
-
-    """ report step """
     if "3" in args.steps:
-        keep_logging('Step 3: Generate Reports and Results folder.', 'Step 3: Generate Reports and Results folder.', logger, 'info')
-        """ Generate DP barplots data """
-        #DP_analysis_barplot()
+        """ 
+        report step 
+        """
 
-        """ Analyze the FQ values of all the unique variant """
+        keep_logging('Step 3: Generate Reports and Results folder.', 'Step 3: Generate Reports and Results folder.', logger, 'info')
+
+        # Generate DP barplots data and Analyze the FQ values of all the unique variant
+        #DP_analysis_barplot()
         #FQ_analysis()
 
+        # Set up Report and results directories to transfer the final results.
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
         consensus_var_dir = core_vcf_fasta_dir + '/consensus_variant_positions'
         consensus_ref_var_dir = core_vcf_fasta_dir + '/consensus_ref_variant_positions'
-
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
         make_sure_path_exists(consensus_var_dir)
         make_sure_path_exists(consensus_ref_var_dir)
 
+        # Move results to the results directory
         move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
-
-
-        #os.system(move_data_matrix_results)
-        #os.system(move_core_vcf_fasta_results)
-        #os.system(move_consensus_var_fasta_results)
-        #os.system(move_consensus_ref_var_fasta_results)
-
         call("%s" % move_data_matrix_results, logger)
         call("%s" % move_core_vcf_fasta_results, logger)
         call("%s" % move_consensus_var_fasta_results, logger)
         call("%s" % move_consensus_ref_var_fasta_results, logger)
-
         subprocess.call(["sed -i 's/title_here/%s/g' %s/generate_diagnostics_plots.R" % (os.path.basename(args.results_dir), data_matrix_dir)], shell=True)
 
-        # Check if the variant consensus files generated are of same length
+        # Sanity Check if the variant consensus files generated are of same length
         count = 0
         for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines():
             count += 1
             ref_variants = count - 1
-
         variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
-
         for f in variant_consensus_files:
             cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
             proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
@@ -2401,14 +2452,16 @@ if __name__ == '__main__':
                 int(out2) != int(ref_variants)
             except OSError as exception:
                 if exception.errno != errno.EEXIST:
-                    print "Error generating variant consensus position file: %s\n" % f
+                    keep_logging('Error generating variant consensus position file: %s' % f,
+                                 'Error generating variant consensus position file: %s' % f, logger, 'info')
                     keep_logging('Error generating variant consensus position file: %s' % f, 'Error generating variant consensus position file: %s' % f, logger, 'exception')
+                    exit()
 
         """ Generate alignment report """
-        # alignment_report(data_matrix_dir)
-        #
-        # """ Generate core snps report """
-        # variant_report(data_matrix_dir)
+        alignment_report(data_matrix_dir)
+
+        """ Generate core snps report """
+        variant_report(data_matrix_dir)
 
         print_details = "Results for core pipeline can be found in: %s\n" \
               "Description of Results:\n" \
@@ -2416,9 +2469,13 @@ if __name__ == '__main__':
               "2. core_snp_consensus contains all the core vcf and fasta files. *_core.vcf.gz: core vcf files, *.fa and *_variants.fa: core consensus fasta file and core consensus fasta with only variant positions." % (args.results_dir)
         keep_logging(print_details, print_details, logger, 'info')
 
-    """ tree step """
     if "4" in args.steps:
+        """ 
+        tree step 
+        """
+
         keep_logging('Step 4: Generate FastTree and RAxML trees for core consensus fasta files.', 'Step 4: Generate FastTree and RAxML trees for core consensus fasta files.', logger, 'info')
+
         #parse_phaster(args.reference)
 
         gubbins_dir = args.results_dir + '/gubbins'

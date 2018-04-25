@@ -66,7 +66,7 @@ def get_filenames(dir, type, filenames, analysis, suffix):
         try:
             list_of_files = glob.glob("%s/*%s" % (dir, suffix))
             if len(list_of_files) < 1:
-                print "No fastq files with suffix %s found in reads directory %s" % (suffix, dir)
+                keep_logging('No fastq files with suffix %s found in reads directory %s' % (suffix, dir), 'No fastq files with suffix %s found in reads directory %s' % (suffix, dir), logger, 'info')
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 keep_logging('Error while listing files in reads directory.', 'Error while listing files in reads directory.', logger, 'exception')
@@ -436,8 +436,8 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
     else:
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core_tree" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
@@ -476,8 +476,6 @@ if __name__ == '__main__':
 
     global config_file
     global log_unique_time
-    print "here"
-    print "here"
     if args.output_folder != '':
         args.output_folder += '/'
     make_sure_path_exists(args.output_folder)
@@ -670,8 +668,3 @@ if __name__ == '__main__':
         keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
 
 
-    ## Changed this to individual steps log folder in Logs folder
-    #logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
-    # time_taken = datetime.now() - start_time_2
-    # keep_logging('Logs were recorded in file with extension log.txt in Logs folder placed in output folder', 'Logs were recorded in file with extension log.txt in Logs folder placed in output folder', logger, 'info')
-    # keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
