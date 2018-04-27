@@ -95,9 +95,17 @@ def extract_only_ref_variant_fasta_alternate():
     if len(f.keys()) == 1:
         ref_id = str(f.keys())
 
-    # Get Only_ref_variant positions list
+    # # Get Only_ref_variant positions list
+    # only_ref_variant = []
+    # ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, "r")
+    # for lines in ffp:
+    #     lines = lines.strip()
+    #     only_ref_variant.append(lines)
+    # ffp.close()
+
+    # Get Only_ref_variant positions list without phage regions
     only_ref_variant = []
-    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, "r")
+    ffp = open("%s/Only_ref_variant_positions_for_closely_without_phage" % args.filter2_only_snp_vcf_dir, "r")
     for lines in ffp:
         lines = lines.strip()
         only_ref_variant.append(lines)
@@ -113,9 +121,12 @@ def extract_only_ref_variant_fasta_alternate():
             core_vcf_pos_base[variants.POS] = variants.ALT
 
     ffp.close()
+
+    #troubleshoot
     # print len(core_vcf_pos_base)
     # test = "2024"
     # print str(core_vcf_pos_base[int(test)][0])
+
     fasta_string = ""
     count = 0
     for lines in only_ref_variant:

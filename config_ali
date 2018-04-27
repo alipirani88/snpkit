@@ -149,7 +149,7 @@ qual: 100
 prox: 10
 
 [functional_filters]
-apply_functional_filters: no
+apply_functional_filters: yes
 find_phage_region: yes
 find_repetitive_region: yes
 mask_region: yes
