@@ -41,6 +41,7 @@ def parser():
     optional.add_argument('-datadir', action='store', dest="datadir", help='Path to snpEff data directory')
     optional.add_argument('-snpeff_db', action='store', dest="snpeff_db", help='Name of pre-build snpEff database to use for Annotation')
     optional.add_argument('-debug_mode', action='store', dest="debug_mode", help='yes/no for debug mode')
+    optional.add_argument('-gubbins', action='store', dest="gubbins", help='yes/no for running gubbins')
     return parser
 
 
@@ -433,8 +434,16 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
 def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     if args.debug_mode == "yes":
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        if args.gubbins == "yes":
+            core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
     else:
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        if args.gubbins == "yes":
+            core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+
+
+
+
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])

@@ -16,8 +16,10 @@ def run_phaster(reference_genome, outdir, logger, Config):
             keep_logging('Running: %s' % phaster_post_cmd, 'Running: %s' % phaster_post_cmd, logger, 'debug')
             call(phaster_post_cmd, logger)
     else:
-        keep_logging("Phaster Post Json file %s/%s_phaster_post.json exists" % (outdir, str(out_name[0])), "Phaster Post Json: %s/%s_phaster_post.json exists" % (outdir, str(out_name[0])), logger,
+        keep_logging("Phaster Post Json file %s/%s_phaster_post.json already exists. Skipping Phaster Job submission. To get latest Phaster results remove this file and run core_prep step again." % (outdir, str(out_name[0])), "Phaster Post Json: %s/%s_phaster_post.json exists. Skipping Phaster Job submission. To get latest Phaster results remove this file and run core_prep step again." % (outdir, str(out_name[0])), logger,
                      'info')
+
+
 def parse_phaster(reference_genome, outdir, logger, Config):
     out_name = (os.path.basename(reference_genome)).split('.')
     if os.path.isfile("%s/%s_phaster_post.json" % (outdir, str(out_name[0]))) and os.stat("%s/%s_phaster_post.json" % (outdir, str(out_name[0]))).st_size != 0:
@@ -28,19 +30,59 @@ def parse_phaster(reference_genome, outdir, logger, Config):
             phaster_get_cmd = "wget \"http://phaster.ca/phaster_api?acc=%s\" -O %s/%s" % (
             data["job_id"], outdir, str(out_name[0]) + "_phaster_get.json")
             if not os.path.isfile("%s/%s_phaster_get.json" % (outdir, str(out_name[0]))):
-                keep_logging('Running: %s' % phaster_get_cmd, 'Running: %s' % phaster_get_cmd, logger, 'debug')
-                call(phaster_get_cmd, logger)
-            else:
+                keep_logging('Running: %s to get results from Phaster server' % phaster_get_cmd, 'Running: %s to get results from Phaster server' % phaster_get_cmd, logger, 'debug')
                 call(phaster_get_cmd, logger)
                 with open('%s/%s' % (outdir, str(out_name[0]) + "_phaster_get.json")) as json_get_data:
                     get_data = json.load(json_get_data)
-                    phaster_get_zip_cmd = "wget \"http://%s\" -O %s/%s_phaster_get.zip" % (str(get_data["zip"]), outdir, str(out_name[0]))
-                    phaster_unzip_cmd = "unzip -o %s/%s_phaster_get.zip" % (outdir, str(out_name[0]))
+                    if get_data["status"] == "Complete":
+                        keep_logging("Phaster Get Json file exists... The status of Phaster job id %s is %s" % (
+                            get_data["job_id"], get_data["status"]),
+                                     "Phaster Get Json file exists... The status of Phaster job id %s is %s" % (
+                                         get_data["job_id"], get_data["status"]), logger,
+                                     'info')
+                        phaster_get_zip_cmd = "wget \"http://%s\" -O %s/%s_phaster_get.zip" % (str(get_data["zip"]), outdir, str(out_name[0]))
+                        phaster_unzip_cmd = "unzip -o %s/%s_phaster_get.zip" % (outdir, str(out_name[0]))
+                        keep_logging('Running: %s' % phaster_get_zip_cmd, 'Running: %s' % phaster_get_zip_cmd, logger,
+                                     'debug')
+                        keep_logging('Running: %s' % phaster_unzip_cmd, 'Running: %s' % phaster_get_cmd, logger, 'debug')
+                        call(phaster_get_zip_cmd, logger)
+                        call(phaster_unzip_cmd, logger)
+                    else:
+                        keep_logging("Phaster Get Json file exists... The status of Phaster job id %s is %s" % (
+                        get_data["job_id"], get_data["status"]),
+                                     "Phaster Get Json file exists... The status of Phaster job id %s is %s" % (
+                                     get_data["job_id"], get_data["status"]), logger,
+                                     'info')
                 json_get_data.close()
-                keep_logging('Running: %s' % phaster_get_zip_cmd, 'Running: %s' % phaster_get_zip_cmd, logger, 'debug')
-                keep_logging('Running: %s' % phaster_unzip_cmd, 'Running: %s' % phaster_get_cmd, logger, 'debug')
-                call(phaster_get_zip_cmd, logger)
-                call(phaster_unzip_cmd, logger)
+
+            elif os.path.isfile("%s/%s_phaster_get.json" % (outdir, str(out_name[0]))) and os.stat("%s/%s_phaster_get.json" % (outdir, str(out_name[0]))).st_size != 0:
+                #call(phaster_get_cmd, logger)
+                with open('%s/%s' % (outdir, str(out_name[0]) + "_phaster_get.json")) as json_get_data:
+                    get_data = json.load(json_get_data)
+                    if get_data["status"] == "Complete":
+                        keep_logging("Phaster Get Json file exists... The status of Phaster job id %s is %s" % (
+                            get_data["job_id"], get_data["status"]),
+                                     "Phaster Get Json file exists... The status of Phaster job id %s is %s" % (
+                                         get_data["job_id"], get_data["status"]), logger,
+                                     'info')
+                        phaster_get_zip_cmd = "wget \"http://%s\" -O %s/%s_phaster_get.zip" % (str(get_data["zip"]), outdir, str(out_name[0]))
+                        phaster_unzip_cmd = "unzip -o %s/%s_phaster_get.zip" % (outdir, str(out_name[0]))
+                        keep_logging('Running: %s' % phaster_get_zip_cmd, 'Running: %s' % phaster_get_zip_cmd, logger,
+                                     'debug')
+                        keep_logging('Running: %s' % phaster_unzip_cmd, 'Running: %s' % phaster_get_cmd, logger, 'debug')
+                        call(phaster_get_zip_cmd, logger)
+                        call(phaster_unzip_cmd, logger)
+                    else:
+                        keep_logging("Phaster Get Json file exists... The status of Phaster job id %s is %s. Phaster job is still running or Phaster get json results were empty depending on the Phaster Job Status." % (
+                            get_data["job_id"], get_data["status"]),
+                                     "Phaster Get Json file exists... The status of Phaster job id %s is %s. Phaster job is still running or Phaster get json results were empty depending on the Phaster Job Status." % (
+                                         get_data["job_id"], get_data["status"]), logger,
+                                     'info')
+                json_get_data.close()
+                # keep_logging('Running: %s' % phaster_get_zip_cmd, 'Running: %s' % phaster_get_zip_cmd, logger, 'debug')
+                # keep_logging('Running: %s' % phaster_unzip_cmd, 'Running: %s' % phaster_get_cmd, logger, 'debug')
+                # call(phaster_get_zip_cmd, logger)
+                # call(phaster_unzip_cmd, logger)
     if os.path.isfile("%s/summary.txt" % outdir):
         keep_logging('Extracting Phage region information from %s/summary.txt' % outdir, 'Extracting Phage region information from %s/summary.txt' % outdir, logger, 'info')
         get_phage_regions = "sed -n -e '/REGION/,$p' %s/summary.txt | awk 'NR>2' | awk -F' ' '{print $5}'" % outdir
@@ -58,8 +100,8 @@ def parse_phaster(reference_genome, outdir, logger, Config):
         for pos in phage_positions:
             f_open.write(str(pos) + "\n")
     else:
-        keep_logging('Phaster output file %s/summary.txt not found' % outdir,
-                     'Phaster output file %s/summary.txt not found' % outdir, logger, 'exception')
+        keep_logging('Phaster output file %s/summary.txt not found. Phaster job is still running or Phaster get json results were empty.' % outdir,
+                     'Phaster output file %s/summary.txt not found. Phaster job is still running or Phaster get json results were empty.' % outdir, logger, 'exception')
         exit()
 
     keep_logging('Number of phage Positions: %s' % len(phage_positions),

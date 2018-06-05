@@ -5,8 +5,8 @@ import re
 import os
 import csv
 import subprocess
-## Hacky way yo append. Instead Add this path to PYTHONPATH Variable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+""" Hacky way yo append. Instead Add this path to PYTHONPATH Variable """
 from collections import OrderedDict
 from collections import defaultdict
 from joblib import Parallel, delayed
@@ -30,6 +30,12 @@ from Bio import SeqIO
 from phage_detection import *
 from find_repeats import *
 from mask_regions import *
+from fasttree import fasttree
+from gubbins import gubbins
+from raxml import raxml
+from pyfasta import Fasta
+from core_prep_sanity_checks import *
+#from core_prep import *
 
 
 # Parse Command line Arguments
@@ -50,6 +56,7 @@ optional.add_argument('-numcores', action='store', dest="numcores",
                     help='Number of cores to use on local system for parallel-local parameter')
 optional.add_argument('-remove_temp', action='store', dest="remove_temp",
                     help='Remove Temporary files generated during the run')
+optional.add_argument('-gubbins', action='store', dest="gubbins", help='yes/no for running gubbins')
 required.add_argument('-reference', action='store', dest="reference",
                     help='Path to Reference Fasta file for consensus generation')
 required.add_argument('-steps', action='store', dest="steps",
@@ -67,97 +74,7 @@ optional.add_argument('-debug_mode', action='store', dest="debug_mode",
                     help='yes/no for debug mode')
 args = parser.parse_args()
 
-""" Sanity Check Methods"""
-def make_sure_path_exists(out_path):
-    """
-    Fuction to make sure output folder exists. If not, create it.
-    :param: out_path
-    :return: null/exception
-    """
-    try:
-        os.makedirs(out_path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
-                         '\nErrors in output folder path! please change the output path or analysis name\n', logger,
-                         'info')
-            exit()
-
-def make_sure_files_exists(vcf_file_array):
-    """
-    Function to make sure the variant call output files exists and are not empty.
-    :param: vcf_file_array
-    :return: null or exception
-    """
-    not_found_files = []
-    for files in vcf_filenames:
-        ori_unmapped_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                          "unmapped.bed_positions")
-        ori_proximate_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                           "filter2_final.vcf_no_proximate_snp.vcf_positions_array")
-        ori_variant_position_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                                  "filter2_final.vcf_no_proximate_snp.vcf")
-        ori_5bp_mpileup_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                             "aln_mpileup_raw.vcf_5bp_indel_removed.vcf")
-        ori_mpileup_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                         "aln_mpileup_raw.vcf")
-        ori_filter_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                        "filter2_final.vcf")
-        ori_indel_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                       "filter2_indel_final.vcf")
-
-        if os.path.isfile(ori_unmapped_file) and os.path.isfile(ori_proximate_file) and os.path.isfile(
-                ori_variant_position_file) and os.path.isfile(ori_5bp_mpileup_file) and os.path.isfile(
-                ori_mpileup_file) and os.path.isfile(ori_filter_file) and os.path.isfile(ori_indel_file):
-            continue
-        else:
-            not_found_files.append(files)
-    if len(not_found_files) > 0:
-        for i in not_found_files:
-            keep_logging('Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
-                         'Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), logger, 'exception')
-        exit()
-
-def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_positions):
-    """
-    Function to make sure the variant call output files exists and are not empty.
-    :param: vcf_file_array
-    :return: null or exception
-    """
-    not_found_files = []
-    found_incomplete = []
-    for files in vcf_filenames:
-
-        snps_label_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                                  "filter2_final.vcf_no_proximate_snp.vcf_positions_label")
-
-        indel_label_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
-                                        "filter2_indel_final.vcf_indel_positions_label")
-
-        num_snps_label_lines = sum(1 for line in open('%s' % snps_label_file))
-        num_indel_label_lines = sum(1 for line in open('%s' % indel_label_file))
-
-        if os.path.isfile(snps_label_file) and os.path.isfile(indel_label_file):
-            if num_snps_label_lines == uniq_snp_positions and num_indel_label_lines == uniq_indel_positions:
-                continue
-            else:
-                found_incomplete.append(files)
-        else:
-            not_found_files.append(files)
-            # keep_logging('Error finding variant calling output files: %s' % files, 'Error finding variant calling output files: %s' % files, logger, 'exception')
-    if len(not_found_files) > 0:
-        for i in not_found_files:
-            keep_logging('Error finding core_prep output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
-                         'Error finding core_prep output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), logger, 'exception')
-        exit()
-
-    if len(found_incomplete) > 0:
-        for i in found_incomplete:
-            tmp_file = os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
-            keep_logging('core_prep step failed for: %s. Rerun %s.pbs' % (tmp_file, i),
-                         'core_prep step failed for: %s. Rerun %s.pbs' % (tmp_file, i), logger, 'exception')
-        exit()
-
+""" Core Prep Methods"""
 def run_command(i):
     """
     Function to run each command and is run as a part of python Parallel mutiprocessing method.
@@ -484,6 +401,9 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
                 command_array.append(lines)
         fpp.close()
         call("bash %s" % command_file, logger)
+
+
+""" core methods """
 
 def generate_paste_command():
     """
@@ -940,7 +860,7 @@ def generate_position_label_data_matrix():
             f_bar_perc.write(bar_perc_string)
         f_bar_count.close()
         f_bar_perc.close()
-        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"
+        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.filter2_only_snp_vcf_dir))
         barplot_R_file = open("%s/bargraph.R" % args.filter2_only_snp_vcf_dir, 'w+')
         barplot_R_file.write(bargraph_R_script)
         keep_logging('Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
@@ -1230,7 +1150,7 @@ def generate_indel_position_label_data_matrix():
             f_bar_perc.write(bar_perc_string)
         f_bar_count.close()
         f_bar_perc.close()
-        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_indel_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"
+        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_indel_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot_indel.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"  % (args.filter2_only_snp_vcf_dir, os.path.basename(args.filter2_only_snp_vcf_dir))
         barplot_R_file = open("%s/bargraph_indel.R" % args.filter2_only_snp_vcf_dir, 'w+')
         barplot_R_file.write(bargraph_R_script)
         keep_logging('Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
@@ -1244,7 +1164,6 @@ def generate_indel_position_label_data_matrix():
     keep_logging('Running: Generating Barplot statistics data matrices...', 'Running: Generating Barplot statistics data matrices...', logger, 'info')
     barplot_indel_stats()
 
-""" core methods """
 def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter):
 
     """ Generate jobs/scripts that creates core consensus fasta file.
@@ -1342,6 +1261,122 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filte
             job_name = os.path.basename(i)
             job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -functional_filter %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, functional_filter)
             job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+
+
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        #os.system("bash command_file")
+        call("bash %s" % command_file, logger)
+
+def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, config_file):
+
+    """ Generate jobs/scripts that creates core consensus fasta file.
+
+    This function will generate and run scripts/jobs to create core consensus fasta file of only core variant positions.
+    Input for Fasttree, Beast and pairwise variant analysis.
+
+    :param jobrun: Based on this value all the job/scripts will run on "cluster": either on single cluster, "parallel-local": run in parallel on local system, "local": run on local system, "parallel-cluster": submit parallel jobs on cluster.
+    :param vcf_filenames: list of final vcf filenames i.e *_no_proximate_snp.vcf. These files are the final output of variant calling step for each sample.
+    :return:
+    :raises:
+    """
+    if jobrun == "parallel-cluster":
+        """
+        Supports only PBS clusters for now.
+        """
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -config %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, config_file)
+            job_file_name = "%s_ref_allele_variants_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
+            #os.system("qsub %s" % i)
+            call("qsub %s" % i, logger)
+
+
+    elif jobrun == "parallel-local" or jobrun == "cluster":
+        """
+        Generate a Command list of each job and run it in parallel on different cores available on local system
+        """
+        command_array = []
+        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -config %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, config_file)
+            job_file_name = "%s_ref_allele_variants_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        if args.numcores:
+            num_cores = int(num_cores)
+        else:
+            num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
+
+    # elif jobrun == "cluster":
+    #     command_array = []
+    #     command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+    #     f3 = open(command_file, 'w+')
+    #     for i in vcf_filenames:
+    #         job_name = os.path.basename(i)
+    #         job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+    #         job_file_name = "%s_fasta.pbs" % (i)
+    #         f1=open(job_file_name, 'w+')
+    #         f1.write(job_print_string)
+    #         f1.close()
+    #     pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+    #     pbs_scripts = glob.glob(pbs_dir)
+    #     for i in pbs_scripts:
+    #         f3.write("bash %s\n" % i)
+    #     f3.close()
+    #     with open(command_file, 'r') as fpp:
+    #         for lines in fpp:
+    #             lines = lines.strip()
+    #             command_array.append(lines)
+    #     fpp.close()
+    #     os.system("bash %s/command_file" % args.filter2_only_snp_vcf_dir)
+    else:
+        """
+        Generate a Command list of each job and run it on local system one at a time
+        """
+        command_array = []
+        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+
+
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -config %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, config_file)
+            job_file_name = "%s_ref_allele_variants_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
             f1.close()
@@ -1738,8 +1773,34 @@ def extract_only_ref_variant_fasta_from_reference():
 
     pattern = re.compile(r'\s+')
     fasta_string = re.sub(pattern, '', fasta_string)
-    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '')) + fasta_string + "\n"
-    fp = open("%s/%s_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', ''))), 'w+')
+    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '').replace('.fa', '')) + fasta_string + "\n"
+    fp = open("%s/%s_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', '').replace('.fa', ''))), 'w+')
+    fp.write(final_fasta_string)
+    fp.close()
+
+def extract_only_ref_variant_fasta_from_reference_allele_variant():
+    ffp = open("%s/unique_positions_file" % args.filter2_only_snp_vcf_dir).readlines()
+    #unique_positions_array = []
+
+    fasta_string = ""
+    #firstLine = ffp.pop(0)
+    for lines in ffp:
+        lines = lines.strip()
+        #unique_positions_array.append(lines)
+        extract_base = "grep -v \'>\' %s | tr -d \'\\n\'| cut -b%s" % (args.reference, lines)
+        proc = subprocess.Popen([extract_base], stdout=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate()
+        out = out.strip()
+        fasta_string = fasta_string + out
+        if not out:
+            print lines
+            keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
+            exit()
+
+    pattern = re.compile(r'\s+')
+    fasta_string = re.sub(pattern, '', fasta_string)
+    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '').replace('.fa', '')) + fasta_string + "\n"
+    fp = open("%s/%s_allele_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', '').replace('.fa', ''))), 'w+')
     fp.write(final_fasta_string)
     fp.close()
 
@@ -2233,18 +2294,29 @@ def annotated_snp_matrix():
         # print gt_string_array
         for i in gt_string_array:
             if str(code_string_array[count]) == "0" or str(code_string_array[count]) == "1" or str(code_string_array[count]) == "2":
-                ntd_string = ntd_string + "," + str(i)
+                ntd_string = ntd_string + "\t" + str(i)
             if code_string_array[count] == "-1":
-                ntd_string = ntd_string + "," + "-"
+                ntd_string = ntd_string + "\t" + "-"
             if str(code_string_array[count]) == "3":
-                ntd_string = ntd_string + "," + "N"
+                ntd_string = ntd_string + "\t" + "N"
             count += 1
         print_string = print_string + ntd_string + "\n"
+        print_string.replace(',;,', '\t')
+        print_string.replace(';,', '\t')
         fp_allele_new.write(print_string)
 
     fp_code.close()
     fp_allele.close()
     fp_allele_new.close()
+
+
+
+
+
+
+
+
+
 
 
     ##Indel
@@ -2424,7 +2496,8 @@ def core_prep_indel(core_vcf_fasta_dir):
 """ report methods """
 def alignment_report(data_matrix_dir):
     keep_logging('Generating Alignment report...', 'Generating Alignment report...', logger, 'info')
-    varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
+    varcall_dir = os.path.dirname(args.results_dir)
+    print varcall_dir
     report_string = ""
     header = "Sample,QC-passed reads,Mapped reads,% mapped reads,mean depth,%_bases_above_5,%_bases_above_10,%_bases_above_15,unmapped_positions,READ_PAIR_DUPLICATES,READ_PAIR_OPTICAL_DUPLICATES,unmapped reads,% unmapped reads"
     fp = open("%s/Report_alignment.txt" % (data_matrix_dir), 'w+')
@@ -2467,52 +2540,52 @@ def variant_report(data_matrix_dir):
     fp.close()
     keep_logging('Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, 'Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, logger, 'info')
 
-""" tree methods """
-def fasttree(tree_dir, input_fasta, cluster):
-    keep_logging('Running Fasttree on input: %s' % input_fasta, 'Running Fasttree on input: %s' % input_fasta, logger, 'info')
-    fasttree_cmd = "%s/%s/%s -nt %s > %s/%s_FastTree.tree" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("fasttree", Config)['fasttree_bin'], ConfigSectionMap("fasttree", Config)['base_cmd'], input_fasta, tree_dir, (os.path.basename(input_fasta)).replace('.fa', ''))
-    keep_logging('%s' % fasttree_cmd, '%s' % fasttree_cmd, logger, 'info')
-    if cluster == "parallel-local" or cluster == "local":
-        call("cd %s" % tree_dir, logger)
-        call(fasttree_cmd, logger)
-    elif cluster == "cluster":
-        call("cd %s" % tree_dir, logger)
-        call(fasttree_cmd, logger)
-    elif cluster == "parallel-cluster":
-        job_file_name = "%s/fasttree_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
-        job_name = os.path.basename(job_file_name)
-        job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, fasttree_cmd)
-        f1=open(job_file_name, 'w+')
-        f1.write(job_print_string)
-        f1.close()
-        call("qsub %s" % job_file_name, logger)
+# """ tree methods """
+# def fasttree(tree_dir, input_fasta, cluster):
+#     keep_logging('Running Fasttree on input: %s' % input_fasta, 'Running Fasttree on input: %s' % input_fasta, logger, 'info')
+#     fasttree_cmd = "%s/%s/%s -nt %s > %s/%s_FastTree.tree" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("fasttree", Config)['fasttree_bin'], ConfigSectionMap("fasttree", Config)['base_cmd'], input_fasta, tree_dir, (os.path.basename(input_fasta)).replace('.fa', ''))
+#     keep_logging('%s' % fasttree_cmd, '%s' % fasttree_cmd, logger, 'info')
+#     if cluster == "parallel-local" or cluster == "local":
+#         call("cd %s" % tree_dir, logger)
+#         call(fasttree_cmd, logger)
+#     elif cluster == "cluster":
+#         call("cd %s" % tree_dir, logger)
+#         call(fasttree_cmd, logger)
+#     elif cluster == "parallel-cluster":
+#         job_file_name = "%s/fasttree_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
+#         job_name = os.path.basename(job_file_name)
+#         job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, fasttree_cmd)
+#         f1=open(job_file_name, 'w+')
+#         f1.write(job_print_string)
+#         f1.close()
+#         call("qsub %s" % job_file_name, logger)
+#
+# def raxml(tree_dir, input_fasta):
+#     keep_logging('Running RAXML on input: %s' % input_fasta, 'Running RAXML on input: %s' % input_fasta, logger, 'info')
+#     raxml_cmd = "%s/%s/%s %s -s %s -n %s_raxML" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'], ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta, (os.path.basename(input_fasta)).replace('.fa', ''))
+#     keep_logging('%s' % raxml_cmd, '%s' % raxml_cmd, logger, 'info')
+#     if args.jobrun == "parallel-local" or args.jobrun == "local":
+#         call("cd %s" % tree_dir, logger)
+#         call(raxml_cmd, logger)
+#     elif args.jobrun == "cluster":
+#         call("cd %s" % tree_dir, logger)
+#         call(raxml_cmd, logger)
+#     elif args.jobrun == "parallel-cluster":
+#         job_file_name = "%s/raxml_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
+#         job_name = os.path.basename(job_file_name)
+#         job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, raxml_cmd)
+#         f1=open(job_file_name, 'w+')
+#         f1.write(job_print_string)
+#         f1.close()
+#         #os.system("qsub %s" % job_file_name)
+#         call("qsub %s" % job_file_name, logger)
 
-def raxml(tree_dir, input_fasta):
-    keep_logging('Running RAXML on input: %s' % input_fasta, 'Running RAXML on input: %s' % input_fasta, logger, 'info')
-    raxml_cmd = "%s/%s/%s %s -s %s -n %s_raxML" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'], ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta, (os.path.basename(input_fasta)).replace('.fa', ''))
-    keep_logging('%s' % raxml_cmd, '%s' % raxml_cmd, logger, 'info')
-    if args.jobrun == "parallel-local" or args.jobrun == "local":
-        call("cd %s" % tree_dir, logger)
-        call(raxml_cmd, logger)
-    elif args.jobrun == "cluster":
-        call("cd %s" % tree_dir, logger)
-        call(raxml_cmd, logger)
-    elif args.jobrun == "parallel-cluster":
-        job_file_name = "%s/raxml_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
-        job_name = os.path.basename(job_file_name)
-        job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, raxml_cmd)
-        f1=open(job_file_name, 'w+')
-        f1.write(job_print_string)
-        f1.close()
-        #os.system("qsub %s" % job_file_name)
-        call("qsub %s" % job_file_name, logger)
-
-def gubbins(gubbins_dir, input_fasta):
-    keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta, logger,
-                 'info')
-    call("cd %s" % ConfigSectionMap("gubbins", Config)['gubbins_bin'], logger)
-    gubbins_cmd = "%s/%s --prefix %s/%s %s" % (ConfigSectionMap("gubbins", Config)['gubbins_bin'], ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir, (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
-    call(gubbins_cmd, logger)
+# def gubbins(gubbins_dir, input_fasta):
+#     keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta, logger,
+#                  'info')
+#     call("cd %s" % ConfigSectionMap("gubbins", Config)['gubbins_bin'], logger)
+#     gubbins_cmd = "%s/%s --prefix %s/%s %s" % (ConfigSectionMap("gubbins", Config)['gubbins_bin'], ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir, (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
+#     call(gubbins_cmd, logger)
 
 
 """
@@ -2627,7 +2700,9 @@ if __name__ == '__main__':
     keep_logging('%s' % print_details, '%s' % print_details, logger, 'info')
 
     # Create temporary Directory core_temp_dir/temp for storing temporary intermediate files. Check if core_temp_dir contains all the required files to run these pipeline.
+    global temp_dir
     temp_dir = args.filter2_only_snp_vcf_dir + "/temp"
+
     make_sure_path_exists(temp_dir)
     filter2_only_snp_vcf_filenames = args.filter2_only_snp_vcf_filenames
     vcf_filenames = []
@@ -2679,7 +2754,7 @@ if __name__ == '__main__':
         tabix(files_for_tabix, "vcf", logger, Config)
 
         if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-            keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+            keep_logging('Functional class filter is set to yes. Preparing Functional class filters\n', 'Functional class filter is set to yes. Preparing Functional class filters\n', logger,
                          'info')
             if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
                 # Submit Phaster jobs to find ProPhage region in reference genome.
@@ -2763,6 +2838,13 @@ if __name__ == '__main__':
         # Annotate core variants. Generate SNP and Indel matrix.
         annotated_snp_matrix()
 
+        # Read new allele matrix and generate fasta; generate a seperate function
+        keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')
+
+        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
+
+        extract_only_ref_variant_fasta_from_reference_allele_variant()
+
     if "3" in args.steps:
         """ 
         report step 
@@ -2776,27 +2858,45 @@ if __name__ == '__main__':
 
         # Set up Report and results directories to transfer the final results.
         data_matrix_dir = args.results_dir + '/data_matrix'
+        data_matrix_snpeff_dir = data_matrix_dir + '/snpEff_results'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
         consensus_var_dir = core_vcf_fasta_dir + '/consensus_variant_positions'
+        core_vcf_dir = core_vcf_fasta_dir + '/core_vcf'
+        consensus_allele_var_dir = core_vcf_fasta_dir + '/consensus_allele_variant_positions'
+        consensus_ref_allele_var_dir = core_vcf_fasta_dir + '/consensus_ref_allele_variant_positions'
         consensus_ref_var_dir = core_vcf_fasta_dir + '/consensus_ref_variant_positions'
         make_sure_path_exists(data_matrix_dir)
+        make_sure_path_exists(data_matrix_snpeff_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
         make_sure_path_exists(consensus_var_dir)
+        make_sure_path_exists(core_vcf_dir)
+        make_sure_path_exists(consensus_allele_var_dir)
+        make_sure_path_exists(consensus_ref_allele_var_dir)
         make_sure_path_exists(consensus_ref_var_dir)
         reference_base = os.path.basename(args.reference).split('.')[0]
         # Move results to the results directory
-        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
+        move_data_matrix_results = "cp -r %s/*.csv %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
+        move_core_vcf = "mv %s/*_core.vcf.gz %s/" % (core_vcf_fasta_dir, core_vcf_dir)
+        move_consensus_allele_var_fasta_results = "mv %s/*allele_variants.fa %s/" % (consensus_var_dir, consensus_allele_var_dir)
+        move_consensus_ref_allele_var_fasta_results = "mv %s/*_ref_allele_variants.fa %s/" % (
+            consensus_allele_var_dir, consensus_ref_allele_var_dir)
+        move_snpeff_results = "mv %s/*ANN* %s/" % (data_matrix_dir, data_matrix_snpeff_dir)
         copy_reference = "cp %s %s/%s.fa" % (args.reference, consensus_ref_var_dir, reference_base)
+        copy_reference = "cp %s %s/%s.fa" % (args.reference, consensus_ref_allele_var_dir, reference_base)
 
         call("%s" % move_data_matrix_results, logger)
         call("%s" % move_core_vcf_fasta_results, logger)
         call("%s" % move_consensus_var_fasta_results, logger)
         call("%s" % move_consensus_ref_var_fasta_results, logger)
+        call("%s" % move_core_vcf, logger)
+        call("%s" % move_consensus_allele_var_fasta_results, logger)
+        call("%s" % move_consensus_ref_allele_var_fasta_results, logger)
         call("%s" % copy_reference, logger)
+        call("%s" % move_snpeff_results, logger)
         subprocess.call(["sed -i 's/title_here/%s/g' %s/generate_diagnostics_plots.R" % (os.path.basename(args.results_dir), data_matrix_dir)], shell=True)
 
         # Sanity Check if the variant consensus files generated are of same length
@@ -2849,23 +2949,40 @@ if __name__ == '__main__':
 
         prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
         prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
+            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+            reference_base)
 
         prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
         prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
+        prepare_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_allele_variant_positions/*_allele_variants.fa > %s" % (
+        args.results_dir, prepare_allele_var_consensus_input)
+        prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (
+            args.results_dir, prepare_ref_allele_var_consensus_input)
 
         call("%s" % prepare_ref_var_consensus_input_cmd, logger)
         call("%s" % prepare_var_consensus_input_cmd, logger)
+        call("%s" % prepare_allele_var_consensus_input_cmd, logger)
+        call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
         # os.system(prepare_ref_var_consensus_input_cmd)
         # os.system(prepare_var_consensus_input_cmd)
 
-        fasttree(tree_dir, prepare_ref_var_consensus_input, args.jobrun)
-        fasttree(tree_dir, prepare_var_consensus_input, args.jobrun)
+        fasttree(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
+        fasttree(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
+        fasttree(tree_dir, prepare_allele_var_consensus_input, args.jobrun, logger, Config)
+        fasttree(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
 
-        raxml(tree_dir, prepare_ref_var_consensus_input)
-        raxml(tree_dir, prepare_var_consensus_input)
+        raxml(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
+        raxml(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
+        raxml(tree_dir, prepare_allele_var_consensus_input, args.jobrun, logger, Config)
+        raxml(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
 
-        # Disabling Gubbins function due to installation issues
-        #gubbins(gubbins_dir, prepare_ref_var_consensus_input)
+        if args.gubbins and args.gubbins == "yes":
+            gubbins(gubbins_dir, prepare_ref_var_consensus_input, logger, Config)
+            gubbins(gubbins_dir, prepare_ref_allele_var_consensus_input, logger, Config)
 
     time_taken = datetime.now() - start_time_2
     if args.remove_temp:
