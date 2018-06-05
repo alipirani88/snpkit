@@ -31,6 +31,7 @@ from phage_detection import *
 from find_repeats import *
 from mask_regions import *
 
+
 # Parse Command line Arguments
 parser = argparse.ArgumentParser(description='Parsing filtered VCF files and investigating Variants to determine the reason why it was filtered out from the final list')
 required = parser.add_argument_group('Required arguments')
@@ -60,6 +61,8 @@ required.add_argument('-results_dir', action='store', dest="results_dir",
                     help='Path to Core results directory')
 required.add_argument('-config', action='store', dest="config",
                     help='Path to config file')
+# optional.add_argument('-db', action='store', dest="snpeff_db",
+#                     help='snpEff prebuilt reference database to use for variant annotations. The database will be downloaded in /data/ folder under snpEff install directory. Make sure if you are providing the name of pre-built snpEff reference database then the build option of snpeff section in config section is set to \"no\"')
 optional.add_argument('-debug_mode', action='store', dest="debug_mode",
                     help='yes/no for debug mode')
 args = parser.parse_args()
@@ -1242,7 +1245,7 @@ def generate_indel_position_label_data_matrix():
     barplot_indel_stats()
 
 """ core methods """
-def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
+def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter):
 
     """ Generate jobs/scripts that creates core consensus fasta file.
 
@@ -1260,7 +1263,7 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
         """
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -functional_filter %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, functional_filter)
             job_file_name = "%s_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -1283,7 +1286,7 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
         f3 = open(command_file, 'w+')
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -functional_filter %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, functional_filter)
             job_file_name = "%s_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -1337,7 +1340,7 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
 
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -functional_filter %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, functional_filter)
             job_file_name = "%s_fasta.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
@@ -1462,20 +1465,27 @@ def create_job_DP(jobrun, vcf_filenames):
         call("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir, logger)
 
 def generate_vcf_files():
-    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
-        keep_logging('Removing Variants falling in Putative Phaster Phage Regions\n', 'Removing Variants falling in Putative Phaster Phage Regions\n', logger,
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+        keep_logging('Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions, 'Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions, logger,
                      'info')
-        phage_positions = []
-        phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
-        with open(phage_region_positions, 'rU') as fp:
-            for line in fp:
-                phage_positions.append(line.strip())
-        fp.close()
+        # phage_positions = []
+        # phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
+        # with open(phage_region_positions, 'rU') as fp:
+        #     for line in fp:
+        #         phage_positions.append(line.strip())
+        # fp.close()
+
+
+        functional_filter_pos_array = []
+        with open(functional_class_filter_positions, 'rU') as f_functional:
+            for line_func in f_functional:
+                functional_filter_pos_array.append(line_func.strip())
+
         ref_variant_position_array = []
         ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
         for line in ffp:
             line = line.strip()
-            if line not in phage_positions:
+            if line not in functional_filter_pos_array:
                 ref_variant_position_array.append(line)
         ffp.close()
     else:
@@ -1487,7 +1497,7 @@ def generate_vcf_files():
         ffp.close()
     print len(ref_variant_position_array)
 
-    f_file = open("%s/Only_ref_variant_positions_for_closely_without_phage" % args.filter2_only_snp_vcf_dir, 'w+')
+    f_file = open("%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir, 'w+')
     for pos in ref_variant_position_array:
         f_file.write(pos + '\n')
     f_file.close()
@@ -1702,10 +1712,16 @@ def DP_analysis_barplot():
         f_bar_perc.write(bar_perc_string)
 
 def extract_only_ref_variant_fasta(core_vcf_fasta_dir):
-    create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir)
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        functional_filter = "yes"
+    create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter)
 
 def extract_only_ref_variant_fasta_from_reference():
-    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir).readlines()
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and \
+            ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        ffp = open("%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir).readlines()
+    else:
+        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir).readlines()
     fasta_string = ""
     #firstLine = ffp.pop(0)
     for lines in ffp:
@@ -1729,6 +1745,7 @@ def extract_only_ref_variant_fasta_from_reference():
 
 def prepare_snpEff_db(reference_basename):
     keep_logging('Preparing snpEff database requirements.', 'Preparing snpEff database requirements.', logger, 'info')
+    reference_basename = (os.path.basename(args.reference)).split(".")
     if os.path.isfile("%s/%s/snpEff.config" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'])):
         #os.system("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir))
         keep_logging("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), "cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger, 'debug')
@@ -1739,8 +1756,8 @@ def prepare_snpEff_db(reference_basename):
     make_sure_path_exists("%s/%s/data/%s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]))
     make_sure_path_exists("%s/%s/data/genomes/" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
     #os.system("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
-    keep_logging("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
-    call("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
+    keep_logging("cp %s %s/%s/data/genomes/%s.fa" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), "cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
+    call("cp %s %s/%s/data/genomes/%s.fa" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
     with open("%s/snpEff.config" % args.filter2_only_snp_vcf_dir, "a") as conf_file:
         conf_file.write("\n\n##Building Custom Database###\n%s.genome\t: %s\n\n" % (reference_basename[0], reference_basename[0]))
     conf_file.close()
@@ -1753,32 +1770,63 @@ def prepare_snpEff_db(reference_basename):
                                                                ConfigSectionMap("bin_path", Config)['binbase'],
                                                                ConfigSectionMap("snpeff", Config)['snpeff_bin'],
                                                                reference_basename[0]), logger, 'debug')
+        keep_logging("cp %s/%s.gb* %s/%s/data/%s/genes.gbk" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]),
+                     "cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
+                                                               ConfigSectionMap("bin_path", Config)['binbase'],
+                                                               ConfigSectionMap("snpeff", Config)['snpeff_bin'],
+                                                               reference_basename[0]), logger, 'debug')
         call("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
+        call("cp %s/%s.gb* %s/%s/data/%s/genes.gbk" % (
         os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
         ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
     else:
         keep_logging("Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]),
                          "Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]), logger, 'exception')
         exit()
-    keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
-    call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
+    #keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
+    keep_logging("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
+
+    #call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
+    call("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
     keep_logging('Finished Preparing snpEff database requirements.', 'Finished Preparing snpEff database requirements.', logger, 'info')
 
 def variant_annotation():
     keep_logging('Annotating Variants using snpEff.', 'Annotating Variants using snpEff.', logger, 'info')
-    reference_basename = (os.path.basename(args.reference)).split(".")
-    print reference_basename[0]
-    prepare_snpEff_db(reference_basename)
+
+    if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
+        if ConfigSectionMap("snpeff", Config)['db']:
+            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            proc = subprocess.Popen(["java -jar %s/%s/%s databases | grep %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
+                                    stdout=subprocess.PIPE, shell=True)
+            (out2, err2) = proc.communicate()
+            if out2:
+                snpeffdb = ConfigSectionMap("snpeff", Config)['db']
+            else:
+                print "The database name %s provided was not found. Check the name and try again" % ConfigSectionMap("snpeff", Config)['db']
+                exit()
+        else:
+            print "snpEff db section is not set in config file"
+            exit()
+    else:
+        reference_basename = (os.path.basename(args.reference)).split(".")
+        snpeffdb = reference_basename[0]
+        prepare_snpEff_db(reference_basename)
+
     annotate_vcf_cmd_array = []
     annotate_final_vcf_cmd_array = []
     for i in vcf_filenames:
         raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
         annotate_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], raw_vcf, raw_vcf)
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
+        #print annotate_vcf_cmd
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
         final_vcf = i
         annotate_final_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], final_vcf, final_vcf)
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
         annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
     if args.numcores:
         num_cores = int(num_cores)
@@ -1790,19 +1838,39 @@ def variant_annotation():
 
 def indel_annotation():
     keep_logging('Annotating indels using snpEff.', 'Annotating indels using snpEff.', logger, 'info')
-    reference_basename = (os.path.basename(args.reference)).split(".")
-    print reference_basename[0]
-    prepare_snpEff_db(reference_basename)
+
+    if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
+        if ConfigSectionMap("snpeff", Config)['db']:
+            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            proc = subprocess.Popen(["java -jar %s/%s/%s databases | grep %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
+                                    stdout=subprocess.PIPE, shell=True)
+            (out2, err2) = proc.communicate()
+            if out2:
+                snpeffdb = ConfigSectionMap("snpeff", Config)['db']
+            else:
+                print "The database name %s provided was not found. Check the name and try again" % ConfigSectionMap("snpeff", Config)['db']
+                exit()
+        else:
+            print "snpEff db section is not set in config file"
+            exit()
+    else:
+        reference_basename = (os.path.basename(args.reference)).split(".")
+        snpeffdb = reference_basename[0]
+        prepare_snpEff_db(reference_basename)
+
+
+
+
     annotate_vcf_cmd_array = []
     annotate_final_vcf_cmd_array = []
     for i in vcf_filenames:
         raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
         annotate_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], raw_vcf, raw_vcf)
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
         final_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf')
         annotate_final_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], final_vcf, final_vcf)
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
         annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
     if args.numcores:
         num_cores = int(num_cores)
@@ -1811,9 +1879,17 @@ def indel_annotation():
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
 
+def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, logger, Config):
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)[
+        'gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    #files_gatk = "--variant " + ' --variant '.join(vcf_files_array)
+    keep_logging("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), "java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger, 'debug')
+    call("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger)
+    return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
+
 def annotated_snp_matrix():
     """
-    :return: Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name
+    :return: Annotate core vcf files generated at core_prep steps. Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name. This dictionary will then be used to insert annotation into SNP/Indel matrix
     """
 
     """ Run snpEff annotation step """
@@ -1822,6 +1898,7 @@ def annotated_snp_matrix():
     """ Run snpEff annotation step """
     indel_annotation()
 
+    # Check if Reference genome Genbank file exists. Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
     reference_basename = (os.path.basename(args.reference)).split(".")
     if os.path.isfile("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0])):
         handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'rU')
@@ -1833,6 +1910,10 @@ def annotated_snp_matrix():
     #locus_tag_to_uniprot = {}
     #locus_tag_to_ec_number = {}
 
+    keep_logging(
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
+        logger, 'info')
     for record in SeqIO.parse(handle, 'genbank') :
         for feature in record.features:
             if 'locus_tag' in feature.qualifiers:
@@ -1846,17 +1927,15 @@ def annotated_snp_matrix():
                     locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
                 # elif 'uniprot' in feature.qualifiers:
                 #     locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = str(feature.qualifiers['product'][0])
-
+            else:
+                keep_logging(
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
+                    logger, 'exception')
 
 
     """ Merge Annotated final vcf file """
-    keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf' % args.filter2_only_snp_vcf_dir, logger, 'info')
-    # call(
-    #     "for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir, logger)
-    # call("for i in %s/*.vcf_no_proximate_snp.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir, logger)
-    # call(
-    #     "for i in %s/*_filter2_indel_final.vcf_ANN.vcf; do bgzip -c $i > $i.gz; done" % args.filter2_only_snp_vcf_dir, logger)
-    # call("for i in %s/*_filter2_indel_final.vcf_ANN.vcf.gz; do tabix $i; done" % args.filter2_only_snp_vcf_dir, logger)
+    keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, logger, 'info')
 
     files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
@@ -1864,36 +1943,57 @@ def annotated_snp_matrix():
     tabix(files_for_tabix, "vcf", logger, Config)
 
     files = ' '.join(vcf_filenames)
-    print files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")
 
+    # Tested various parameters of bcftools to fix the ALT allele bug but not successful.
+    #print files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")
     # os.system("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")))
     # os.system("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_indel_final.vcf_ANN.vcf.gz")))
-    #
     # os.system("bgzip -c %s/Final_vcf_no_proximate_snp.vcf > %s/Final_vcf_no_proximate_snp.vcf.gz" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
     # os.system("tabix %s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
     # os.system("bgzip -c %s/Final_vcf_indel.vcf > %s/Final_vcf_indel.vcf.gz" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
     # os.system("tabix %s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
 
+    # Merge with bcftools, ** Deprecated **
     call("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (
-    args.filter2_only_snp_vcf_dir,
-    files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")), logger)
+        args.filter2_only_snp_vcf_dir,
+        files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")),
+         logger)
     call("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (args.filter2_only_snp_vcf_dir,
-                                                                                        files.replace(
-                                                                                            "_filter2_final.vcf_no_proximate_snp.vcf",
-                                                                                            "_filter2_indel_final.vcf_ANN.vcf.gz")), logger)
+                                                                                   files.replace(
+                                                                                       "_filter2_final.vcf_no_proximate_snp.vcf",
+                                                                                       "_filter2_indel_final.vcf_ANN.vcf.gz")),
+         logger)
 
-    # call("bgzip -c %s/Final_vcf_no_proximate_snp.vcf > %s/Final_vcf_no_proximate_snp.vcf.gz" % (
-    # args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir), logger)
-    # call("tabix %s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir, logger)
-    # call("bgzip -c %s/Final_vcf_indel.vcf > %s/Final_vcf_indel.vcf.gz" % (
-    # args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir), logger)
-    # call("tabix %s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir, logger)
+
+
+
+    # Merge with Gatk combine variants method
+    merged_file_suffix = "_no_proximate_snp.vcf"
+    files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
+    final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
+    merged_file_suffix = "_indel.vcf"
+    final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                                                         '_filter2_indel_final.vcf_ANN.vcf.gz'),
+                                                      args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
+                                                      logger, Config)
+
 
     files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
 
 
 
+    # Var- Ann dictionary
+    snp_var_ann_dict = {}
+    indel_var_ann_dict = {}
+
+    for variants in VCF("%s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
+        snp_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
+
+    for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
+        indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
+
+    # Get all the unique variant positions from the matrix All_label_final_sorted/All_indel_label_final_sorted
     position_label = OrderedDict()
     with open("%s/All_label_final_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
         keep_logging('Reading All label positions file: %s/All_label_final_sorted.txt' % args.filter2_only_snp_vcf_dir, 'Reading All label positions file: %s/All_label_final_sorted.txt' % args.filter2_only_snp_vcf_dir, logger, 'info')
@@ -1914,10 +2014,12 @@ def annotated_snp_matrix():
                 keep_logging('Warning: position %s already present as a SNP' % row[0], 'Warning: position %s already present as a SNP' % row[0], logger, 'info')
     csv_file.close()
 
+    # Generate a header of file names
     print_string_header = "\t"
     for i in vcf_filenames:
         print_string_header = print_string_header + os.path.basename(i) + "\t"
 
+    # Get the final core variant positions
     core_positions = []
     with open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir) as fp:
         for line in fp:
@@ -1930,48 +2032,67 @@ def annotated_snp_matrix():
             core_positions.append(line)
         fp.close()
 
-    # GET PHAGE POSITIONS
+
+
+    # GET PHAGE/Repetitive region/mask region positions
     phage_positions = []
-    phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
-    if os.path.isfile(phage_region_positions):
-        with open(phage_region_positions, 'rU') as fp:
-            for line in fp:
-                phage_positions.append(line.strip())
-        fp.close()
-
-    # GET REPETITIVE REGIONS
     repetitive_positions = []
-    repetitive_positions_file = "%s/repeat_region_positions.txt" % args.filter2_only_snp_vcf_dir
-    if os.path.isfile(repetitive_positions_file):
-        with open(repetitive_positions_file, 'rU') as fp:
-            for line in fp:
-                repetitive_positions.append(line.strip())
-        fp.close()
-
-    # GET MASK REGIONS
     mask_positions = []
-    mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
-    if os.path.isfile(mask_positions_file):
-        with open(mask_positions_file, 'rU') as fp:
-            for line in fp:
-                mask_positions.append(line.strip())
-        fp.close()
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+        if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+            phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
+            if os.path.isfile(phage_region_positions):
+                with open(phage_region_positions, 'rU') as fphage:
+                    for line in fphage:
+                        phage_positions.append(line.strip())
+                fphage.close()
+
+        # GET REPETITIVE REGIONS
+        if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
+            repetitive_positions_file = "%s/repeat_region_positions.txt" % args.filter2_only_snp_vcf_dir
+            if os.path.isfile(repetitive_positions_file):
+                with open(repetitive_positions_file, 'rU') as frep:
+                    for line in frep:
+                        repetitive_positions.append(line.strip())
+                frep.close()
+
+        # GET MASK REGIONS
+        if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
+            mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
+            if os.path.isfile(mask_positions_file):
+                with open(mask_positions_file, 'rU') as fmask:
+                    for line in fmask:
+                        mask_positions.append(line.strip())
+                fmask.close()
 
 
-    header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos:::"
-    final_merge_anno_file = VCF("%s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
+    # Prepare SNP/Indel Matrix strings to print
+
+    # Read merged vcf files using cyvcf library
+    final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
+
+    header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos"
     for sample in final_merge_anno_file.samples:
-        header_print_string = header_print_string + "," + sample
+        # header_print_string = header_print_string + "," + sample
+        header_print_string = header_print_string + "\t" + sample
     header_print_string = header_print_string + "\n"
-    header_print_string = header_print_string.replace(':::,', ':::')
+    # header_print_string = header_print_string.replace(':::,', ':::')
+    # changing to tab-delimited
+    #header_print_string = header_print_string.replace(':::,', '\t')
+
+    # Open files to write the strings
     fp_code = open("%s/SNP_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_allele = open("%s/SNP_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_new = open("%s/SNP_matrix_allele_new.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
+    fp_allele_new.write(header_print_string)
 
-    for variants in VCF("%s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
+    # Parse variant positions from the loaded cyvcf VCF object and generate the print strings
+    for variants in VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
         print_string = ""
 
+        # Initiate and assign Functional Field filter string => PHAGE/REPEAT/MASK/NULL
         functional_field = ""
         if str(variants.POS) in phage_positions:
             functional_field = functional_field + "PHAGE_"
@@ -1986,7 +2107,7 @@ def annotated_snp_matrix():
         else:
             functional_field = functional_field + "NULL"
 
-
+        # Initiate variant code string => REF allele = 0, core = 1, Filtered = 2, unmapped = -1, True but non-core = 3
         code_string = position_label[str(variants.POS)]
         code_string = code_string.replace('reference_allele', '0')
         code_string = code_string.replace('reference_unmapped_position', '-1')
@@ -2016,38 +2137,59 @@ def annotated_snp_matrix():
         else:
             code_string = code_string.replace('VARIANT', '3')
 
-
-        if "protein_coding" in variants.INFO.get('ANN'):
-            snp_type = "Coding SNP"
+        # Assign type of snp: coding / non-coding
+        if variants.INFO.get('ANN'):
+            if "protein_coding" in variants.INFO.get('ANN'):
+                snp_type = "Coding SNP"
+            else:
+                snp_type = "Non-coding SNP"
         else:
-            snp_type = "Non-coding SNP"
+            if len(variants.ALT) > 1:
+                #print variants.ALT
+                #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
+                if "protein_coding" in set(snp_var_ann_dict[variants.POS].split(',')):
+                    snp_type = "Coding SNP"
+                else:
+                    snp_type = "Non-coding SNP"
+            else:
+                snp_type = "None"
+
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
 
-        ann_array = (variants.INFO.get('ANN')).split(',')
-        ann_string = ";"
-        for i in list(set(ann_array)):
-            i_split = i.split('|')
-            #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
-            tag = str(i_split[3]).replace('CHR_START-', '')
-            tag = str(tag).replace('-CHR_END', '')
+        # Get ANN field from variant INFO column and save it as an array. Split and Go through each elements, add bells and whistles
+        if variants.INFO.get('ANN'):
+            ann_array = (variants.INFO.get('ANN')).split(',')
+            ann_string = ";"
+            for i in list(set(ann_array)):
+                i_split = i.split('|')
+                #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
+                tag = str(i_split[4]).replace('CHR_START-', '')
+                tag = str(tag).replace('-CHR_END', '')
 
-            if "-" in tag:
-                #print tag
-                extra_tags = ""
-                tag_split = tag.split('-')
-                for i in tag_split:
-                    extra_tags = extra_tags + locus_tag_to_gene_name[i] + ","
-                extra_tags_prot = ""
-                for i in tag_split:
-                    extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
-                ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
-            elif tag == "":
-                print list(set(ann_array))
+                if "-" in tag:
+                    #print tag
+                    extra_tags = ""
+                    tag_split = tag.split('-')
+                    for i in tag_split:
+                        extra_tags = extra_tags + locus_tag_to_gene_name[i] + ","
+                    extra_tags_prot = ""
+                    for i in tag_split:
+                        extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                elif tag == "":
+                    print list(set(ann_array))
+                else:
+                    extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
+                    # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+        else:
+            if len(variants.ALT) > 1:
+                #print variants.ALT
+                #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
+                ann_string = ";%s" % ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
             else:
-                #print tag
-                extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
-                # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-                ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                ann_string = ";None"
+
 
         print_string = print_string + ann_string
 
@@ -2066,35 +2208,60 @@ def annotated_snp_matrix():
         # #print print_string + "," + code_string + '\n'
         # fp_code.write(print_string + "," + code_string + '\n')
 
-        final_allele_string = print_string + gt_string + '\n'
-        final_code_string = print_string + "," + code_string + '\n'
+        final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
+        final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
         final_allele_string = final_allele_string.replace(',|', '|')
+        # final_allele_string = final_allele_string.replace(',;,', ':::')
+        # final_allele_string = final_allele_string.replace(';,', ':::')
         final_allele_string = final_allele_string.replace(',;,', ':::')
         final_allele_string = final_allele_string.replace(';,', ':::')
         final_code_string = final_code_string.replace(',|', '|')
+        # final_code_string = final_code_string.replace(',;,', ':::')
+        # final_code_string = final_code_string.replace(';,', ':::')
         final_code_string = final_code_string.replace(',;,', ':::')
         final_code_string = final_code_string.replace(';,', ':::')
         fp_allele.write(final_allele_string)
         fp_code.write(final_code_string)
 
+        # print code_string
+        # print gt_string[1:]
+        ntd_string = ""
+        count = 0
+        code_string_array = code_string.split(',')
+        gt_string_array = gt_string[1:].split(',')
+        # print code_string_array
+        # print gt_string_array
+        for i in gt_string_array:
+            if str(code_string_array[count]) == "0" or str(code_string_array[count]) == "1" or str(code_string_array[count]) == "2":
+                ntd_string = ntd_string + "," + str(i)
+            if code_string_array[count] == "-1":
+                ntd_string = ntd_string + "," + "-"
+            if str(code_string_array[count]) == "3":
+                ntd_string = ntd_string + "," + "N"
+            count += 1
+        print_string = print_string + ntd_string + "\n"
+        fp_allele_new.write(print_string)
+
     fp_code.close()
     fp_allele.close()
-
+    fp_allele_new.close()
 
 
     ##Indel
-    header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos:::"
-    final_merge_anno_file = VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
+    header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos"
+    final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
     for sample in final_merge_anno_file.samples:
-        header_print_string = header_print_string + "," + sample
+        # header_print_string = header_print_string + "," + sample
+        header_print_string = header_print_string + "\t" + sample
     header_print_string = header_print_string + "\n"
-    header_print_string = header_print_string.replace(':::,', ':::')
+    #header_print_string = header_print_string.replace(':::,', ':::')
+    #header_print_string = header_print_string.replace(':::,', '\t')
     fp_code = open("%s/Indel_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_allele = open("%s/Indel_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
 
-    for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
+    for variants in VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         print_string = ""
 
         functional_field = ""
@@ -2140,39 +2307,63 @@ def annotated_snp_matrix():
         else:
             code_string = code_string.replace('VARIANT', '3')
 
-        if "protein_coding" in variants.INFO.get('ANN'):
-            snp_type = "Coding INDEL"
+
+
+
+
+        if variants.INFO.get('ANN'):
+            if "protein_coding" in variants.INFO.get('ANN'):
+                snp_type = "Coding INDEL"
+            else:
+                snp_type = "Non-coding INDEL"
         else:
-            snp_type = "Non-coding INDEL"
+            if len(variants.ALT) > 1:
+                #print variants.ALT
+                #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
+                if "protein_coding" in set(indel_var_ann_dict[variants.POS].split(',')):
+                    snp_type = "Coding SNP"
+                else:
+                    snp_type = "Non-coding SNP"
+            else:
+                snp_type = "None"
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
 
-        ann_array = (variants.INFO.get('ANN')).split(',')
-        ann_string = ";"
-        # for i in list(set(ann_array)):
-        #     i_split = i.split('|')
-        #     ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
-        # print_string = print_string + ann_string
-        for i in list(set(ann_array)):
-            i_split = i.split('|')
-            #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
-            tag = str(i_split[3]).replace('CHR_START-', '')
-            tag = str(tag).replace('-CHR_END', '')
-            tag = str(tag).replace('&', '-')
-            #print tag
-            if "-" in tag:
+        if variants.INFO.get('ANN'):
+            ann_array = (variants.INFO.get('ANN')).split(',')
+            ann_string = ";"
+            # for i in list(set(ann_array)):
+            #     i_split = i.split('|')
+            #     ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
+            # print_string = print_string + ann_string
+            for i in list(set(ann_array)):
+                i_split = i.split('|')
+                #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
+                tag = str(i_split[4]).replace('CHR_START-', '')
+                tag = str(tag).replace('-CHR_END', '')
+                tag = str(tag).replace('&', '-')
                 #print tag
-                extra_tags = ""
-                tag_split = tag.split('-')
-                for i in tag_split:
-                    extra_tags = extra_tags + locus_tag_to_gene_name[i] + ","
-                extra_tags_prot = ""
-                for i in tag_split:
-                    extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
-                ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                if "-" in tag:
+                    #print tag
+                    extra_tags = ""
+                    tag_split = tag.split('-')
+                    for i in tag_split:
+                        extra_tags = extra_tags + locus_tag_to_gene_name[i] + ","
+                    extra_tags_prot = ""
+                    for i in tag_split:
+                        extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                else:
+                    extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
+                    # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+        else:
+
+            if len(variants.ALT) > 1:
+                #print variants.ALT
+                #print ';'.join(set(indel_var_ann_dict[variants.POS].split(',')))
+                ann_string = ";%s" % ';'.join(set(indel_var_ann_dict[variants.POS].split(',')))
             else:
-                extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
-                # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-                ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                ann_string = ";None"
 
         print_string = print_string + ann_string
 
@@ -2184,13 +2375,20 @@ def annotated_snp_matrix():
                 gt = gt_split[0]
             gt_string = gt_string + "," + gt
         gt_string = gt_string.replace('.', variants.REF)
-        final_allele_string = print_string + gt_string + '\n'
-        final_code_string = print_string + "," + code_string + '\n'
+
+
+
+        final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
+        final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
         final_allele_string = final_allele_string.replace(',|', '|')
+        # final_allele_string = final_allele_string.replace(',;,', ':::')
+        # final_allele_string = final_allele_string.replace(';,', ':::')
         final_allele_string = final_allele_string.replace(',;,', ':::')
         final_allele_string = final_allele_string.replace(';,', ':::')
         final_code_string = final_code_string.replace(',|', '|')
-        final_code_string = final_code_string.replace(',;,', ';')
+        # final_code_string = final_code_string.replace(',;,', ':::')
+        # final_code_string = final_code_string.replace(';,', ':::')
+        final_code_string = final_code_string.replace(',;,', ':::')
         final_code_string = final_code_string.replace(';,', ':::')
         fp_allele.write(final_allele_string)
         fp_code.write(final_code_string)
@@ -2462,6 +2660,7 @@ if __name__ == '__main__':
     Config.read(config_file)
     keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
 
+
     # Start Variant Calling Core Pipeline steps based on steps argument supplied.
     if "1" in args.steps:
         """ 
@@ -2512,7 +2711,7 @@ if __name__ == '__main__':
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
-        # Parse Phaster results file to extract phage region.
+        #Parse Phaster results file to extract phage region.
         if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
             keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
                          'info')
@@ -2535,12 +2734,27 @@ if __name__ == '__main__':
                 # Mask custom region/Positions
                 if ConfigSectionMap("functional_filters", Config)['mask_file']:
                     mask_file = ConfigSectionMap("functional_filters", Config)['mask_file']
-                    mask_positions_file = mask_regions(mask_file, args.filter2_only_snp_vcf_dir, logger, Config)
-                    with open(mask_positions_file, 'rU') as fp:
+                    mask_extension = os.path.splitext(mask_file)[1]
+                    if mask_extension == ".bed":
+                        mask_positions_file = mask_regions(mask_file, args.filter2_only_snp_vcf_dir, logger, Config)
+                        keep_logging(
+        'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        logger, 'info')
+                    else:
+                        #mask_positions_file = mask_file
+                        os.system("cp %s %s/mask_positions.txt" % (mask_file, args.filter2_only_snp_vcf_dir))
+                        mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
+                        keep_logging(
+        'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        logger, 'info')
+                    with open(mask_positions_file   , 'rU') as fp:
                         for line in fp:
                             f1.write(line)
                     fp.close()
             f1.close()
+
         # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
         core_prep_snp(core_vcf_fasta_dir)
 
@@ -2569,17 +2783,20 @@ if __name__ == '__main__':
         make_sure_path_exists(core_vcf_fasta_dir)
         make_sure_path_exists(consensus_var_dir)
         make_sure_path_exists(consensus_ref_var_dir)
-
+        reference_base = os.path.basename(args.reference).split('.')[0]
         # Move results to the results directory
         move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
+        copy_reference = "cp %s %s/%s.fa" % (args.reference, consensus_ref_var_dir, reference_base)
+
         call("%s" % move_data_matrix_results, logger)
         call("%s" % move_core_vcf_fasta_results, logger)
         call("%s" % move_consensus_var_fasta_results, logger)
         call("%s" % move_consensus_ref_var_fasta_results, logger)
+        call("%s" % copy_reference, logger)
         subprocess.call(["sed -i 's/title_here/%s/g' %s/generate_diagnostics_plots.R" % (os.path.basename(args.results_dir), data_matrix_dir)], shell=True)
 
         # Sanity Check if the variant consensus files generated are of same length
@@ -2622,17 +2839,18 @@ if __name__ == '__main__':
         keep_logging('Step 4: Generate FastTree and RAxML trees for core consensus fasta files.', 'Step 4: Generate FastTree and RAxML trees for core consensus fasta files.', logger, 'info')
 
         #parse_phaster(args.reference)
-
+        reference_base = os.path.basename(args.reference).split('.')[0]
         gubbins_dir = args.results_dir + '/gubbins'
         tree_dir = args.results_dir + '/trees'
 
         make_sure_path_exists(gubbins_dir)
         make_sure_path_exists(tree_dir)
 
-        prepare_ref_var_consensus_input = "%s/gubbins/%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''))
-        prepare_var_consensus_input = "%s/gubbins/%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''))
 
-        prepare_ref_var_consensus_input_cmd = "cat %s %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.reference, args.results_dir, prepare_ref_var_consensus_input)
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+
+        prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
         prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
 
         call("%s" % prepare_ref_var_consensus_input_cmd, logger)

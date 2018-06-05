@@ -525,7 +525,7 @@ if __name__ == '__main__':
         core_temp_dir = args.output_folder + "/core_temp_dir/"
         make_sure_path_exists(core_temp_dir)
         keep_logging('Copying vcf files to %s' % core_temp_dir, 'Copying vcf files to %s' % core_temp_dir, logger, 'info')
-        cp_command = "cp %s/*/*_filter2_indel_final.vcf %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf.gz %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf.gz %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
+        cp_command = "cp %s/*/*_filter2_indel_final.vcf %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf* %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
         call(cp_command, logger)
         list_of_gzipped_files = glob.glob("%s/*.gz" % core_temp_dir)
         keep_logging('Decompressing gzipped files in %s' % core_temp_dir, 'Decompressing gzipped files in %s' % core_temp_dir, logger, 'info')

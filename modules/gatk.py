@@ -2,7 +2,6 @@ from __future__ import division
 __author__ = 'alipirani'
 import os
 from config_settings import ConfigSectionMap
-from modules.samtools import *
 from modules.picard import *
 from modules.log_modules import keep_logging
 from modules.logging_subprocess import *
@@ -22,7 +21,8 @@ def gatk_filter2(final_raw_vcf, out_path, analysis, reference, logger, Config, A
     FQ_filter = "FQ < %s" % ConfigSectionMap(filter_criteria, Config)['fq']
     FQ_filter2 = "FQ < %s" % ConfigSectionMap(filter_criteria, Config)['fq2']
     QUAL_filter = "QUAL > %s" % ConfigSectionMap(filter_criteria, Config)['qual']
-    gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, FQ_filter2)
+    AF_filter = "AF1 > %s" % float(ConfigSectionMap(filter_criteria, Config)['af'])
+    gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, FQ_filter2, AF_filter)
     if os.path.exists(final_raw_vcf):
         gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
     else:
@@ -38,6 +38,65 @@ def gatk_filter2(final_raw_vcf, out_path, analysis, reference, logger, Config, A
         sys.exit(1)
     gatk_filter2_final_vcf = "%s/%s_filter2_final.vcf" % (out_path, analysis)
     return gatk_filter2_final_vcf
+
+def gatk_filter2_contamination(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp):
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    filter_criteria = "contamination_filters"
+    if ConfigSectionMap(filter_criteria, Config)['avg_depth'] == "yes":
+        keep_logging('The average depth filter is turned on.', 'The average depth filter is turned on.', logger, 'info')
+        low_Dp = float(Avg_dp) / 2
+        high_Dp = float(Avg_dp) * 5
+        DP_filter = "DP > %s && DP < %s" % (int(low_Dp), int(high_Dp))
+    else:
+        DP_filter = "DP > %s" % float(ConfigSectionMap(filter_criteria, Config)['dp'])
+    MQ_filter = "MQ > %s" % float(ConfigSectionMap(filter_criteria, Config)['mq'])
+    FQ_filter = "FQ > %s" % float(ConfigSectionMap(filter_criteria, Config)['fq'])
+    QUAL_filter = "QUAL > %s" % float(ConfigSectionMap(filter_criteria, Config)['qual'])
+    AF_filter = "AF1 < %s" % float(ConfigSectionMap(filter_criteria, Config)['af'])
+    gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, AF_filter)
+    if os.path.exists(final_raw_vcf):
+        gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_contamination.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
+    else:
+        gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_contamination.vcf --variant %s.gz --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
+    filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_contamination.vcf > %s/%s_filter2_final_contamination.vcf" % (out_path, analysis, out_path, analysis)
+    keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
+    keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
+    try:
+        call(gatk_filter2_command, logger)
+        call(filter_flag_command, logger)
+    except sp.CalledProcessError:
+        keep_logging('Error in GATK filter step. Exiting.', 'Error in GATK filter step. Exiting.', logger, 'exception')
+        sys.exit(1)
+    gatk_filter2_final_contamination_vcf = "%s/%s_filter2_final_contamination.vcf" % (out_path, analysis)
+    #extract_dp = "egrep -v \"^#\" %s | cut -f 8 | sed 's/^.*DP=\([0-9]*\);.*$/\1/' > %s/%s_depth_values.txt" % (gatk_filter2_final_contamination_vcf, out_path, analysis)
+    extract_dp = "egrep -v \"^#\" %s | cut -f 8 | grep -Po 'DP=[0-9]*;?' | sed 's/DP=//g' | sed 's/;//g' > %s/%s_depth_values.txt" % (
+    gatk_filter2_final_contamination_vcf, out_path, analysis)
+    extract_pos = "grep -v '^#' %s | awk -F'\t' '{print $2}' > %s/%s_POS_values.txt" % (gatk_filter2_final_contamination_vcf, out_path, analysis)
+    extract_fq = "awk -F'\t' '{print $8}' %s  | grep -o 'FQ=.*' | sed 's/FQ=//g' | awk -F';' '{print $1}' > %s/%s_FQ_values.txt" % (gatk_filter2_final_contamination_vcf, out_path, analysis)
+    extract_mq = "egrep -v \"^#\" %s | cut -f 8 | sed 's/^.*MQ=\([0-9]*\);.*$/\1/' > %s/%s_MQ_values.txt" % (gatk_filter2_final_contamination_vcf, out_path, analysis)
+    extract_af = "awk -F'\t' '{print $8}' %s  | grep -o 'AF1=.*' | sed 's/AF1=//g' | awk -F';' '{print $1}' > %s/%s_AF1_values.txt" % (gatk_filter2_final_contamination_vcf, out_path, analysis)
+    try:
+        call(extract_dp, logger)
+        call(extract_pos, logger)
+        call(extract_fq, logger)
+        call(extract_mq, logger)
+        call(extract_af, logger)
+        keep_logging(extract_dp, filter_flag_command, logger, 'debug')
+        keep_logging(extract_pos, filter_flag_command, logger, 'debug')
+        keep_logging(extract_fq, filter_flag_command, logger, 'debug')
+        keep_logging(extract_mq, filter_flag_command, logger, 'debug')
+        keep_logging(extract_af, filter_flag_command, logger, 'debug')
+    except sp.CalledProcessError:
+        keep_logging('Error in GATK contamination filter step. Exiting.', 'Error in GATK contamination filter step. Exiting.', logger, 'exception')
+        sys.exit(1)
+    header = "pos,af"
+    header_cmd = "echo \"%s\" > %s/header.txt" % (header, out_path)
+    call(header_cmd, logger)
+    paste_command = "paste -d, %s/%s_POS_values.txt %s/%s_AF1_values.txt > %s/%s_temp_paste_file.txt" % (out_path, analysis, out_path, analysis, out_path, analysis)
+    call(paste_command, logger)
+    combine_file_cmd = "cat %s/header.txt %s/%s_temp_paste_file.txt > %s/%s_INFO.txt" % (out_path, out_path, analysis, out_path, analysis)
+    call(combine_file_cmd, logger)
+    return gatk_filter2_final_contamination_vcf
 
 def gatk_filter2_indel(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp):
     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']

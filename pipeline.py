@@ -192,7 +192,7 @@ def pipeline(args, logger):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             if os.path.exists(out_sorted_bam) and os.path.exists(final_raw_vcf) and os.path.exists(gatk_depth_of_coverage_file) and os.path.exists(final_raw_vcf_mpileup):
                 filter(gatk_depth_of_coverage_file)
-                stats()
+                #stats()
             else:
                 keep_logging('The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files\n', 'The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files', logger, 'exception')
                 exit()
@@ -256,7 +256,7 @@ def pipeline(args, logger):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf, final_raw_indel_vcf = varcall()
             filter(gatk_depth_of_coverage_file)
-            stats()
+            #stats()
 
         elif steps_list[0] == "filter":
             #Sanity Check Post-varcall vcf and other files here
@@ -266,7 +266,7 @@ def pipeline(args, logger):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
-            stats()
+            #stats()
         elif steps_list[0] == "stats":
             #Sanity check BAM and vcf files
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)

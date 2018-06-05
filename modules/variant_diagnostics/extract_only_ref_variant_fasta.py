@@ -17,6 +17,7 @@ from pyfasta import Fasta
 from datetime import datetime
 import threading
 from cyvcf2 import VCF
+from config_settings import ConfigSectionMap
 
 
 parser = argparse.ArgumentParser(description='Extract Only reference and variant positions and generate a fasta file out of it.')
@@ -30,7 +31,10 @@ required.add_argument('-reference', action='store', dest="reference",
                     help='Path to Reference Fasta File')
 required.add_argument('-out_core', action='store', dest="out_core",
                     help='Path to core results directory')
+required.add_argument('-functional_filter', action='store', dest="functional_filter",
+                    help='Turn Functional filter on')
 args = parser.parse_args()
+
 
 
 def extract_only_ref_variant_fasta():
@@ -95,6 +99,32 @@ def extract_only_ref_variant_fasta_alternate():
     if len(f.keys()) == 1:
         ref_id = str(f.keys())
 
+
+    if args.functional_filter == "yes":
+        functional_filter_pos_array = []
+        functional_class_filter_positions = args.filter2_only_snp_vcf_dir + "/Functional_class_filter_positions.txt"
+        with open(functional_class_filter_positions, 'rU') as f_functional:
+            for line_func in f_functional:
+                functional_filter_pos_array.append(line_func.strip())
+
+        only_ref_variant = []
+        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            if line not in functional_filter_pos_array:
+                only_ref_variant.append(line)
+        ffp.close()
+    else:
+        only_ref_variant = []
+        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            only_ref_variant.append(line)
+        ffp.close()
+    print len(only_ref_variant)
+
+
+
     # # Get Only_ref_variant positions list
     # only_ref_variant = []
     # ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, "r")
@@ -103,13 +133,7 @@ def extract_only_ref_variant_fasta_alternate():
     #     only_ref_variant.append(lines)
     # ffp.close()
 
-    # Get Only_ref_variant positions list without phage regions
-    only_ref_variant = []
-    ffp = open("%s/Only_ref_variant_positions_for_closely_without_phage" % args.filter2_only_snp_vcf_dir, "r")
-    for lines in ffp:
-        lines = lines.strip()
-        only_ref_variant.append(lines)
-    ffp.close()
+
 
     core_vcf_file = args.filter2_only_snp_vcf_filename.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_core.vcf.gz')
     # print core_vcf_file

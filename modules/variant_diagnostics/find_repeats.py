@@ -38,7 +38,19 @@ def nucmer_repeat(reference, outdir, logger, Config):
             end_range = int(i_range[1]) + 1
             inexact_repeat_positions.extend(list(range(int(i_range[0]), end_range)))
     fp.close()
-    keep_logging('No. of inexact repeat matches positions: %s' % len(set(sorted(inexact_repeat_positions))), 'No. of inexact repeat matches: %s' % len(set(sorted(inexact_repeat_positions))), logger, 'info')
+
+    #Write inexact repeat position to file inexact_repeat_region_positions.txt
+    f_inexact = open("%s/inexact_repeat_region_positions.txt" % outdir, 'w+')
+    for i in inexact_repeat_positions:
+        f_inexact.write(str(i) + '\n')
+
+    keep_logging('No. of inexact repeat matches positions: %s' % len(set(sorted(inexact_repeat_positions))),
+                 'No. of inexact repeat matches: %s' % len(set(sorted(inexact_repeat_positions))), logger, 'info')
+
+    keep_logging('Note: The pipeline will not remove these inexact repeat positions. Writing these postions to %s/inexact_repeat_region_positions.txt' % outdir,
+                 'Note: The pipeline will not remove these inexact repeat positions. Writing these postions to %s/inexact_repeat_region_positions.txt' % outdir, logger, 'info')
+
+    #Find Tandem repeats using Nucmer
     tandem_repeats = []
     with open("%s_tandem_repeats_file" % prefix) as fp:
         for i in xrange(5):
@@ -50,7 +62,16 @@ def nucmer_repeat(reference, outdir, logger, Config):
             tandem_repeats.extend(list(range(int(line_split[0]), end_coords)))
     keep_logging('No. of Tandem repeat matches positions: %s' % len(set(sorted(tandem_repeats))),
                  'No. of Tandem repeat matches positions: %s' % len(set(sorted(tandem_repeats))), logger, 'info')
-    All_repeats = sorted(set(inexact_repeat_positions + tandem_repeats))
+
+    # Not including inexact repeats filter
+    #All_repeats = sorted(set(inexact_repeat_positions + tandem_repeats))
+    All_repeats = sorted(set(tandem_repeats))
+
+    keep_logging(
+        'Repeat positions in this file %s/repeat_region_positions.txt will be filtered out' % outdir,
+        'Repeat positions in this file %s/repeat_region_positions.txt will be filtered out' % outdir,
+        logger, 'info')
+
     f_open = open("%s/repeat_region_positions.txt" % outdir, 'w+')
     for pos in All_repeats:
         f_open.write(str(pos) + '\n')

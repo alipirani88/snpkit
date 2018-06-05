@@ -9,11 +9,12 @@ import subprocess
 def run_phaster(reference_genome, outdir, logger, Config):
     out_name = (os.path.basename(reference_genome)).split('.')
     if not os.path.isfile("%s/%s_phaster_post.json" % (outdir, str(out_name[0]))):
-        keep_logging('Running Phaster on %s' % reference_genome, 'Running Phaster on %s' % reference_genome, logger,
+        if not os.path.isfile("%s/summary.txt" % outdir) or os.stat("%s/summary.txt") == 0:
+            keep_logging('Running Phaster on %s' % reference_genome, 'Running Phaster on %s' % reference_genome, logger,
                      'info')
-        phaster_post_cmd = "wget --post-file=\"%s\" \"http://phaster.ca/phaster_api\" -O %s/%s_phaster_post.json" % (reference_genome, outdir, str(out_name[0]))
-        keep_logging('Running: %s' % phaster_post_cmd, 'Running: %s' % phaster_post_cmd, logger, 'debug')
-        call(phaster_post_cmd, logger)
+            phaster_post_cmd = "wget --post-file=\"%s\" \"http://phaster.ca/phaster_api\" -O %s/%s_phaster_post.json" % (reference_genome, outdir, str(out_name[0]))
+            keep_logging('Running: %s' % phaster_post_cmd, 'Running: %s' % phaster_post_cmd, logger, 'debug')
+            call(phaster_post_cmd, logger)
     else:
         keep_logging("Phaster Post Json file %s/%s_phaster_post.json exists" % (outdir, str(out_name[0])), "Phaster Post Json: %s/%s_phaster_post.json exists" % (outdir, str(out_name[0])), logger,
                      'info')
@@ -30,6 +31,7 @@ def parse_phaster(reference_genome, outdir, logger, Config):
                 keep_logging('Running: %s' % phaster_get_cmd, 'Running: %s' % phaster_get_cmd, logger, 'debug')
                 call(phaster_get_cmd, logger)
             else:
+                call(phaster_get_cmd, logger)
                 with open('%s/%s' % (outdir, str(out_name[0]) + "_phaster_get.json")) as json_get_data:
                     get_data = json.load(json_get_data)
                     phaster_get_zip_cmd = "wget \"http://%s\" -O %s/%s_phaster_get.zip" % (str(get_data["zip"]), outdir, str(out_name[0]))
@@ -59,4 +61,10 @@ def parse_phaster(reference_genome, outdir, logger, Config):
         keep_logging('Phaster output file %s/summary.txt not found' % outdir,
                      'Phaster output file %s/summary.txt not found' % outdir, logger, 'exception')
         exit()
+
+    keep_logging('Number of phage Positions: %s' % len(phage_positions),
+                 'Number of phage Positions: %s' % len(phage_positions),
+                 logger, 'info')
+    keep_logging('The Phage region positions in this file %s/phage_region_positions.txt will be filtered out' % outdir,
+                 'The Phage region positions in this file %s/phage_region_positions.txt will be filtered out' % outdir, logger, 'info')
     return "%s/phage_region_positions.txt" % outdir

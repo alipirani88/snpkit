@@ -9,12 +9,13 @@ variant_caller: samtools
 [bin_path]
 binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 
+#resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 [scheduler]
-resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
 large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
-queue: flux
-flux_account: esnitkin_flux
+queue: fluxod
+flux_account: esnitkin_fluxod
 notification: ae
 
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
@@ -80,8 +81,9 @@ base_cmd: GenomeAnalysisTK.jar
 haplotype_parameters: -T HaplotypeCaller --genotyping_mode DISCOVERY
 #changes: 12th August
 gatk_filter1_parameter_expression: FQ < 40.00 && MQ > 20 && QUAL > 50 && DP > 15
-gatk_filter2_parameter_expression: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
+gatk_filter2_parameter_expression: AF1 < 1 && DP > 1
 #changed gatk_filter2_parameter_expression DP 15 from 10 that was used in VRE samples.
+# Default Parameters: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
 
 [vcftools]
 #vcftools_perl_bin: /vcftools_0.1.12b/perl/
@@ -127,7 +129,7 @@ percent_id: 95
 
 [SNP_filters]
 filter_criteria: snitkin_filters
-# Other Criterias: SPANDx_filters, loose_filters, snitkin_filters
+# Other Criterias: SPANDx_filters, loose_filters, snitkin_filters, contamination_filters
 
 [snitkin_filters]
 avg_depth: no
@@ -145,16 +147,61 @@ fq2: 0.025
 mq: 50
 # Filter variants with Variant QUAL less than the below threshold
 qual: 100
+# Filter variants with AF1 less than the below threshold
+af: 0.9
 # Filter Variants that are proximate to each other
 prox: 10
+
+[rna_filters]
+avg_depth: no
+# If AVG_DEPTH is yes, the below DP threshold will be ignored. Instead, LOW_DEPTH and HIGH_DEPTH filter parameter will be used.
+# Filter variants with Depth less than the below threshold
+dp: 3
+# A value of 2 means that regions with less than half of the average coverage of the entire genome will fail
+low_depth: 2
+# A value of 5 means that regions with 5x depth greater than the average coverage will fail
+high_depth: 5
+# Filter variants with FQ(Consensus Quality) greater than the below threshold
+fq: 0.00
+fq2: 0.00
+# Filter variants with MQ(Root Mean Square Quality) less than the below threshold
+mq: 50
+# Filter variants with Variant QUAL less than the below threshold
+qual: 0
+# Filter variants with AF1 less than the below threshold
+af: 0.9
+# Filter Variants that are proximate to each other
+prox: 1
+
+[contamination_filters]
+avg_depth: no
+# If AVG_DEPTH is yes, the below DP threshold will be ignored. Instead, LOW_DEPTH and HIGH_DEPTH filter parameter will be used.
+# Filter variants with Depth less than the below threshold
+dp: 3
+# A value of 2 means that regions with less than half of the average coverage of the entire genome will fail
+low_depth: 2
+# A value of 5 means that regions with 5x depth greater than the average coverage will fail
+high_depth: 5
+# Filter variants with FQ(Consensus Quality) greater than the below threshold
+fq: -20.00
+fq2: -20.00
+# Filter variants with MQ(Root Mean Square Quality) less than the below threshold
+mq: 50
+# Filter variants with Variant QUAL less than the below threshold
+qual: 0
+# Filter variants with AF1 less than the below threshold
+af: 1
+# Filter Variants that are proximate to each other
+prox: 1
 
 [functional_filters]
 apply_functional_filters: yes
 find_phage_region: yes
 find_repetitive_region: yes
-mask_region: yes
-mask_file: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300//test_mask_file.bed
+mask_region: no
+mask_file: /nfs/esnitkin/bin_group/variant_calling_bin/reference/test_file.txt
 mobile_elements: yes
+apply_to_calls: yes
 
 
 #CLUSTER_SNP: 3
@@ -169,6 +216,8 @@ mobile_elements: yes
 snpeff_bin: /snpEff/
 base_cmd: snpEff.jar
 snpeff_parameters: -d -no-downstream -no-upstream
+prebuild: no
+db: Staphylococcus_aureus_subsp_aureus_usa300_tch1516
 dataDir: /data/
 
 ########################################################################################################################
@@ -870,3 +919,9 @@ Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_19_Rush_KPC_6
 Ref_Name: Rush_KPC_85_contigs_ordered.fasta
 # path to the reference genome fasta file.
 Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_20_Rush_KPC_85/
+
+[SRR3334137]
+# Name of reference genome fasta file.
+Ref_Name: SRR3334137.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/SRR3334137/
