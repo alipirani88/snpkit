@@ -31,7 +31,7 @@ from phage_detection import *
 from find_repeats import *
 from mask_regions import *
 from fasttree import fasttree
-from gubbins import gubbins
+from gubbins import *
 from raxml import raxml
 from pyfasta import Fasta
 from core_prep_sanity_checks import *
@@ -73,6 +73,21 @@ required.add_argument('-config', action='store', dest="config",
 optional.add_argument('-debug_mode', action='store', dest="debug_mode",
                     help='yes/no for debug mode')
 args = parser.parse_args()
+
+def make_sure_path_exists(out_path):
+    """
+    Fuction to make sure output folder exists. If not, create it.
+    :param: out_path
+    :return: null/exception
+    """
+    try:
+        os.makedirs(out_path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
+                         '\nErrors in output folder path! please change the output path or analysis name\n', logger,
+                         'info')
+            exit()
 
 """ Core Prep Methods"""
 def run_command(i):
@@ -860,7 +875,7 @@ def generate_position_label_data_matrix():
             f_bar_perc.write(bar_perc_string)
         f_bar_count.close()
         f_bar_perc.close()
-        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.filter2_only_snp_vcf_dir))
+        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()" % (args.filter2_only_snp_vcf_dir, os.path.basename(os.path.normpath(args.results_dir)))
         barplot_R_file = open("%s/bargraph.R" % args.filter2_only_snp_vcf_dir, 'w+')
         barplot_R_file.write(bargraph_R_script)
         keep_logging('Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
@@ -1150,7 +1165,7 @@ def generate_indel_position_label_data_matrix():
             f_bar_perc.write(bar_perc_string)
         f_bar_count.close()
         f_bar_perc.close()
-        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_indel_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot_indel.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"  % (args.filter2_only_snp_vcf_dir, os.path.basename(args.filter2_only_snp_vcf_dir))
+        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_indel_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot_indel.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"  % (args.filter2_only_snp_vcf_dir, os.path.basename(os.path.normpath(args.results_dir)))
         barplot_R_file = open("%s/bargraph_indel.R" % args.filter2_only_snp_vcf_dir, 'w+')
         barplot_R_file.write(bargraph_R_script)
         keep_logging('Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
@@ -1317,7 +1332,7 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
         Generate a Command list of each job and run it in parallel on different cores available on local system
         """
         command_array = []
-        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        command_file = "%s/commands_list_ref_allele_variants_fasta.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
         for i in vcf_filenames:
             job_name = os.path.basename(i)
@@ -1326,7 +1341,7 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
             f1.close()
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_ref_allele_variants_fasta.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
@@ -1369,7 +1384,7 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
         Generate a Command list of each job and run it on local system one at a time
         """
         command_array = []
-        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        command_file = "%s/commands_list_ref_allele_variants_fasta.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
 
 
@@ -1381,7 +1396,7 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             f1.write(job_print_string)
             f1.close()
         #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_ref_allele_variants_fasta.pbs"
         pbs_scripts = glob.glob(pbs_dir)
 
 
@@ -1945,7 +1960,15 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
         'gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
     #files_gatk = "--variant " + ' --variant '.join(vcf_files_array)
     keep_logging("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), "java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger, 'debug')
-    call("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger)
+    merge_gatk_commands_file = "%s/gatk_merge.sh" % args.filter2_only_snp_vcf_dir
+    with open(merge_gatk_commands_file, 'a+') as fopen:
+        fopen.write("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix) + '\n')
+    fopen.close()
+    os.system("bash %s" % merge_gatk_commands_file)
+    # Commenting out calling gatk combine variants, problem with python subprocess, OSError: [Errno 7] Argument list too long
+    #call("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger)
+    #keep_logging("java -jar %s -T CombineVariants -R %s --variant %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), "java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger, 'debug')
+    #call("java -jar %s -T CombineVariants -R %s --variant %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger)
     return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
 
 def annotated_snp_matrix():
@@ -2014,22 +2037,52 @@ def annotated_snp_matrix():
     # os.system("bgzip -c %s/Final_vcf_indel.vcf > %s/Final_vcf_indel.vcf.gz" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
     # os.system("tabix %s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
 
-    # Merge with bcftools, ** Deprecated **
-    call("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (
-        args.filter2_only_snp_vcf_dir,
-        files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")),
-         logger)
-    call("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (args.filter2_only_snp_vcf_dir,
-                                                                                   files.replace(
-                                                                                       "_filter2_final.vcf_no_proximate_snp.vcf",
-                                                                                       "_filter2_indel_final.vcf_ANN.vcf.gz")),
-         logger)
+    #Merge with bcftools, ** Deprecated **
+    merge_commands_file = "%s/bcftools_merge.sh" % args.filter2_only_snp_vcf_dir
+    # with open(merge_commands_file, 'w+') as fopen:
+    #     fopen.write("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
+    #     fopen.write("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (args.filter2_only_snp_vcf_dir,
+    #                                                                                files.replace(
+    #                                                                                    "_filter2_final.vcf_no_proximate_snp.vcf",
+    #                                                                                    "_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
+    with open(merge_commands_file, 'w+') as fopen:
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir,files.replace("_filter2_final.vcf_no_proximate_snp.vcf","_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
 
+
+    fopen.close()
+
+    os.system("bash %s" % merge_commands_file)
+
+    # Commenting out calling bcftools merge, problem with python subprocess, OSError: [Errno 7] Argument list too long
+    # call("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (
+    #     args.filter2_only_snp_vcf_dir,
+    #     files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")),
+    #      logger)
+    # call("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (args.filter2_only_snp_vcf_dir,
+    #                                                                                files.replace(
+    #                                                                                    "_filter2_final.vcf_no_proximate_snp.vcf",
+    #                                                                                    "_filter2_indel_final.vcf_ANN.vcf.gz")),
+    #      logger)
 
 
 
     # Merge with Gatk combine variants method
     merged_file_suffix = "_no_proximate_snp.vcf"
+
+    annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
+    annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
+
+    with open(annotated_no_proximate_snp_file, 'w+') as fopen:
+        for i in vcf_filenames:
+            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
+    fopen.close()
+
+    with open(annotated_no_proximate_snp_indel_file, 'w+') as fopen:
+        for i in vcf_filenames:
+            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
+    fopen.close()
+
     files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
     final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
     merged_file_suffix = "_indel.vcf"
@@ -2037,6 +2090,14 @@ def annotated_snp_matrix():
                                                                          '_filter2_indel_final.vcf_ANN.vcf.gz'),
                                                       args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
                                                       logger, Config)
+
+
+
+    # final_gatk_snp_merged_vcf = gatk_combine_variants(annotated_no_proximate_snp_file, args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
+    # merged_file_suffix = "_indel.vcf"
+    # final_gatk_indel_merged_vcf = gatk_combine_variants(annotated_no_proximate_snp_indel_file,
+    #                                                   args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
+    #                                                   logger, Config)
 
 
     files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
@@ -2540,57 +2601,10 @@ def variant_report(data_matrix_dir):
     fp.close()
     keep_logging('Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, 'Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, logger, 'info')
 
-# """ tree methods """
-# def fasttree(tree_dir, input_fasta, cluster):
-#     keep_logging('Running Fasttree on input: %s' % input_fasta, 'Running Fasttree on input: %s' % input_fasta, logger, 'info')
-#     fasttree_cmd = "%s/%s/%s -nt %s > %s/%s_FastTree.tree" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("fasttree", Config)['fasttree_bin'], ConfigSectionMap("fasttree", Config)['base_cmd'], input_fasta, tree_dir, (os.path.basename(input_fasta)).replace('.fa', ''))
-#     keep_logging('%s' % fasttree_cmd, '%s' % fasttree_cmd, logger, 'info')
-#     if cluster == "parallel-local" or cluster == "local":
-#         call("cd %s" % tree_dir, logger)
-#         call(fasttree_cmd, logger)
-#     elif cluster == "cluster":
-#         call("cd %s" % tree_dir, logger)
-#         call(fasttree_cmd, logger)
-#     elif cluster == "parallel-cluster":
-#         job_file_name = "%s/fasttree_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
-#         job_name = os.path.basename(job_file_name)
-#         job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, fasttree_cmd)
-#         f1=open(job_file_name, 'w+')
-#         f1.write(job_print_string)
-#         f1.close()
-#         call("qsub %s" % job_file_name, logger)
-#
-# def raxml(tree_dir, input_fasta):
-#     keep_logging('Running RAXML on input: %s' % input_fasta, 'Running RAXML on input: %s' % input_fasta, logger, 'info')
-#     raxml_cmd = "%s/%s/%s %s -s %s -n %s_raxML" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'], ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta, (os.path.basename(input_fasta)).replace('.fa', ''))
-#     keep_logging('%s' % raxml_cmd, '%s' % raxml_cmd, logger, 'info')
-#     if args.jobrun == "parallel-local" or args.jobrun == "local":
-#         call("cd %s" % tree_dir, logger)
-#         call(raxml_cmd, logger)
-#     elif args.jobrun == "cluster":
-#         call("cd %s" % tree_dir, logger)
-#         call(raxml_cmd, logger)
-#     elif args.jobrun == "parallel-cluster":
-#         job_file_name = "%s/raxml_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
-#         job_name = os.path.basename(job_file_name)
-#         job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, raxml_cmd)
-#         f1=open(job_file_name, 'w+')
-#         f1.write(job_print_string)
-#         f1.close()
-#         #os.system("qsub %s" % job_file_name)
-#         call("qsub %s" % job_file_name, logger)
-
-# def gubbins(gubbins_dir, input_fasta):
-#     keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta, logger,
-#                  'info')
-#     call("cd %s" % ConfigSectionMap("gubbins", Config)['gubbins_bin'], logger)
-#     gubbins_cmd = "%s/%s --prefix %s/%s %s" % (ConfigSectionMap("gubbins", Config)['gubbins_bin'], ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir, (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
-#     call(gubbins_cmd, logger)
 
 
 """
 Pending inclusion
-
 
 class FuncThread(threading.Thread):
     def __init__(self, target, *args):
@@ -2606,65 +2620,7 @@ def someOtherFunc(data, key):
 Pending inclusion
 """
 
-""" Backup
-def generate_vcf_files():
-    base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
-    filter2_files_array = []
-    for i in vcf_filenames:
-        filter2_file = i.replace('_no_proximate_snp.vcf', '')
-        filter2_files_array.append(filter2_file)
-    ref_variant_position_array = []
-    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    for line in ffp:
-        line = line.strip()
-        ref_variant_position_array.append(line)
-    ffp.close()
 
-    filtered_out_vcf_files = []
-    for i in filter2_files_array:
-        print_array =[]
-        with open(i) as file_open:
-            for line in file_open:
-                line = line.strip()
-                if line.startswith("#"):
-                    print_array.append(line)
-                else:
-                    split_array = re.split(r'\t+', line)
-                    if split_array[1] in ref_variant_position_array and 'INDEL' not in split_array[7]:
-                        print_array.append(line)
-        file_open.close()
-        file_name = i + "_core.vcf"
-        keep_logging('Generating %s' % file_name, 'Generating %s' % file_name, logger, 'info')
-        filtered_out_vcf_files.append(file_name)
-        f1 = open(file_name, 'w+')
-        for ios in print_array:
-            print_string = str(ios) + "\n"
-            f1.write(print_string)
-        f1.close()
-
-    filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
-    keep_logging('Generating Consensus...', 'Generating Consensus...', logger, 'info')
-    for file in filtered_out_vcf_files:
-        f1 = open(filename, 'a+')
-        bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
-        f1.write(bgzip_cmd)
-        subprocess.call([bgzip_cmd], shell=True)
-        tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
-        f1.write(tabix_cmd)
-        subprocess.call([tabix_cmd], shell=True)
-        fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s.fa\n" % (args.reference, base_vcftools_bin, file, file.replace('_filter2_final.vcf_core.vcf', ''))
-        f1.write(fasta_cmd)
-        subprocess.call([fasta_cmd], shell=True)
-        base = os.path.basename(file)
-        header = base.replace('_filter2_final.vcf_core.vcf', '')
-        sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
-        subprocess.call([sed_command], shell=True)
-        f1.write(sed_command)
-    keep_logging('The consensus commands are in : %s' % filename, 'The consensus commands are in : %s' % filename, logger, 'info')
-    sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
-    #os.system(sequence_lgth_cmd)
-    call("%s" % sequence_lgth_cmd, logger)
-"""
 
 if __name__ == '__main__':
     """
@@ -2703,6 +2659,17 @@ if __name__ == '__main__':
     global temp_dir
     temp_dir = args.filter2_only_snp_vcf_dir + "/temp"
 
+    # Read Config file into Config object that will be used to extract configuration settings set up in config file.
+    global config_file
+    if args.config:
+        config_file = args.config
+    else:
+        config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
+    global Config
+    Config = ConfigParser.ConfigParser()
+    Config.read(config_file)
+    keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
+
     make_sure_path_exists(temp_dir)
     filter2_only_snp_vcf_filenames = args.filter2_only_snp_vcf_filenames
     vcf_filenames = []
@@ -2712,7 +2679,7 @@ if __name__ == '__main__':
             line = args.filter2_only_snp_vcf_dir + line
             vcf_filenames.append(line)
         fp.close()
-    make_sure_files_exists(vcf_filenames)
+    make_sure_files_exists(vcf_filenames, Config, logger)
 
     # Read filenames. Core variants and final results will be extracted considering only these files.
     filter2_only_snp_vcf_filenames = args.filter2_only_snp_vcf_filenames
@@ -2724,16 +2691,9 @@ if __name__ == '__main__':
             vcf_filenames.append(line)
         fp.close()
 
-    # Read Config file into Config object that will be used to extract configuration settings set up in config file.
-    global config_file
-    if args.config:
-        config_file = args.config
-    else:
-        config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
-    global Config
-    Config = ConfigParser.ConfigParser()
-    Config.read(config_file)
-    keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
+
+
+    log_file_handle = "%s/%s_%s.log.txt" % (args.filter2_only_snp_vcf_dir, log_unique_time, analysis_name_log)
 
 
     # Start Variant Calling Core Pipeline steps based on steps argument supplied.
@@ -2765,6 +2725,7 @@ if __name__ == '__main__':
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
 
+        call("cp %s %s/Logs/core_prep/" % (log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
     if "2" in args.steps:
         """ 
         core step 
@@ -2778,7 +2739,7 @@ if __name__ == '__main__':
         if not os.path.isfile(snp_unique_positions_file) and not os.path.isfile(indel_unique_positions_file):
             keep_logging('Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.','Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.', logger,'exception')
             exit()
-        make_sure_label_files_exists(vcf_filenames, uniq_snp_positions, uniq_indel_positions)
+        make_sure_label_files_exists(vcf_filenames, uniq_snp_positions, uniq_indel_positions, Config, logger)
 
         # Set up Report and results directories to transfer the final results.
         data_matrix_dir = args.results_dir + '/data_matrix'
@@ -2786,49 +2747,52 @@ if __name__ == '__main__':
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
-        #Parse Phaster results file to extract phage region.
-        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-            keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
-                         'info')
-            functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
-            f1 = open(functional_class_filter_positions, 'w+')
-            if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
-                phage_region_positions = parse_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
-                with open(phage_region_positions, 'rU') as fp:
-                    for line in fp:
-                        f1.write(line)
-                fp.close()
-            if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
-                # Find repeat regions in reference genome
-                repeat_region_positions = nucmer_repeat(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
-                with open(repeat_region_positions, 'rU') as fp:
-                    for line in fp:
-                        f1.write(line)
-                fp.close()
-            if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
-                # Mask custom region/Positions
-                if ConfigSectionMap("functional_filters", Config)['mask_file']:
-                    mask_file = ConfigSectionMap("functional_filters", Config)['mask_file']
-                    mask_extension = os.path.splitext(mask_file)[1]
-                    if mask_extension == ".bed":
-                        mask_positions_file = mask_regions(mask_file, args.filter2_only_snp_vcf_dir, logger, Config)
-                        keep_logging(
-        'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        logger, 'info')
-                    else:
-                        #mask_positions_file = mask_file
-                        os.system("cp %s %s/mask_positions.txt" % (mask_file, args.filter2_only_snp_vcf_dir))
-                        mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
-                        keep_logging(
-        'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        logger, 'info')
-                    with open(mask_positions_file   , 'rU') as fp:
-                        for line in fp:
-                            f1.write(line)
-                    fp.close()
-            f1.close()
+        functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
+
+        # 06/05 Moving this to variant_call.py
+        # #Parse Phaster results file to extract phage region.
+        # if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+        #     keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+        #                  'info')
+        #     functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
+        #     f1 = open(functional_class_filter_positions, 'w+')
+        #     if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+        #         phage_region_positions = parse_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
+        #         with open(phage_region_positions, 'rU') as fp:
+        #             for line in fp:
+        #                 f1.write(line)
+        #         fp.close()
+        #     if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
+        #         # Find repeat regions in reference genome
+        #         repeat_region_positions = nucmer_repeat(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
+        #         with open(repeat_region_positions, 'rU') as fp:
+        #             for line in fp:
+        #                 f1.write(line)
+        #         fp.close()
+        #     if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
+        #         # Mask custom region/Positions
+        #         if ConfigSectionMap("functional_filters", Config)['mask_file']:
+        #             mask_file = ConfigSectionMap("functional_filters", Config)['mask_file']
+        #             mask_extension = os.path.splitext(mask_file)[1]
+        #             if mask_extension == ".bed":
+        #                 mask_positions_file = mask_regions(mask_file, args.filter2_only_snp_vcf_dir, logger, Config)
+        #                 keep_logging(
+        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        # logger, 'info')
+        #             else:
+        #                 #mask_positions_file = mask_file
+        #                 os.system("cp %s %s/mask_positions.txt" % (mask_file, args.filter2_only_snp_vcf_dir))
+        #                 mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
+        #                 keep_logging(
+        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
+        # logger, 'info')
+        #             with open(mask_positions_file   , 'rU') as fp:
+        #                 for line in fp:
+        #                     f1.write(line)
+        #             fp.close()
+        #     f1.close()
 
         # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
         core_prep_snp(core_vcf_fasta_dir)
@@ -2844,6 +2808,9 @@ if __name__ == '__main__':
         create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
 
         extract_only_ref_variant_fasta_from_reference_allele_variant()
+
+        call("cp %s %s/Logs/core/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     if "3" in args.steps:
         """ 
@@ -2865,6 +2832,7 @@ if __name__ == '__main__':
         consensus_allele_var_dir = core_vcf_fasta_dir + '/consensus_allele_variant_positions'
         consensus_ref_allele_var_dir = core_vcf_fasta_dir + '/consensus_ref_allele_variant_positions'
         consensus_ref_var_dir = core_vcf_fasta_dir + '/consensus_ref_variant_positions'
+        consensus_ref_allele_unmapped_variant_dir = core_vcf_fasta_dir + '/consensus_ref_allele_unmapped_variant'
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(data_matrix_snpeff_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
@@ -2873,6 +2841,7 @@ if __name__ == '__main__':
         make_sure_path_exists(consensus_allele_var_dir)
         make_sure_path_exists(consensus_ref_allele_var_dir)
         make_sure_path_exists(consensus_ref_var_dir)
+        make_sure_path_exists(consensus_ref_allele_unmapped_variant_dir)
         reference_base = os.path.basename(args.reference).split('.')[0]
         # Move results to the results directory
         move_data_matrix_results = "cp -r %s/*.csv %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
@@ -2884,9 +2853,11 @@ if __name__ == '__main__':
         move_consensus_allele_var_fasta_results = "mv %s/*allele_variants.fa %s/" % (consensus_var_dir, consensus_allele_var_dir)
         move_consensus_ref_allele_var_fasta_results = "mv %s/*_ref_allele_variants.fa %s/" % (
             consensus_allele_var_dir, consensus_ref_allele_var_dir)
+        move_consensus_ref_allele_unmapped_var_fasta_results = "mv %s/*_ref_allele_unmapped_variants.fa %s/" % (
+            consensus_var_dir, consensus_ref_allele_unmapped_variant_dir)
         move_snpeff_results = "mv %s/*ANN* %s/" % (data_matrix_dir, data_matrix_snpeff_dir)
         copy_reference = "cp %s %s/%s.fa" % (args.reference, consensus_ref_var_dir, reference_base)
-        copy_reference = "cp %s %s/%s.fa" % (args.reference, consensus_ref_allele_var_dir, reference_base)
+        copy_reference_2 = "cp %s %s/%s.fa" % (args.reference, consensus_ref_allele_var_dir, reference_base)
 
         call("%s" % move_data_matrix_results, logger)
         call("%s" % move_core_vcf_fasta_results, logger)
@@ -2895,7 +2866,9 @@ if __name__ == '__main__':
         call("%s" % move_core_vcf, logger)
         call("%s" % move_consensus_allele_var_fasta_results, logger)
         call("%s" % move_consensus_ref_allele_var_fasta_results, logger)
+        call("%s" % move_consensus_ref_allele_unmapped_var_fasta_results, logger)
         call("%s" % copy_reference, logger)
+        call("%s" % copy_reference_2, logger)
         call("%s" % move_snpeff_results, logger)
         subprocess.call(["sed -i 's/title_here/%s/g' %s/generate_diagnostics_plots.R" % (os.path.basename(args.results_dir), data_matrix_dir)], shell=True)
 
@@ -2919,17 +2892,53 @@ if __name__ == '__main__':
                     keep_logging('Error generating variant consensus position file: %s' % f, 'Error generating variant consensus position file: %s' % f, logger, 'exception')
                     exit()
 
-        """ Generate alignment report """
-        alignment_report(data_matrix_dir)
+        # """ Generate alignment report """
+        # alignment_report(data_matrix_dir)
+        #
+        # """ Generate core snps report """
+        # variant_report(data_matrix_dir)
 
-        """ Generate core snps report """
-        variant_report(data_matrix_dir)
+        """ Generating Gubbins MFA files"""
+        #parse_phaster(args.reference)
+        reference_base = os.path.basename(args.reference).split('.')[0]
+        gubbins_dir = args.results_dir + '/gubbins'
+        tree_dir = args.results_dir + '/trees'
+
+        make_sure_path_exists(gubbins_dir)
+        make_sure_path_exists(tree_dir)
+
+
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
+            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+            reference_base)
+
+        prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
+        prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
+        prepare_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_allele_variant_positions/*_allele_variants.fa > %s" % (
+        args.results_dir, prepare_allele_var_consensus_input)
+        prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (
+            args.results_dir, prepare_ref_allele_var_consensus_input)
+
+        call("%s" % prepare_ref_var_consensus_input_cmd, logger)
+        call("%s" % prepare_var_consensus_input_cmd, logger)
+        call("%s" % prepare_allele_var_consensus_input_cmd, logger)
+        call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
+        # os.system(prepare_ref_var_consensus_input_cmd)
+        # os.system(prepare_var_consensus_input_cmd)
 
         print_details = "Results for core pipeline can be found in: %s\n" \
               "Description of Results:\n" \
               "1. data_matrix folder contains all the data matrices and other temporary files generated during the core pipeline. bargraph_counts.txt and bargraph_percentage.txt: contains counts/percentage of unique positions filtered out due to different filter parameters for each sample. Run bargraph.R to plot bargraph statistics." \
               "2. core_snp_consensus contains all the core vcf and fasta files. *_core.vcf.gz: core vcf files, *.fa and *_variants.fa: core consensus fasta file and core consensus fasta with only variant positions." % (args.results_dir)
         keep_logging(print_details, print_details, logger, 'info')
+
+        call("cp %s %s/Logs/report/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     if "4" in args.steps:
         """ 
@@ -2983,6 +2992,8 @@ if __name__ == '__main__':
         if args.gubbins and args.gubbins == "yes":
             gubbins(gubbins_dir, prepare_ref_var_consensus_input, logger, Config)
             gubbins(gubbins_dir, prepare_ref_allele_var_consensus_input, logger, Config)
+        call("cp %s %s/Logs/tree/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     time_taken = datetime.now() - start_time_2
     if args.remove_temp:

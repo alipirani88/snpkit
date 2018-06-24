@@ -15,6 +15,9 @@ from config_settings import ConfigSectionMap
 from modules.logging_subprocess import *
 from modules.log_modules import *
 from argparse import RawTextHelpFormatter
+from modules.phage_detection import *
+from modules.variant_diagnostics.find_repeats import *
+from modules.variant_diagnostics.mask_regions import *
 
 """ Command Line Argument Parsing """
 def parser():
@@ -528,10 +531,11 @@ if __name__ == '__main__':
     elif "core_prep" in args.steps:
         core_prep_logs_folder = logs_folder + "/core_prep"
         make_sure_path_exists(core_prep_logs_folder)
-        logger = generate_logger(core_prep_logs_folder, args.analysis_name, log_unique_time)
-        keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
-        call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_prep_logs_folder, log_unique_time, args.analysis_name), logger)
         core_temp_dir = args.output_folder + "/core_temp_dir/"
+        logger = generate_logger(core_prep_logs_folder, args.analysis_name, log_unique_time)
+        keep_logging('START: Copying variant calling results to %s and running core_prep step.' % core_temp_dir, 'START: Copying variant calling results to %s and running core_prep step.' % core_temp_dir, logger, 'info')
+        call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_prep_logs_folder, log_unique_time, args.analysis_name), logger)
+
         make_sure_path_exists(core_temp_dir)
         keep_logging('Copying vcf files to %s' % core_temp_dir, 'Copying vcf files to %s' % core_temp_dir, logger, 'info')
         cp_command = "cp %s/*/*_filter2_indel_final.vcf %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf* %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
@@ -545,20 +549,46 @@ if __name__ == '__main__':
         results = Parallel(n_jobs=num_cores)(delayed(run_command_list)(i) for i in gzipped_command_list)
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
-            list_of_vcf_files = generate_custom_vcf_file_list(list_of_files, logger)
-            print len(list_of_vcf_files)
+            list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
+
+
+            keep_logging('Number of final variant call vcf files: %s' % len(list_of_vcf_files), 'Number of final variant call vcf files: %s' % len(list_of_vcf_files), logger, 'info')
+            keep_logging('Make sure the number of final variant call vcf files looks correct', 'Make sure the number of final variant call vcf files looks correct', logger, 'info')
+            keep_logging('Running core_prep on these files...', 'Running core_prep on these files...', logger, 'info')
+
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_vcf_files:
                     out_fp.write(os.path.basename(file)+'\n')
             out_fp.close()
         else:
-            call("ls -1a %s/*.vcf_no_proximate_snp.vcf > %s/vcf_filenames" % (core_temp_dir,core_temp_dir), logger)
-            list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
-            list_of_files = subprocess.check_output(list_cmd, shell=True)
-            with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_files.splitlines():
-                    out_fp.write(os.path.basename(file)+'\n')
-            out_fp.close()
+            keep_logging('Checking if all the variant calling results exists in %s' % core_temp_dir, 'Checking if all the variant calling results exists in %s' % core_temp_dir, logger, 'info')
+            #call("ls -1a %s/*.vcf_no_proximate_snp.vcf > %s/vcf_filenames" % (core_temp_dir, core_temp_dir), logger)
+            try:
+                list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
+                list_of_files = subprocess.check_output(list_cmd, shell=True)
+
+                keep_logging('Number of final variant call vcf files: %s' % len(list_of_files.splitlines()), 'Number of final variant call vcf files: %s' % len(list_of_files.splitlines()), logger, 'info')
+                keep_logging('Make sure the number of final variant call vcf files looks correct', 'Make sure the number of final variant call vcf files looks correct', logger, 'info')
+                keep_logging('Running core_prep on these files...', 'Running core_prep on these files...', logger, 'info')
+                with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
+                    for file in list_of_files.splitlines():
+                        out_fp.write(os.path.basename(file)+'\n')
+                out_fp.close()
+            except:
+                keep_logging('Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
+                             'This can be done by checking if all the variant call results folder contains final variant call vcf file: *.vcf_no_proximate_snp.vcf file' % core_temp_dir, 'Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
+                                                                                                                                                                                              'This can be done by checking if all the variant call results folder contains final variant call vcf file: *.vcf_no_proximate_snp.vcf file' % core_temp_dir, logger, 'exception')
+                exit()
+
+
+
+            # list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
+            # list_of_files = subprocess.check_output(list_cmd, shell=True)
+            # print list_of_files
+            # with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
+            #     for file in list_of_files.splitlines():
+            #         out_fp.write(os.path.basename(file)+'\n')
+            # out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         run_core_prep_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, config_file)
         time_taken = datetime.now() - start_time_2
@@ -576,8 +606,9 @@ if __name__ == '__main__':
         #make_sure_path_exists(core_results_dir)
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
-            list_of_vcf_files = generate_custom_vcf_file_list(list_of_files, logger)
+            list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
             list_of_label_files = []
+
             for i in list_of_vcf_files:
                 list_of_label_files.append(i + '_positions_label')
             if len(list_of_label_files) == len(list_of_vcf_files):
@@ -588,6 +619,7 @@ if __name__ == '__main__':
             else:
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
+
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_vcf_files:
                     out_fp.write(os.path.basename(file)+'\n')
@@ -595,6 +627,7 @@ if __name__ == '__main__':
         else:
             list_of_label_files = glob.glob("%s/*_no_proximate_snp.vcf_positions_label" % core_temp_dir)
             list_of_vcf_files = glob.glob("%s/*_filter2_final.vcf_no_proximate_snp.vcf" % core_temp_dir)
+            print sorted(list_of_vcf_files)
             if len(list_of_label_files) == len(list_of_vcf_files):
                 for i in list_of_label_files:
                     if os.stat(i).st_size == 0:
@@ -604,10 +637,57 @@ if __name__ == '__main__':
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_vcf_files:
+                for file in sorted(list_of_vcf_files):
                     out_fp.write(os.path.basename(file)+'\n')
             out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
+
+        # Parse Phaster results file to extract phage region.
+        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+            keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+                         'info')
+            functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % core_temp_dir
+            f1 = open(functional_class_filter_positions, 'w+')
+            if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                phage_region_positions = parse_phaster(reference, core_temp_dir, logger, Config)
+                with open(phage_region_positions, 'rU') as fp:
+                    for line in fp:
+                        f1.write(line)
+                fp.close()
+            if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
+                # Find repeat regions in reference genome
+                repeat_region_positions = nucmer_repeat(reference, core_temp_dir, logger, Config)
+                with open(repeat_region_positions, 'rU') as fp:
+                    for line in fp:
+                        f1.write(line)
+                fp.close()
+            if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
+                # Mask custom region/Positions
+                if ConfigSectionMap("functional_filters", Config)['mask_file']:
+                    mask_file = ConfigSectionMap("functional_filters", Config)['mask_file']
+                    mask_extension = os.path.splitext(mask_file)[1]
+                    if mask_extension == ".bed":
+                        mask_positions_file = mask_regions(mask_file, core_temp_dir, logger, Config)
+                        keep_logging(
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            logger, 'info')
+                    else:
+                        # mask_positions_file = mask_file
+                        os.system("cp %s %s/mask_positions.txt" % (mask_file, core_temp_dir))
+                        mask_positions_file = "%s/mask_positions.txt" % core_temp_dir
+                        keep_logging(
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            logger, 'info')
+                    with open(mask_positions_file, 'rU') as fp:
+                        for line in fp:
+                            f1.write(line)
+                    fp.close()
+            f1.close()
+
+
+
         run_core_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, core_results_dir, config_file)
         time_taken = datetime.now() - start_time_2
         keep_logging('Logs were recorded in file with extension log.txt in %s' % core_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % core_logs_folder, logger, 'info')
@@ -625,7 +705,9 @@ if __name__ == '__main__':
         proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output_folder], stdout=subprocess.PIPE, shell=True)
         (out2, err2) = proc.communicate()
         core_results_dir = out2.strip()
-        print core_results_dir
+        keep_logging('Moving final results and reports to %s' % core_results_dir,
+                     'Moving final results and reports to %s' % core_results_dir, logger, 'info')
+
 
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
@@ -654,6 +736,8 @@ if __name__ == '__main__':
                                 shell=True)
         (out2, err2) = proc.communicate()
         core_results_dir = out2.strip()
+        keep_logging('Generating RaxML and fasttree trees in %s/trees' % core_results_dir,
+                     'Generating RaxML and fasttree trees in %s/trees' % core_results_dir, logger, 'info')
         print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
@@ -669,6 +753,7 @@ if __name__ == '__main__':
         time_taken = datetime.now() - start_time_2
         keep_logging('Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, logger, 'info')
         keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
+
     else:
         logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')

@@ -67,7 +67,10 @@ def extract_only_ref_variant_fasta_unique_positions():
     unique_position_array = []
     for i in columns[0][1:]:
         replace_string = i.split(' ')
-        unique_position_array.append(int(replace_string[3]))
+        if replace_string[0] != "None":
+            unique_position_array.append(int(replace_string[3]))
+        else:
+            unique_position_array.append(int(replace_string[2]))
     #print unique_position_array
 
     counts = 1
@@ -75,15 +78,33 @@ def extract_only_ref_variant_fasta_unique_positions():
     for i in xrange(1, end, 1):
         print_string = ""
         ref_print_string = ""
-        sample_name = str(columns[i][0])
-        sample_name_re = re.sub('_R1.fastq.gz', '', sample_name)
-        sample_name_re = re.sub('_*1*.fastq.gz', '', sample_name_re)
+        grab_vcf_filename = len(os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
+        #print grab_vcf_filename
+        sample_name_re = columns[i][0][:grab_vcf_filename]
+        #print sample_name_re
 
-        if sample_name_re == os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''):
+        # Replaced this with a more stable check
+        #sample_name = str(columns[i][0])
+        # sample_name_re = re.sub('_R1.fastq.gz', '', sample_name)
+        # sample_name_re = re.sub('_R1_001.fastq.gz', '', sample_name_re)
+        # sample_name_re = re.sub('_L001.fastq.gz', '', sample_name_re)
+        # sample_name_re = re.sub('_*1*.fastq.gz', '', sample_name_re)
+        # sample_name_re = re.sub('_S.*', '', sample_name_re)
+
+
+
+        if sample_name_re == os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', '') or sample_name_re in os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''):
             vcf_header = "##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\n" % sample_name_re
             print_string = print_string + ">%s\n" % sample_name_re
             ref_print_string = ref_print_string + ">%s\n" % sample_name_re
-            variant_allele = ''.join(columns[i][1:])
+            #variant_allele = ''.join(columns[i][1:])
+            variant_allele = ""
+            for ntd in columns[i][1:]:
+                if "/" in ntd:
+                    variant_allele = variant_allele + ntd[0]
+                else:
+                    variant_allele = variant_allele + ntd
+            #print variant_allele
             print_string = print_string + str(variant_allele) + "\n"
             allele_variant_fasta = open("%s/%s_allele_variants.fa" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
             allele_ref_variant_fasta = open("%s/%s_ref_allele_variants.fa" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
@@ -98,7 +119,12 @@ def extract_only_ref_variant_fasta_unique_positions():
                 sample_ref_id = get_sample_reference.keys()
             for positions in unique_position_array:
                 pos_index = unique_position_array.index(positions)
-                allele_var = str(variant_allele_array[0][pos_index])
+
+                if "/" in str(variant_allele_array[0][pos_index]):
+                    allele_var = str(variant_allele_array[0][pos_index][0])
+                    #print allele_var
+                else:
+                    allele_var = str(variant_allele_array[0][pos_index])
                 ref_allele = str(get_reference.sequence({'chr': str(get_reference.keys()[0]), 'start': int(positions), 'stop': int(positions)}))
                 generate_vcf_string = "%s\t%s\t.\t%s\t%s\t221.999\t.\t.\t.\n" % (ref_id[0].split(' ')[0], positions, ref_allele, allele_var)
                 allele_ref_variant_vcf.write(generate_vcf_string)
@@ -122,7 +148,8 @@ def extract_only_ref_variant_fasta_unique_positions():
             subprocess.call([sed_command], shell=True)
             f1.write(sed_command)
 
-            sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
+            #os.system("bash %s" % filename)
+            #sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
             #os.system(sequence_lgth_cmd)
             #call("%s" % sequence_lgth_cmd, logger)
 

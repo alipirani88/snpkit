@@ -81,9 +81,10 @@ base_cmd: GenomeAnalysisTK.jar
 haplotype_parameters: -T HaplotypeCaller --genotyping_mode DISCOVERY
 #changes: 12th August
 gatk_filter1_parameter_expression: FQ < 40.00 && MQ > 20 && QUAL > 50 && DP > 15
-gatk_filter2_parameter_expression: AF1 < 1 && DP > 1
+gatk_filter2_parameter_expression: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
 #changed gatk_filter2_parameter_expression DP 15 from 10 that was used in VRE samples.
 # Default Parameters: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
+# gatk_filter2_parameter_expression: AF1 < 1 && DP > 1
 
 [vcftools]
 #vcftools_perl_bin: /vcftools_0.1.12b/perl/
@@ -479,16 +480,17 @@ Ref_Name: 803-A001-120-N-MRSA-TIP__ordered.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/803-A001-120-N-MRSA-TIP
 
+## This Efaecium settings is an old reference genome version. Not much difference except the contigs in the latest one is combined with gene start spacers seperating them out.
+##Efaecium NH cluster-based Reference Genomes
+##[3399-4058-0-RVRE]
+### Name of reference genome fasta file.
+##Ref_Name: 3399-4058-0-RVRE_ordered.fasta
+### path to the reference genome fasta file.
+##Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3399-4058-0-RVRE
+
+
 ##Efaecium NH cluster-based Reference Genomes
 [3399-4058-0-RVRE]
-# Name of reference genome fasta file.
-Ref_Name: 3399-4058-0-RVRE_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3399-4058-0-RVRE
-
-
-##Efaecium NH cluster-based Reference Genomes
-[3399-4058-0-RVRE_latest]
 # Name of reference genome fasta file.
 Ref_Name: 3399-4058-0-RVRE_final_ordered.fasta
 # path to the reference genome fasta file.
