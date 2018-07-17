@@ -45,19 +45,21 @@ def parser():
 def pipeline(args, logger):
     keep_logging('START: Pipeline', 'START: Pipeline', logger, 'info')
 
-    # Check Subroutines and create logger object: Arguments, Input files, Reference Index
+    """ SANITATION CHECKS """
+
+    # Check Subroutines: Arguments, Input FASTQ files, Reference Index
     keep_logging('START: Checking Dependencies...', 'Checking Dependencies', logger, 'info')
 
     # Reference Genome file name
     reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
     keep_logging('Getting Reference Genome name from config file: {}'.format(reference), 'Getting Reference Genome name from config file: {}'.format(reference), logger, 'info')
 
-    # Check FASTQ files
+    # Check if FASTQ files exists
     if args.type != "PE" and args.type != "BAM":
         reverse_raw = "None"
         file_exists(args.forward_raw, args.forward_raw, reference)
     elif args.type != "PE" and args.type != "SE":
-        print "BAM type... continue"
+        print "BAM type... Not Integrated... continue"
     else:
         file_exists(args.forward_raw, args.reverse_raw, reference)
 
@@ -66,13 +68,16 @@ def pipeline(args, logger):
     keep_logging('END: Checking Dependencies...', 'END: Checking Dependencies', logger, 'info')
 
     """ Start the pipeline: """
+    # split values provided with -steps argument and decide the starting point of pipeline
     steps_list = args.steps.split(',')
+
+    # Check cluster parameter and set cluster variable, used for running pipeline locally or parallelly on local or on cluster
     if args.cluster:
         cluster = args.cluster
     else:
         cluster = "local"
 
-
+    """ INDIVIDUAL SUBPROCESS FOR EACH PIPELINE STEPS"""
     ## 1. Pre-Processing Raw reads using Trimmomatic
     def clean():
         keep_logging('START: Pre-Processing Raw reads using Trimmomatic', 'START: Pre-Processing Raw reads using Trimmomatic', logger, 'info')
@@ -130,9 +135,10 @@ def pipeline(args, logger):
             final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
             #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
             final_raw_vcf = remove_5_bp_snp_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
+            final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             keep_logging('The final raw VCF file: {}'.format(final_raw_vcf), 'The final raw VCF file: {}'.format(final_raw_vcf), logger, 'debug')
             keep_logging('END: Variant Calling using Samtools without post-align bam input files.', 'END: Variant Calling using Samtools without post-align bam input files.', logger, 'info')
-            return final_raw_vcf
+            return final_raw_vcf, final_raw_indel_vcf
         else:
             keep_logging('Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. samtoolswithpostalignbam 3. gatkhaplotypecaller', 'Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. samtoolswithpostalignbam 3. gatkhaplotypecaller', logger, 'info')
             exit()
@@ -141,12 +147,19 @@ def pipeline(args, logger):
     ## 5. Stages: Variant Filteration
     def filter(gatk_depth_of_coverage_file):
         keep_logging('START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
+        final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
+        final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
+        if not os.path.isfile(gatk_depth_of_coverage_file):
+            file_basename = os.path.basename(gatk_depth_of_coverage_file)
+            keep_logging('The input file {} does not exists. Please provide another file with full path or check the files path.\n'.format(file_basename), 'The input file {} does not exists. Please provide another file or check the files path.\n'.format(file_basename), logger, 'exception')
+            exit()
         Avg_dp_cmd = "grep \'^Total\' %s | awk -F\'\t\' \'{print $3}\'" % gatk_depth_of_coverage_file
         proc = sp.Popen([Avg_dp_cmd], stdout=sp.PIPE, shell=True)
         (out, err) = proc.communicate()
         Avg_dp = float(out)
         print "The Average Depth per reference genome base is: %s" % Avg_dp
         filter2_variants(final_raw_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
+        filter2_indels(final_raw_indel_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
         keep_logging('END: Variant Filteration', 'END: Variant Filteration', logger, 'info')
 
     ## 6. Stages: Statistics
@@ -174,6 +187,21 @@ def pipeline(args, logger):
             out_sorted_bam = post_align()
             gatk_DepthOfCoverage_file = coverage_depth_stats()
 
+        if steps_list[0] == "filter":
+            #Sanity Check Post-varcall vcf and other files here
+            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf.gz" % (args.output_folder, args.analysis_name)
+            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
+            final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
+            if not os.path.exists(gatk_depth_of_coverage_file):
+                gatk_depth_of_coverage_file = coverage_depth_stats()
+            if os.path.exists(out_sorted_bam) and os.path.exists(final_raw_vcf) and os.path.exists(gatk_depth_of_coverage_file) and os.path.exists(final_raw_vcf_mpileup):
+                filter(gatk_depth_of_coverage_file)
+                #stats()
+            else:
+                keep_logging('The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files\n', 'The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files', logger, 'exception')
+                exit()
+
         elif steps_list[0] == "All":
             clean()
             out_sam = align_reads()
@@ -182,11 +210,13 @@ def pipeline(args, logger):
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf = varcall()
+            final_raw_vcf, final_raw_indel_vcf = varcall()
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             stats()
-
+	elif steps_list[0] == "bedtools":
+            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+            only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
     # Run individual variant calling steps: clean, align, post-align, varcall, filter, stats etc
     else:
 
@@ -198,7 +228,7 @@ def pipeline(args, logger):
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf = varcall()
+            final_raw_vcf, final_raw_indel_vcf = varcall()
             filter(gatk_depth_of_coverage_file)
             stats()
         elif steps_list[0] == "align":
@@ -209,7 +239,7 @@ def pipeline(args, logger):
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf = varcall()
+            final_raw_vcf, final_raw_indel_vcf = varcall()
             filter(gatk_depth_of_coverage_file)
             stats()
         elif steps_list[0] == "post-align":
@@ -219,7 +249,7 @@ def pipeline(args, logger):
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf = varcall()
+            final_raw_vcf, final_raw_indel_vcf = varcall()
             filter(gatk_depth_of_coverage_file)
             stats()
 
@@ -229,9 +259,9 @@ def pipeline(args, logger):
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf = varcall()
+            final_raw_vcf, final_raw_indel_vcf = varcall()
             filter(gatk_depth_of_coverage_file)
-            stats()
+            #stats()
 
         elif steps_list[0] == "filter":
             #Sanity Check Post-varcall vcf and other files here
@@ -241,7 +271,7 @@ def pipeline(args, logger):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
-            stats()
+            #stats()
         elif steps_list[0] == "stats":
             #Sanity check BAM and vcf files
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)

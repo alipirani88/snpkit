@@ -12,7 +12,8 @@ binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 
 # If you are using a grid system to run jobs, change the below parameters accordingly. Supports only pbs torque system.
 [scheduler]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
+large_resources: nodes=1:ppn=4,mem=47000mb,walltime=250:00:00
 email: USERNAME@med.umich.edu
 queue: XXX
 flux_account: XXX
@@ -104,6 +105,21 @@ version_for_coverage: /version_for_coverage/
 bioawk_bin: /bioawk-master/
 base_cmd: bioawk
 
+[fasttree]
+fasttree_bin: /Fasttree_2.1.10/
+#For Multithread fasttree; use FastTreeMP executable file
+base_cmd: FastTree
+
+[raxml]
+raxml_bin: /raxml/
+# Other raxml executable available to use: raxmlHPC-PTHREADS,raxmlHPC-PTHREADS-SSE3,raxmlHPC-SSE3
+base_cmd: raxmlHPC-SSE3
+parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
+
+[gubbins]
+# Change this path to wherever gubbins is located/installed. Right now, installed using conda from anaconda3 package installed in bin_group.
+gubbins_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
+base_cmd: run_gubbins.py
 
 [SNP_filters]
 filter_criteria: snitkin_filters
@@ -125,6 +141,8 @@ fq2: 0.025
 mq: 50
 # Filter variants with Variant QUAL less than the below threshold
 qual: 100
+# Filter variants with AF1 less than the below threshold
+af: 0.9
 # Filter Variants that are proximate to each other
 prox: 10
 
@@ -135,6 +153,45 @@ prox: 10
 #QD_SNP: 10.0
 #FS_SNP: 10.0
 #HAPLO_SNP: 20.0
+
+[contamination_filters]
+avg_depth: no
+# If AVG_DEPTH is yes, the below DP threshold will be ignored. Instead, LOW_DEPTH and HIGH_DEPTH filter parameter will be used.
+# Filter variants with Depth less than the below threshold
+dp: 3
+# A value of 2 means that regions with less than half of the average coverage of the entire genome will fail
+low_depth: 2
+# A value of 5 means that regions with 5x depth greater than the average coverage will fail
+high_depth: 5
+# Filter variants with FQ(Consensus Quality) greater than the below threshold
+fq: -20.00
+fq2: -20.00
+# Filter variants with MQ(Root Mean Square Quality) less than the below threshold
+mq: 50
+# Filter variants with Variant QUAL less than the below threshold
+qual: 0
+# Filter variants with AF1 less than the below threshold
+af: 1
+# Filter Variants that are proximate to each other
+prox: 1
+
+##SNP annotations
+[snpeff]
+snpeff_bin: /snpEff/
+base_cmd: snpEff.jar
+snpeff_parameters: -d -no-downstream -no-upstream
+prebuild: no
+db: Staphylococcus_aureus_subsp_aureus_usa300_tch1516
+dataDir: /data/
+
+[functional_filters]
+apply_functional_filters: yes
+find_phage_region: yes
+find_repetitive_region: yes
+mask_region: no
+mask_file: /nfs/esnitkin/bin_group/variant_calling_bin/reference/test_file.txt
+mobile_elements: yes
+apply_to_calls: yes
 
 ########################################################################################################################
 
@@ -162,6 +219,7 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/aus/
 Ref_Name: MRSA_USA_300.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300/
+
 
 [MRSA_USA_100]
 # Name of reference genome fasta file.

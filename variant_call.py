@@ -15,8 +15,11 @@ from config_settings import ConfigSectionMap
 from modules.logging_subprocess import *
 from modules.log_modules import *
 from argparse import RawTextHelpFormatter
+from modules.phage_detection import *
+from modules.variant_diagnostics.find_repeats import *
+from modules.variant_diagnostics.mask_regions import *
 
-# Command Line Argument Parsing
+""" Command Line Argument Parsing """
 def parser():
     parser = argparse.ArgumentParser(description='\nVariant Calling pipeline for Illumina PE/SE data.\n', formatter_class=RawTextHelpFormatter)
     required = parser.add_argument_group('Required arguments')
@@ -38,9 +41,14 @@ def parser():
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option\nThe possible modes are: cluster/parallel-cluster/parallel-local/local\ncluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.\nparallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.\nparallel-local: Run variant call jobs for each sample in parallel locally.\nlocal: Run variant call jobs locally.\nMake Sure to check if the [scheduler] section in config file is set up correctly for your cluster.')
     optional.add_argument('-clean', action='store', dest="clean", help='clean up intermediate files. Default: OFF')
     optional.add_argument('-extract_unmapped', action='store', dest="extract_unmapped", help='Extract unmapped reads, assemble it and detect AMR genes using ariba')
+    optional.add_argument('-datadir', action='store', dest="datadir", help='Path to snpEff data directory')
+    optional.add_argument('-snpeff_db', action='store', dest="snpeff_db", help='Name of pre-build snpEff database to use for Annotation')
+    optional.add_argument('-debug_mode', action='store', dest="debug_mode", help='yes/no for debug mode')
+    optional.add_argument('-gubbins', action='store', dest="gubbins", help='yes/no for running gubbins')
     return parser
 
-# Sanity checks and directory structure maintenance methods
+
+""" Sanity checks and directory structure maintenance methods """
 def file_exists(path1):
     if not os.path.isfile(path1):
         file_basename = os.path.basename(path1)
@@ -62,7 +70,7 @@ def get_filenames(dir, type, filenames, analysis, suffix):
         try:
             list_of_files = glob.glob("%s/*%s" % (dir, suffix))
             if len(list_of_files) < 1:
-                print "No fastq files with suffix %s found in reads directory %s" % (suffix, dir)
+                keep_logging('No fastq files with suffix %s found in reads directory %s' % (suffix, dir), 'No fastq files with suffix %s found in reads directory %s' % (suffix, dir), logger, 'info')
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 keep_logging('Error while listing files in reads directory.', 'Error while listing files in reads directory.', logger, 'exception')
@@ -76,7 +84,7 @@ def get_filenames(dir, type, filenames, analysis, suffix):
                 list_of_files.append(line)
     return list_of_files
 
-# Methods to generate jobs for various pipeline tasks
+""" Methods to generate jobs for various pipeline tasks """
 def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, config_file, logger):
     jobs_temp_dir = "%s/temp_jobs" % output_folder
     make_sure_path_exists(jobs_temp_dir)
@@ -291,14 +299,29 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
             keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
             call("bash %s" % job, logger)
 
-# Pipeline individual task methods
+""" Pipeline individual task methods """
 def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, config_file):
     file_exists(reference)
-    core_prep_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file)
+    if args.debug_mode == "yes":
+        core_prep_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file)
+    else:
+        core_prep_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file)
+
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    # Changed on 04/11/2018
+    # Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
+    #                   % (ConfigSectionMap("scheduler", Config)['email'],
+    #                      ConfigSectionMap("scheduler", Config)['notification'],
+    #                      ConfigSectionMap("scheduler", Config)['queue'],
+    #                      ConfigSectionMap("scheduler", Config)['flux_account'])
+
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
+                      % (ConfigSectionMap("scheduler", Config)['email'],
+                         ConfigSectionMap("scheduler", Config)['notification'],
+                         ConfigSectionMap("scheduler", Config)['resources'],
+                         ConfigSectionMap("scheduler", Config)['queue'],
+                         ConfigSectionMap("scheduler", Config)['flux_account'])
 
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
@@ -327,15 +350,28 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
         print qid.split('.')[0]
     keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
-
 def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     file_exists(reference)
-    core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+    if args.debug_mode == "yes":
+        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+    else:
+        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    # Changed on 11/04/2018
+    # Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
+    #                   % (ConfigSectionMap("scheduler", Config)['email'],
+    #                      ConfigSectionMap("scheduler", Config)['notification'],
+    #                      ConfigSectionMap("scheduler", Config)['queue'],
+    #                      ConfigSectionMap("scheduler", Config)['flux_account'])
 
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
+                      % (ConfigSectionMap("scheduler", Config)['email'],
+                         ConfigSectionMap("scheduler", Config)['notification'],
+                         ConfigSectionMap("scheduler", Config)['large_resources'],
+                         ConfigSectionMap("scheduler", Config)['queue'],
+                         ConfigSectionMap("scheduler", Config)['flux_account'])
+    
     with open(job_name, 'w') as out:
         job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
@@ -364,12 +400,58 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
 
 def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     file_exists(reference)
-    core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+    if args.debug_mode == "yes":
+        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+    else:
+        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+    job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
+    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    with open(job_name, 'w') as out:
+        job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
+        out.write(job_title+'\n')
+        out.write(Pbs_model_lines+'\n')
+        out.write("#  Change to the directory you submitted from\nif [ -n \"$PBS_O_WORKDIR\" ]; then cd $PBS_O_WORKDIR; fi" + '\n')
+        out.write("echo \"PBS working directory: $PBS_O_WORKDIR\"" + '\n')
+        out.write("cd %s" % core_temp_dir + '\n')
+        out.write(core_pipeline+'\n')
+    out.close()
+
+    if cluster == "local":
+        keep_logging('Running local mode: bash %s' % job_name, 'Running local mode: bash %s' % job_name, logger, 'info')
+        call("bash %s" % job_name, logger)
+    elif cluster == "parallel-local":
+        call("bash %s" % job_name, logger)
+    elif cluster == "cluster":
+        #call("qsub %s" % job_name, logger)
+        keep_logging('Submitting single cluster Job: qsub %s' % job_name, 'Submitting single cluster Job: qsub %s' % job_name, logger, 'info')
+        qid = subprocess.check_output("bash %s" % job_name, shell=True)
+        print qid.split('.')[0]
+    elif cluster == "parallel-cluster":
+        #call("qsub %s" % job_name, logger)
+        keep_logging('Submitting parallel-cluster Job: qsub %s' % job_name, 'Submitting parallel-cluster Job: qsub %s' % job_name, logger, 'info')
+        qid = subprocess.check_output("qsub %s" % job_name, shell=True)
+        print qid.split('.')[0]
+    #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
+
+def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
+    if args.debug_mode == "yes":
+        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        if args.gubbins == "yes":
+            core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+    else:
+        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        if args.gubbins == "yes":
+            core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+
+
+
+
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
     with open(job_name, 'w') as out:
-        job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
+        job_title = "#PBS -N %s_%s_core_tree" % (log_unique_time, analysis_name)
         out.write(job_title+'\n')
         out.write(Pbs_model_lines+'\n')
         out.write("#  Change to the directory you submitted from\nif [ -n \"$PBS_O_WORKDIR\" ]; then cd $PBS_O_WORKDIR; fi" + '\n')
@@ -394,14 +476,16 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
         qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         print qid.split('.')[0]
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
-### End of methods
 
-# Start of Main Method/Pipeline
+""" Start of Main Method/Pipeline """
 if __name__ == '__main__':
+
     # Set up logging modules and config file
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()
+
     args = parser().parse_args()
+
     global config_file
     global log_unique_time
     if args.output_folder != '':
@@ -413,16 +497,22 @@ if __name__ == '__main__':
     else:
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
     global logger
-    logger = generate_logger(args.output_folder, args.analysis_name, log_unique_time)
+    logs_folder = args.output_folder + "/Logs"
+    make_sure_path_exists(logs_folder)
+    # logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
     global Config
     global files_to_delete
     files_to_delete = []
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
-    call("cp %s %s/%s_%s_config_copy.txt" % (config_file, args.output_folder, log_unique_time, args.analysis_name), logger)
+
 
     # Run pipeline steps
-    if "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps:
+    if "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps:
+        vc_logs_folder = logs_folder + "/variant_calling"
+        make_sure_path_exists(vc_logs_folder)
+        logger = generate_logger(vc_logs_folder, args.analysis_name, log_unique_time)
+        call("cp %s %s/%s_%s_config_copy.txt" % (config_file, vc_logs_folder, log_unique_time, args.analysis_name), logger)
         if args.cluster:
             cluster_mode = args.cluster
         else:
@@ -433,14 +523,22 @@ if __name__ == '__main__':
         list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
         list_of_jobs = create_varcall_jobs(list_of_files, args.type, args.output_folder, args.index, args.steps, config_file, logger)
         run_varcall_jobs(list_of_jobs, cluster_mode, log_unique_time, args.analysis_name, args.output_folder, logger)
+        time_taken = datetime.now() - start_time_2
+        keep_logging('Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, logger, 'info')
+        keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
         keep_logging('End: Variant calling Pipeline', 'End: Variant calling Pipeline', logger, 'info')
 
     elif "core_prep" in args.steps:
-        keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
+        core_prep_logs_folder = logs_folder + "/core_prep"
+        make_sure_path_exists(core_prep_logs_folder)
         core_temp_dir = args.output_folder + "/core_temp_dir/"
+        logger = generate_logger(core_prep_logs_folder, args.analysis_name, log_unique_time)
+        keep_logging('START: Copying variant calling results to %s and running core_prep step.' % core_temp_dir, 'START: Copying variant calling results to %s and running core_prep step.' % core_temp_dir, logger, 'info')
+        call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_prep_logs_folder, log_unique_time, args.analysis_name), logger)
+
         make_sure_path_exists(core_temp_dir)
         keep_logging('Copying vcf files to %s' % core_temp_dir, 'Copying vcf files to %s' % core_temp_dir, logger, 'info')
-        cp_command = "cp %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf.gz %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf.gz %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
+        cp_command = "cp %s/*/*_filter2_indel_final.vcf %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf* %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
         call(cp_command, logger)
         list_of_gzipped_files = glob.glob("%s/*.gz" % core_temp_dir)
         keep_logging('Decompressing gzipped files in %s' % core_temp_dir, 'Decompressing gzipped files in %s' % core_temp_dir, logger, 'info')
@@ -451,31 +549,66 @@ if __name__ == '__main__':
         results = Parallel(n_jobs=num_cores)(delayed(run_command_list)(i) for i in gzipped_command_list)
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
-            list_of_vcf_files = generate_custom_vcf_file_list(list_of_files, logger)
+            list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
+
+
+            keep_logging('Number of final variant call vcf files: %s' % len(list_of_vcf_files), 'Number of final variant call vcf files: %s' % len(list_of_vcf_files), logger, 'info')
+            keep_logging('Make sure the number of final variant call vcf files looks correct', 'Make sure the number of final variant call vcf files looks correct', logger, 'info')
+            keep_logging('Running core_prep on these files...', 'Running core_prep on these files...', logger, 'info')
+
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_vcf_files:
                     out_fp.write(os.path.basename(file)+'\n')
             out_fp.close()
         else:
-            call("ls -1a %s/*.vcf_no_proximate_snp.vcf > %s/vcf_filenames" % (core_temp_dir,core_temp_dir), logger)
-            list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
-            list_of_files = subprocess.check_output(list_cmd, shell=True)
-            with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_files.splitlines():
-                    out_fp.write(os.path.basename(file)+'\n')
-            out_fp.close()
+            keep_logging('Checking if all the variant calling results exists in %s' % core_temp_dir, 'Checking if all the variant calling results exists in %s' % core_temp_dir, logger, 'info')
+            #call("ls -1a %s/*.vcf_no_proximate_snp.vcf > %s/vcf_filenames" % (core_temp_dir, core_temp_dir), logger)
+            try:
+                list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
+                list_of_files = subprocess.check_output(list_cmd, shell=True)
+
+                keep_logging('Number of final variant call vcf files: %s' % len(list_of_files.splitlines()), 'Number of final variant call vcf files: %s' % len(list_of_files.splitlines()), logger, 'info')
+                keep_logging('Make sure the number of final variant call vcf files looks correct', 'Make sure the number of final variant call vcf files looks correct', logger, 'info')
+                keep_logging('Running core_prep on these files...', 'Running core_prep on these files...', logger, 'info')
+                with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
+                    for file in list_of_files.splitlines():
+                        out_fp.write(os.path.basename(file)+'\n')
+                out_fp.close()
+            except:
+                keep_logging('Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
+                             'This can be done by checking if all the variant call results folder contains final variant call vcf file: *.vcf_no_proximate_snp.vcf file' % core_temp_dir, 'Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
+                                                                                                                                                                                              'This can be done by checking if all the variant call results folder contains final variant call vcf file: *.vcf_no_proximate_snp.vcf file' % core_temp_dir, logger, 'exception')
+                exit()
+
+
+
+            # list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
+            # list_of_files = subprocess.check_output(list_cmd, shell=True)
+            # print list_of_files
+            # with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
+            #     for file in list_of_files.splitlines():
+            #         out_fp.write(os.path.basename(file)+'\n')
+            # out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         run_core_prep_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, config_file)
+        time_taken = datetime.now() - start_time_2
+        keep_logging('Logs were recorded in file with extension log.txt in %s' % core_prep_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % core_prep_logs_folder, logger, 'info')
+        keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
 
     elif "core" in args.steps:
+        core_logs_folder = logs_folder + "/core"
+        make_sure_path_exists(core_logs_folder)
+        logger = generate_logger(core_logs_folder, args.analysis_name, log_unique_time)
         keep_logging('START: Extract core snps and generate diagnostic plots', 'START: Extract core snps and generate diagnostic plots', logger, 'info')
+        call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_logs_folder, log_unique_time, args.analysis_name), logger)
         core_temp_dir = args.output_folder + "/core_temp_dir/"
         core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
-        make_sure_path_exists(core_results_dir)
+        #make_sure_path_exists(core_results_dir)
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
-            list_of_vcf_files = generate_custom_vcf_file_list(list_of_files, logger)
+            list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
             list_of_label_files = []
+
             for i in list_of_vcf_files:
                 list_of_label_files.append(i + '_positions_label')
             if len(list_of_label_files) == len(list_of_vcf_files):
@@ -486,13 +619,15 @@ if __name__ == '__main__':
             else:
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
+
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_vcf_files:
                     out_fp.write(os.path.basename(file)+'\n')
             out_fp.close()
         else:
-            list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
-            list_of_vcf_files = glob.glob("%s/*vcf_no_proximate_snp.vcf" % core_temp_dir)
+            list_of_label_files = glob.glob("%s/*_no_proximate_snp.vcf_positions_label" % core_temp_dir)
+            list_of_vcf_files = glob.glob("%s/*_filter2_final.vcf_no_proximate_snp.vcf" % core_temp_dir)
+            print sorted(list_of_vcf_files)
             if len(list_of_label_files) == len(list_of_vcf_files):
                 for i in list_of_label_files:
                     if os.stat(i).st_size == 0:
@@ -502,17 +637,78 @@ if __name__ == '__main__':
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_vcf_files:
+                for file in sorted(list_of_vcf_files):
                     out_fp.write(os.path.basename(file)+'\n')
             out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
+
+        # Parse Phaster results file to extract phage region.
+        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+            keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+                         'info')
+            functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % core_temp_dir
+            f1 = open(functional_class_filter_positions, 'w+')
+            if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                phage_region_positions = parse_phaster(reference, core_temp_dir, logger, Config)
+                with open(phage_region_positions, 'rU') as fp:
+                    for line in fp:
+                        f1.write(line)
+                fp.close()
+            if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
+                # Find repeat regions in reference genome
+                repeat_region_positions = nucmer_repeat(reference, core_temp_dir, logger, Config)
+                with open(repeat_region_positions, 'rU') as fp:
+                    for line in fp:
+                        f1.write(line)
+                fp.close()
+            if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
+                # Mask custom region/Positions
+                if ConfigSectionMap("functional_filters", Config)['mask_file']:
+                    mask_file = ConfigSectionMap("functional_filters", Config)['mask_file']
+                    mask_extension = os.path.splitext(mask_file)[1]
+                    if mask_extension == ".bed":
+                        mask_positions_file = mask_regions(mask_file, core_temp_dir, logger, Config)
+                        keep_logging(
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            logger, 'info')
+                    else:
+                        # mask_positions_file = mask_file
+                        os.system("cp %s %s/mask_positions.txt" % (mask_file, core_temp_dir))
+                        mask_positions_file = "%s/mask_positions.txt" % core_temp_dir
+                        keep_logging(
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            logger, 'info')
+                    with open(mask_positions_file, 'rU') as fp:
+                        for line in fp:
+                            f1.write(line)
+                    fp.close()
+            f1.close()
+
+
+
         run_core_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, core_results_dir, config_file)
+        time_taken = datetime.now() - start_time_2
+        keep_logging('Logs were recorded in file with extension log.txt in %s' % core_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % core_logs_folder, logger, 'info')
+        keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
 
     elif "report" in args.steps:
+        report_logs_folder = logs_folder + "/report"
+        make_sure_path_exists(report_logs_folder)
+        logger = generate_logger(report_logs_folder, args.analysis_name, log_unique_time)
         keep_logging('START: Generating alignment and variant calling report', 'START: Generating alignment and variant calling report', logger, 'info')
+        call("cp %s %s/%s_%s_config_copy.txt" % (config_file, report_logs_folder, log_unique_time, args.analysis_name), logger)
         core_temp_dir = args.output_folder + "/core_temp_dir/"
-        core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
-        make_sure_path_exists(core_results_dir)
+        # core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
+        # make_sure_path_exists(core_results_dir)
+        proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output_folder], stdout=subprocess.PIPE, shell=True)
+        (out2, err2) = proc.communicate()
+        core_results_dir = out2.strip()
+        keep_logging('Moving final results and reports to %s' % core_results_dir,
+                     'Moving final results and reports to %s' % core_results_dir, logger, 'info')
+
+
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
         with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
@@ -524,9 +720,45 @@ if __name__ == '__main__':
                 exit()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         run_report_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, core_results_dir, config_file)
+        time_taken = datetime.now() - start_time_2
+        keep_logging('Logs were recorded in file with extension log.txt in %s' % report_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % report_logs_folder, logger, 'info')
+        keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
+
+    elif "tree" in args.steps:
+        tree_logs_folder = logs_folder + "/tree"
+        make_sure_path_exists(tree_logs_folder)
+        logger = generate_logger(tree_logs_folder, args.analysis_name, log_unique_time)
+        keep_logging('START: Generating FastTree and RAxML trees', 'START: Generating FastTree and RAxML trees', logger, 'info')
+        call("cp %s %s/%s_%s_config_copy.txt" % (config_file, tree_logs_folder, log_unique_time, args.analysis_name), logger)
+        core_temp_dir = args.output_folder + "/core_temp_dir/"
+        #core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
+        proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output_folder], stdout=subprocess.PIPE,
+                                shell=True)
+        (out2, err2) = proc.communicate()
+        core_results_dir = out2.strip()
+        keep_logging('Generating RaxML and fasttree trees in %s/trees' % core_results_dir,
+                     'Generating RaxML and fasttree trees in %s/trees' % core_results_dir, logger, 'info')
+        print core_results_dir
+        list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
+        list_of_vcf_files = []
+        with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
+            for line in out_fp:
+                list_of_vcf_files.append(line)
+        for i in list_of_label_files:
+            if os.stat(i).st_size == 0:
+                keep_logging('The file {} is empty. Please rerun core_prep step again.\n'.format(i), 'The file {} is empty. Please rerun core_prep step again.\n'.format(i), logger, 'exception')
+                exit()
+        reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
+        run_tree_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, core_results_dir, config_file)
+        time_taken = datetime.now() - start_time_2
+        keep_logging('Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, logger, 'info')
+        keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
 
     else:
+        logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')
-    time_taken = datetime.now() - start_time_2
-    keep_logging('Logs were recorded in file with extension log.txt in output folder', 'Logs were recorded in file with extension log.txt in output folder', logger, 'info')
-    keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
+        time_taken = datetime.now() - start_time_2
+        keep_logging('Logs were recorded in file with extension log.txt in %s' % logs_folder, 'Logs were recorded in file with extension log.txt in %s' % logs_folder, logger, 'info')
+        keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
+
+
