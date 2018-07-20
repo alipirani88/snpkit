@@ -627,7 +627,7 @@ if __name__ == '__main__':
         else:
             list_of_label_files = glob.glob("%s/*_no_proximate_snp.vcf_positions_label" % core_temp_dir)
             list_of_vcf_files = glob.glob("%s/*_filter2_final.vcf_no_proximate_snp.vcf" % core_temp_dir)
-            print sorted(list_of_vcf_files)
+            #print sorted(list_of_vcf_files)
             if len(list_of_label_files) == len(list_of_vcf_files):
                 for i in list_of_label_files:
                     if os.stat(i).st_size == 0:
