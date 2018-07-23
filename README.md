@@ -3,12 +3,12 @@
 ## Synopsis
 
 
-This pipeline calls variants on PE/SE reads provided in a directory and generates core SNP/consensus fasta files that can be used to to build a phylogeny or as an input for Gubbins/Beast analysis
+The pipeline call variants on Illumina PE/SE reads provided in a directory and generates a core SNP/Indel matrix and various SNP consesensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/Beast analysis.
 
 ## Contents
 
 - [Installation](#installation)
-- [Input](#input)
+- [Input](#input-requirements)
 - [Steps](#steps)
 - [Command line options](#command-line-options)
 - [Run pipeline on Compute cluster](#run-pipeline-on-compute-cluster)
@@ -22,7 +22,7 @@ This pipeline calls variants on PE/SE reads provided in a directory and generate
 
 Pending. 
 
-Ignore this if you are in snitkin lab. The dependencies are already installed in lab bin_group folder: 
+Ignore this if you are in Snitkin lab. The dependencies are already installed in lab bin_group folder: 
 
 /nfs/esnitkin/bin_group/variant_calling_bin/. 
 
@@ -31,14 +31,16 @@ Use the python version installed in:
 /nfs/esnitkin/bin_group/anaconda2/bin/python
 
 
-## Input
+## Input Requirements
 
+- a directory(-readsdir) containing SE/PE reads
+- a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. This settings will be applied globally on all variant call sample jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize this config file and provide it with the -config argument.
+- Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fastq.gz), other acceptable fastq extensions are: R1.fastq.gz/_R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, _1.fastq.gz/.1.fastq.gz.
 
-Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize this config file and provide it with the -config argument. 
+For more information, refer [Customizing Config file](#customizing-config-file)
 
-Detailed information in section [Customizing Config file](#customizing-config-file)
+<!--- Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
 
-Note: Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fastq.gz), other acceptable fastq extensions are: R1.fastq.gz/_R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, _1.fastq.gz/.1.fastq.gz. 
 
 
 ## Steps
@@ -46,34 +48,39 @@ Note: Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fast
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/pipeline.png)
 
-There are three main steps to generate core SNPs which can be provided with -steps argument and should be run in sequential order.
+Pipeline is divided into three individual steps(-steps option) which should be run in sequential order. 
 
-**1. Variant Calling:** This step will run all the standard variant calling steps on sample read files residing in input reads directory. 
+**1. Variant Calling:** This step will run all standard variant calling steps on sample reads residing in input reads directory.
+
 The possible options are:
 
-Option ***All*** :  This will run all the variant calling steps starting from cleaning the reads to variant calling and generating intermediate files that will be used in later steps. 
+Option ***All*** :  This will run all variant calling steps starting from read trimming to variant calling. 
 
-Option ***clean,align,post-align,varcall,filter,stats*** :  This option will run variant calling steps starting from cleaning to variant calling, variant filtering and generating stats.
+Option ***clean,align,post-align,varcall,filter,stats*** :  This option will run variant calling steps starting from read trimming, alignment to reference genome, post-alignment format conversion, variant call/filter and finally generates mapping/variant statistics.
 
-You can modify this argument to run a part of the pipeline. For example, if you want to restart the pipeline from alignment step, you can do it by supplying the following option: "align,post-align,varcall,filter,stats" which will skip the Trimmomatic cleaning part.
+You can run a part of the pipeline by customizing the order of -steps argument. For example, to skip Trimmomatic cleaning part, run it with following options: "align,post-align,varcall,filter,stats" 
 
 
-Note: The order of variant calling steps needs to be sequential to avoid any errors. While skipping any of the steps, make sure the results for skipped steps are already present in your output folder.
+Note: The order of variant calling steps needs to be sequential. While skipping any of the steps, make sure those skipped steps finished without any errors.
 
 
 **2. Preparing files for Core SNP extraction and diagnostics purposes:**
 
 
-Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for the last core step i.e generating the consensus fasta file out of core snps. This can be a time consuming step depending on how closely related the samples are to the reference genome.  
+Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for generating core SNP matrix/consensus.
 
 
 **3. Generate Core SNP consensus and data matrix for diagnostics plots:**
 
-Option ***core*** : This step will generate core SNP consensus fasta file and a consensus fasta of only core variant positions. Various data matrices will generated at this step that can be used later for diagnostics purposes. 
+Option ***core*** : This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias. 
 
-**4. Generate report for the pipeline:**
+**4. Generate report and aggregate results for the pipeline:**
 
-Option ***report*** : This step will generate final core results directory and various reports that will summarize the alignment and core SNP results. 
+Option ***report*** : This step will aggregate the results in prefix_core_results directory under the output directory.
+
+**5. Phylogenetic reconstruction and recombination filtering using FastTree/RAxML/Gubbins:**
+
+Option ***tree*** : This step will generate FastTree/RAxML tree from pre-recombination filtered consensus files. If -gubbins option is set to yes, it will run gubbins on all final consensus files..
 
 ## Command line options
 
@@ -83,35 +90,63 @@ usage: variant_call.py [-h] -type TYPE -readsdir DIR -outdir OUTPUT_FOLDER
                        -index INDEX [-steps STEPS] -analysis ANALYSIS_NAME
                        [-config CONFIG] [-suffix SUFFIX]
                        [-filenames FILENAMES] [-cluster CLUSTER]
+                       [-clean CLEAN] [-extract_unmapped EXTRACT_UNMAPPED]
+                       [-datadir DATADIR] [-snpeff_db SNPEFF_DB]
+                       [-debug_mode DEBUG_MODE] [-gubbins GUBBINS]
 
 Variant Calling pipeline for Illumina PE/SE data.
 
-Required arguments:
+optional arguments:
+  -h, --help            show this help message and exit
 
-  -type         Type of reads: SE or PE
-  -readsdir     Path to Sequencing Reads Data directory. Requires full/absolute path.
-  -outdir       Output Folder Path ending with output directory name to save the results. Requires full/absolute path.
-  -index        Reference Index Name. Most Frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris
-  -steps        Variant Calling Steps in sequential order.
-                1.   All: This will run all the steps starting from cleaning the reads to variant calling;
-                2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling.
-                3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps
-                4.   core_prep: Run this step before running the core steps. This will prepare the data required for generating core SNPs
-                5.   core: extract core snps and generate diagnostics plot data matrices to explore filtered snps.
-  -analysis     Unique analysis name that will be used as prefix to saving results and log files.
+Required arguments:
+  -type TYPE            Type of reads: SE or PE
+  -readsdir DIR         Path to Sequencing Reads Data directory. NOTE: Provide full/absolute path.
+  -outdir OUTPUT_FOLDER
+                        Output Folder Path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
+  -index INDEX          Reference Index Name. Most Frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris Make sure the paths are properly set in config file
+  -steps STEPS          Variant Calling Steps in sequential order.
+                        1.   All: This will run all the steps starting from cleaning the reads to variant calling;
+                        2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. 
+                        You can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.
+                        The order is required to be sequential while using this option. Also, while skipping any of the step make sure you have results already present in your output folder.
+                        3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps
+                        4.   core_prep: Run this step before running the core steps. This will prepare the data required for generating core SNPs
+                        5.   core: extract core snps and generate diagnostics plot data matrices to explore filtered snps.
+  -analysis ANALYSIS_NAME
+                        Unique analysis name that will be used as prefix to saving results and log files.
 
 Optional arguments:
-  -config       Path to Config file, Make sure to check config settings before running pipeline
-  -suffix       Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz
-  -filenames    fastq filenames with one single-end filename per line. if the type is set to PE, it will detect the second paired-end filename with the suffix from first filename.
-  -cluster      Run variant calling pipeline in one of the four modes. Default: local. The possible modes are: cluster/parallel-cluster/parallel-local/local
+  -config CONFIG        Path to Config file, Make sure to check config settings before running pipeline
+  -suffix SUFFIX        Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz
+  -filenames FILENAMES  fastq filenames with one single-end filename per line. 
+                        If the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. 
+                        Useful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. 
+                        Otherwise the pipeline will consider all the samples available in reads directory.
+  -cluster CLUSTER      Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option
+                        The possible modes are: cluster/parallel-cluster/parallel-local/local
+                        cluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.
+                        parallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.
+                        parallel-local: Run variant call jobs for each sample in parallel locally.
+                        local: Run variant call jobs locally.
+                        Make Sure to check if the [scheduler] section in config file is set up correctly for your cluster.
+  -clean CLEAN          clean up intermediate files. Default: OFF
+  -extract_unmapped EXTRACT_UNMAPPED
+                        Extract unmapped reads, assemble it and detect AMR genes using ariba
+  -datadir DATADIR      Path to snpEff data directory
+  -snpeff_db SNPEFF_DB  Name of pre-build snpEff database to use for Annotation
+  -debug_mode DEBUG_MODE
+                        yes/no for debug mode
+  -gubbins GUBBINS      yes/no for running gubbins
 
 ```
 
 ## Run pipeline on Compute cluster
 
 
-The variant calling can be run in parallel on each sample using the -cluster argument. Set the pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. For more details, check out UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website.
+Variant calling can be run in parallel on each sample using -cluster argument. Set pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. 
+
+For more details, refer UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website for detailed explanation of each pbs specifications.
 
 
 Possible options for -cluster option(Supported system: pbs):
@@ -122,11 +157,13 @@ Possible options for -cluster option(Supported system: pbs):
 
 ***cluster*** : This option will run the pipeline on a single cluster. This option is similar to local but will rather run on a cluster node. It will not make use of multiple cores present on a cluster. Use this option for few number of samples or for testing purposes or for few number of large size samples which requires multiple cores to analyze individual samples.
 
-***parallel-cluster*** : The pipeline is optimized for this option. When this option is set, the pipeline will run everything on a cluster making use of all the cores available. This option will also submit individual jobs for each sample seperately and whenever needed. When you set this option for each step in the pipeline, make sure all the jobs submitted by the pipeline at each step is completed before proceeding to another step. You can check the status of the job with: 
+***parallel-cluster*** : The variant call step(All) is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on individual compute cluster. When you set this option for each step in the pipeline, make sure all the jobs submitted by the pipeline at each step is completed before proceeding to another step. You can check the status of the job with: 
 
 ```
 qstat -u USERNAME  
 ```
+
+Note: Use parallel-cluster mode for All/clean,align,post-align,varcall,filter,stats steps. Use cluster/parallel-local mode for core_prep and core steps. parallel-cluster and cluster will be merged in next release.
 
 ## Quick Start
 
@@ -153,7 +190,7 @@ The results of variant calling will be placed in an individual folder generated 
 Run this steps to generate various intermediate files that will be used for generating core SNPs.
 
 ```
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core_prep -cluster parallel-cluster
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core_prep -cluster cluster
 
 ```
 
@@ -170,26 +207,95 @@ nodes=1:ppn=4,mem=47000mb,walltime=24:00:00
 Replace the resources option in scheduler section of config file with the above line before running the command.
 
 ```
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster cluster
+
+```
+
+- Run report step to aggregate results under prefix_core_results folder
+
+```
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps report -cluster cluster
+
+```
+
+- Run tree step to generate FastTree/RAxML phylogenetic tree and recombination filterating using Gubbins
+
+```
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps tree -cluster cluster -gubbins yes
 
 ```
 
 ## Output Files
 
-All the final results will be saved into date_time_core_results directory inside the output folder. 
+All the final results from report step will be saved under date_time_core_results directory inside the output folder. 
+
 
 ```
 
 2018_01_13_13_18_03_core_results
 ├── core_snp_consensus
-└── data_matrix
+│   ├── consensus_allele_variant_positions
+│   ├── consensus_ref_allele_unmapped_variant
+│   ├── consensus_ref_allele_variant_positions
+│   ├── consensus_ref_variant_positions
+│   ├── consensus_variant_positions
+│   └── core_vcf
+├── data_matrix
+│   ├── snpEff_results
+│   └── temp
+├── gubbins
+└── trees
 
 ```
 
-core_snp_consensus directory contains the core consensus fasta and vcf files.
-data_matrix contains all matrices and reports generated during report step.  
+- core_snp_consensus: contains various combination of consensus fasta and vcf files. 
 
-As the name suggests, data_matrix will contain various matrices that can be queried or plotted for further diagnosing the variant call results. Alternatively, you can run a R script provided inside the data_matrix folder to generate the plots. 
+- gubbins: contains multi-fasta consensus generated from invidual consensus file in core_snp_consensus folder.
+
+***date_time_referencegenome_var_consensus.fa:*** consensus generated from core variant positions.
+
+***date_time_referencegenome_ref_var_consensus.fa*** full consensus relative to the reference genome generated from core variant positions (final core variant positions + reference allele positions + non-core variant positions). 
+
+Note: non-core variant positions here refers to the positions where a variant was observed but was filtered out for not meeting the core variant criteria/hard variant filters/functional filter. non-core variant positions therefore will contain a reference allele.
+
+***date_time_referencegenome_allele_var_consensus.fa:*** all unique variant positions that was called in any sample. This contains core variant positions, non-core variant positions substituted with dash for unmapped and N’s for positions that didn't meet hard variant filters or fall under functional filter position. non-core variant positions that met all the filter parameters is substituted with the variant allele.
+
+***date_time_referencegenome_ref_allele_var_consensus.fa*** full consensus relative to the reference genome and all unique variant positions that was called in any sample. This contains core variant positions, non-core variant positions substituted with dash for unmapped and N’s for positions that didn't meet hard variant filters or fall under functional filter position. non-core variant positions that met all the filter parameters were substituted with variant allele.
+
+***date_time_referencegenome_ref_allele_unmapped_consensus.fa:*** full consensus relative to the reference genome and all unique variant positions that was called in any sample. This contains core variant positions, non-core variant positions substituted with dash for unmapped and N’s for positions that didn't meet hard variant filters or fall under functional filter position. non-core variant positions that met all the filter parameters were substituted with variant allele. Positions that were unmapped relative to the reference genome are substituted with dashes.
+
+
+- data_matrix: contains different data matrices and reports useful for variant diagnostics. 
+
+The various matrices that can be queried or plotted for further diagnosing the results are:
+
+***SNP/Indel Matrix***:
+
+Indel_matrix_allele.csv
+Indel_matrix_code.csv
+SNP_matrix_allele.csv
+SNP_matrix_allele_new.csv
+SNP_matrix_code.csv
+
+***Bargraph matrices***
+bargraph_counts.txt
+bargraph_indel_counts.txt
+bargraph_indel_percentage.txt
+bargraph_percentage.txt
+
+***Functional filters***
+Functional_class_filter_positions.txt
+phage_region_positions.txt
+repeat_region_positions.txt
+
+***Core variant positions***
+Only_ref_variant_positions_for_closely_matrix.txt
+Only_ref_variant_positions_for_closely_without_functional_filtered_positions
+
+
+
+
+Alternatively, you can run a R script provided inside the data_matrix folder to generate the plots. 
 
 Require: ggplot2 and heatmap.3
 
@@ -251,7 +357,7 @@ Pending...
 | . |  |
 
 
-## Bonus Ducks
+## Bonus
 
 - Run only a part of variant calling step
 
