@@ -355,11 +355,11 @@ Rscript generate_diagnostics_plots.R
 
 - barplot
 
-![alt tag]https://github.com/alipirani88/variant_calling_pipeline/blob/master/barplot.png)
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/barplot.png)
 
 - barplot_DP
 
-![alt tag]https://github.com/alipirani88/variant_calling_pipeline/blob/master/barplot_DP.png)
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/barplot_DP.png)
 
 
 <!-- 
