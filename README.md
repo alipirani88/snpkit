@@ -302,10 +302,15 @@ SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status co
 Different status codes are: 
 
 unmapped = -1
+
 reference allele = 0
+
 core = 1
+
 filtered = 2
+
 non-core or True variant but filtered out due to another sample = 3
+
 
 **Functional class:**
 
@@ -369,11 +374,11 @@ Only_ref_variant_positions_for_closely_without_functional_filtered_positions
 
 | Extension | Description |
 | --------- | ----------- |
-| . barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
-| . barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
-| . temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
-| . DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
-| . temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low DP values |
+| barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
+| barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
+| temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
+| DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
+| temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low DP values |
 
 
 barplot.pdf
