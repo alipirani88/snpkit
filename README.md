@@ -242,6 +242,19 @@ All the final results from report step will be saved under date_time_core_result
 │   ├── consensus_variant_positions
 │   └── core_vcf
 ├── data_matrix
+│   ├── Indel_matrix_allele.csv
+│   ├── Indel_matrix_code.csv
+│   ├── SNP_matrix_allele.csv
+│   ├── SNP_matrix_allele_new.csv
+│   ├── SNP_matrix_code.csv
+│   ├── phage_region_positions.txt
+│   ├── repeat_region_positions.txt
+│   ├── mask_positions.txt
+│   ├── Functional_class_filter_positions.txt
+│   ├── bargraph_counts.txt
+│   ├── bargraph_indel_counts.txt
+│   ├── bargraph_indel_percentage.txt
+│   ├── bargraph_percentage.txt
 │   ├── snpEff_results
 │   └── temp
 ├── gubbins
@@ -280,7 +293,7 @@ Note: non-core variant positions here refers to the positions where a variant wa
 ### data_matrix
 This folder contains different type of data matrices and reports that can be queried for variant diagnostics/QC plots. 
 
-**SNP/Indel Matrix**:
+**SNP/Indel Matrix:**
 
 SNP_matrix_allele.csv and Indel_matrix_allele.csv: contains allele information for each unique variant positions(rownames) called for each sample(columns)
 
@@ -288,24 +301,25 @@ SNP_matrix_code.csv and Indel_matrix_code.csv: contains one of the five status c
 
 Different status codes are: unmapped(-1)/reference allele(0)/core(1)/filtered(2)/non-core or True variant but filtered out due to another sample(3) status for each variant position 
 
-<!-- ***Bargraph matrices***
-bargraph_counts.txt
-bargraph_indel_counts.txt
-bargraph_indel_percentage.txt
-bargraph_percentage.txt
+**Functional class:**
 
-***Functional filters***
-Functional_class_filter_positions.txt
-phage_region_positions.txt
-repeat_region_positions.txt
+phage_region_positions.txt contain positions identified by Phaster as phage regions.
 
-***Core variant positions***
-Only_ref_variant_positions_for_closely_matrix.txt
-Only_ref_variant_positions_for_closely_without_functional_filtered_positions
+repeat_region_positions.txt contain positions identified by nucmer as tandem repeats.
 
+mask_positions.txt contain positions set by user to mask from final core position list.
 
+Functional_class_filter_positions.txt is an aggregated unique list of positions that fall under repeat, mask and phage region.
 
-Alternatively, you can run a R script provided inside the data_matrix folder to generate the plots. 
+**Bargraph matrices**
+
+bargraph_counts.txt and bargraph_indel_counts.txt contains distribution of all the variant positions observed for each sample. Each color represents the number of variants that got filtered out due to that particular hard filter parameter.
+
+bargraph_indel_percentage.txt and bargraph_percentage.txt contain same distribution but the counts are transforemed into percentage.
+
+This  matrices can be plotted to QC the effects of different variant filters on the total number of core variants and is useful in figuring out the outlier samples.
+
+Run generate_diagnostics_plots.R script created inside the data_matrix folder to generate various QC plots. 
 
 Require: ggplot2 and heatmap.3
 
@@ -316,6 +330,34 @@ module load R
 Rscript generate_diagnostics_plots.R 
 
 ```
+
+| Extension | Description |
+| --------- | ----------- |
+| . barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
+| . barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
+| . temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
+| . DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
+| . temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low DP values |
+
+
+barplot.pdf
+
+![click here](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot.pdf)
+
+barplot_DP.pdf 
+
+![click here](https://github.com/alipirani88/variant_calling_pipeline/blob/master/modules/variant_diagnostics/R_scripts/barplot_DP.pdf)
+
+
+<!-- 
+
+***Core variant positions***
+Only_ref_variant_positions_for_closely_matrix.txt
+Only_ref_variant_positions_for_closely_without_functional_filtered_positions
+
+
+
+
 
 | Extension | Description |
 | --------- | ----------- |

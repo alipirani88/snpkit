@@ -1538,17 +1538,47 @@ def generate_vcf_files():
             if line not in functional_filter_pos_array:
                 ref_variant_position_array.append(line)
         ffp.close()
+
+        # Adding core indel support: 2018-07-24
+        ref_indel_variant_position_array = []
+        ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            if line not in functional_filter_pos_array:
+                ref_indel_variant_position_array.append(line)
+        ffp.close()
+
     else:
+        functional_filter_pos_array = []
         ref_variant_position_array = []
         ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
         for line in ffp:
             line = line.strip()
             ref_variant_position_array.append(line)
         ffp.close()
-    print len(ref_variant_position_array)
+
+        # Adding core indel support: 2018-07-24
+        ref_indel_variant_position_array = []
+        ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            if line not in functional_filter_pos_array:
+                ref_indel_variant_position_array.append(line)
+        ffp.close()
+
+    print "No. of core SNPs: %s" % len(ref_variant_position_array)
+    print "No. of core INDELs: %s" % len(ref_indel_variant_position_array)
 
     f_file = open("%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir, 'w+')
     for pos in ref_variant_position_array:
+        f_file.write(pos + '\n')
+    f_file.close()
+
+    # Adding core indel support: 2018-07-24
+    f_file = open(
+        "%s/Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir,
+        'w+')
+    for pos in ref_indel_variant_position_array:
         f_file.write(pos + '\n')
     f_file.close()
 
@@ -1866,8 +1896,8 @@ def prepare_snpEff_db(reference_basename):
     #keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     keep_logging("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
 
-    #call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
-    call("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
+    call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
+    #call("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
     keep_logging('Finished Preparing snpEff database requirements.', 'Finished Preparing snpEff database requirements.', logger, 'info')
 
 def variant_annotation():
@@ -2117,18 +2147,31 @@ def annotated_snp_matrix():
 
     # Get the final core variant positions
     core_positions = []
-    with open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir) as fp:
-        for line in fp:
-            line = line.strip()
-            core_positions.append(line)
-        fp.close()
-    with open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir) as fp:
+    if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        core_positions_file = "%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir
+    else:
+        core_positions_file = "%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir
+    with open(core_positions_file) as fp:
         for line in fp:
             line = line.strip()
             core_positions.append(line)
         fp.close()
 
+    indel_core_positions = []
+    if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        core_positions_file = "%s/Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir
+    else:
+        core_positions_file = "%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir
+    with open(core_positions_file) as fp:
+        for line in fp:
+            line = line.strip()
+            indel_core_positions.append(line)
+        fp.close()
 
+    functional_filter_pos_array = []
+    with open(functional_class_filter_positions, 'rU') as f_functional:
+        for line_func in f_functional:
+            functional_filter_pos_array.append(line_func.strip())
 
     # GET PHAGE/Repetitive region/mask region positions
     phage_positions = []
@@ -2333,8 +2376,12 @@ def annotated_snp_matrix():
         code_string = code_string.replace('LowFQ', '2')
         code_string = code_string.replace('HighFQ', '2')
 
+
         if str(variants.POS) in core_positions:
             code_string = code_string.replace('VARIANT', '1')
+        # Adding functional class status code to SNP matrix: 2018-07-24
+        elif str(variants.POS) in functional_filter_pos_array:
+            code_string = code_string.replace('VARIANT', '2')
         else:
             code_string = code_string.replace('VARIANT', '3')
 
@@ -2456,15 +2503,6 @@ def annotated_snp_matrix():
     fp_allele_new.close()
 
 
-
-
-
-
-
-
-
-
-
     ## Indel SNP matrix generation steps
     header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos"
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
@@ -2520,8 +2558,11 @@ def annotated_snp_matrix():
         code_string = code_string.replace('LowFQ', '2')
         code_string = code_string.replace('HighFQ', '2')
 
-        if str(variants.POS) in core_positions:
+        if str(variants.POS) in indel_core_positions:
             code_string = code_string.replace('VARIANT', '1')
+        # Adding functional class status code to SNP matrix: 2018-07-24
+        elif str(variants.POS) in functional_filter_pos_array:
+            code_string = code_string.replace('VARIANT', '2')
         else:
             code_string = code_string.replace('VARIANT', '3')
 
@@ -2539,9 +2580,9 @@ def annotated_snp_matrix():
                 #print variants.ALT
                 #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
                 if "protein_coding" in set(indel_var_ann_dict[variants.POS].split(',')):
-                    snp_type = "Coding SNP"
+                    snp_type = "Coding INDEL"
                 else:
-                    snp_type = "Non-coding SNP"
+                    snp_type = "Non-coding INDEL"
             else:
                 snp_type = "None"
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
@@ -3124,7 +3165,7 @@ if __name__ == '__main__':
 
     if "5" in args.steps:
         """ 
-        Run only SNP matrix annotation step 
+        Debugging Purposes only: Run only SNP matrix annotation step 
         """
 
         keep_logging('Step 5: Running SNP matrix annotation step.', 'Step 5: Running SNP matrix annotation step.', logger, 'info')
