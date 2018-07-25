@@ -45,19 +45,21 @@ def parser():
 def pipeline(args, logger):
     keep_logging('START: Pipeline', 'START: Pipeline', logger, 'info')
 
-    # Check Subroutines and create logger object: Arguments, Input files, Reference Index
+    """ SANITATION CHECKS """
+
+    # Check Subroutines: Arguments, Input FASTQ files, Reference Index
     keep_logging('START: Checking Dependencies...', 'Checking Dependencies', logger, 'info')
 
     # Reference Genome file name
     reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
     keep_logging('Getting Reference Genome name from config file: {}'.format(reference), 'Getting Reference Genome name from config file: {}'.format(reference), logger, 'info')
 
-    # Check FASTQ files
+    # Check if FASTQ files exists
     if args.type != "PE" and args.type != "BAM":
         reverse_raw = "None"
         file_exists(args.forward_raw, args.forward_raw, reference)
     elif args.type != "PE" and args.type != "SE":
-        print "BAM type... continue"
+        print "BAM type... Not Integrated... continue"
     else:
         file_exists(args.forward_raw, args.reverse_raw, reference)
 
@@ -66,13 +68,16 @@ def pipeline(args, logger):
     keep_logging('END: Checking Dependencies...', 'END: Checking Dependencies', logger, 'info')
 
     """ Start the pipeline: """
+    # split values provided with -steps argument and decide the starting point of pipeline
     steps_list = args.steps.split(',')
+
+    # Check cluster parameter and set cluster variable, used for running pipeline locally or parallelly on local or on cluster
     if args.cluster:
         cluster = args.cluster
     else:
         cluster = "local"
 
-
+    """ INDIVIDUAL SUBPROCESS FOR EACH PIPELINE STEPS"""
     ## 1. Pre-Processing Raw reads using Trimmomatic
     def clean():
         keep_logging('START: Pre-Processing Raw reads using Trimmomatic', 'START: Pre-Processing Raw reads using Trimmomatic', logger, 'info')

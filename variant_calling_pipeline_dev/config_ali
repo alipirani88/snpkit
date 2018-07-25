@@ -14,8 +14,8 @@ binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
 large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
-queue: flux
-flux_account: esnitkin_flux
+queue: fluxod
+flux_account: esnitkin_fluxod
 notification: ae
 
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
@@ -81,9 +81,10 @@ base_cmd: GenomeAnalysisTK.jar
 haplotype_parameters: -T HaplotypeCaller --genotyping_mode DISCOVERY
 #changes: 12th August
 gatk_filter1_parameter_expression: FQ < 40.00 && MQ > 20 && QUAL > 50 && DP > 15
-gatk_filter2_parameter_expression: AF1 < 1 && DP > 1
+gatk_filter2_parameter_expression: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
 #changed gatk_filter2_parameter_expression DP 15 from 10 that was used in VRE samples.
 # Default Parameters: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
+# gatk_filter2_parameter_expression: AF1 < 1 && DP > 1
 
 [vcftools]
 #vcftools_perl_bin: /vcftools_0.1.12b/perl/
@@ -272,6 +273,18 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630/
 Ref_Name: Cdiff_VPI10463.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_VPI10463/
+
+[Cdiff_O27_R20291]
+# Name of reference genome fasta file.
+Ref_Name: Cdiff_O27_R20291.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O27_R20291/
+
+[Cdiff_O14_PH44]
+# Name of reference genome fasta file.
+Ref_Name: Cdiff_O14_PH44.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O14_PH44/
 
 [CFT073]
 # Name of reference genome fasta file.
@@ -479,16 +492,17 @@ Ref_Name: 803-A001-120-N-MRSA-TIP__ordered.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/803-A001-120-N-MRSA-TIP
 
+## This Efaecium settings is an old reference genome version. Not much difference except the contigs in the latest one is combined with gene start spacers seperating them out.
+##Efaecium NH cluster-based Reference Genomes
+##[3399-4058-0-RVRE]
+### Name of reference genome fasta file.
+##Ref_Name: 3399-4058-0-RVRE_ordered.fasta
+### path to the reference genome fasta file.
+##Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3399-4058-0-RVRE
+
+
 ##Efaecium NH cluster-based Reference Genomes
 [3399-4058-0-RVRE]
-# Name of reference genome fasta file.
-Ref_Name: 3399-4058-0-RVRE_ordered.fasta
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/3399-4058-0-RVRE
-
-
-##Efaecium NH cluster-based Reference Genomes
-[3399-4058-0-RVRE_latest]
 # Name of reference genome fasta file.
 Ref_Name: 3399-4058-0-RVRE_final_ordered.fasta
 # path to the reference genome fasta file.
@@ -925,3 +939,12 @@ Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_20_Rush_KPC_8
 Ref_Name: SRR3334137.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/SRR3334137/
+
+
+
+##Maddeline Helicobacter project
+[helicobacter_hepaticus_ATCC_51449]
+# Name of reference genome fasta file.
+Ref_Name: helicobacter_hepaticus_ATCC_51449.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/helicobacter_hepaticus_ATCC_51449/

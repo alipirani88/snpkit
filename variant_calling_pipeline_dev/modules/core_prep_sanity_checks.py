@@ -6,23 +6,23 @@ from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
 
-""" Sanity Check Methods"""
-def make_sure_path_exists(out_path):
-    """
-    Fuction to make sure output folder exists. If not, create it.
-    :param: out_path
-    :return: null/exception
-    """
-    try:
-        os.makedirs(out_path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
-                         '\nErrors in output folder path! please change the output path or analysis name\n', logger,
-                         'info')
-            exit()
+# """ Sanity Check Methods"""
+# def make_sure_path_exists(out_path):
+#     """
+#     Fuction to make sure output folder exists. If not, create it.
+#     :param: out_path
+#     :return: null/exception
+#     """
+#     try:
+#         os.makedirs(out_path)
+#     except OSError as exception:
+#         if exception.errno != errno.EEXIST:
+#             keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
+#                          '\nErrors in output folder path! please change the output path or analysis name\n', logger,
+#                          'info')
+#             exit()
 
-def make_sure_files_exists(vcf_file_array):
+def make_sure_files_exists(vcf_file_array, Config, logger):
     """
     Function to make sure the variant call output files exists and are not empty.
     :param: vcf_file_array
@@ -57,7 +57,7 @@ def make_sure_files_exists(vcf_file_array):
                          'Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), logger, 'exception')
         exit()
 
-def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_positions):
+def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_positions, Config, logger):
     """
     Function to make sure the variant call output files exists and are not empty.
     :param: vcf_file_array

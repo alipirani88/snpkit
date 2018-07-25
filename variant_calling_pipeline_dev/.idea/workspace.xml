@@ -8,6 +8,7 @@
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/other/config_gatk" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/other/pipeline.py.save" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/other/pipeline_gatk.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/other/README.md" afterPath="$PROJECT_DIR$/other/README.md" />
     </list>
     <ignored path="variant_calling_pipeline_dev.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -34,38 +35,31 @@
       <file leaf-file-name="core_pipeline.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="9.5489" vertical-offset="33799" max-vertical-offset="44325">
-              <caret line="2780" column="30" selection-start-line="2780" selection-start-column="30" selection-end-line="2780" selection-end-column="30" />
+            <state vertical-scroll-proportion="0.23767383" vertical-offset="29932" max-vertical-offset="48255">
+              <caret line="2014" column="22" selection-start-line="2010" selection-start-column="4" selection-end-line="2014" selection-end-column="22" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="log_modules.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/log_modules.py">
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider editor-type-id="MarkdownPreviewEditor">
+            <state />
+          </provider>
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="345" max-vertical-offset="510">
-              <caret line="24" column="106" selection-start-line="24" selection-start-column="34" selection-end-line="24" selection-end-column="106" />
+            <state vertical-scroll-proportion="-8.5" vertical-offset="4245" max-vertical-offset="9285">
+              <caret line="300" column="0" selection-start-line="300" selection-start-column="0" selection-end-line="300" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="logging_subprocess.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/logging_subprocess.py">
+      <file leaf-file-name="extract_only_ref_variant_fasta.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="570">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="variant_call.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/variant_call.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="7729" max-vertical-offset="11160">
-              <caret line="552" column="0" selection-start-line="552" selection-start-column="0" selection-end-line="552" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1995" max-vertical-offset="2430">
+              <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -82,36 +76,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Final_vcf_indel</find>
-      <find>fasttree</find>
-      <find>Final_vcf_no_proximate_snp.vcf.gz</find>
-      <find>Final_vcf_indel.vcf.gz</find>
-      <find>\t</find>
-      <find>fp_code</find>
-      <find>:::</find>
-      <find>gubbins</find>
-      <find>tabix(</find>
-      <find>create_job</find>
-      <find>Generating custom vcf file</find>
-      <find>.pdf</find>
-      <find>.fa</find>
-      <find>-</find>
-      <find>-&quot;</find>
-      <find>fastq.gz</find>
-      <find>fp_allele_new</find>
-      <find>extract</find>
-      <find>extract_only_ref_variant_fasta_from_reference_allele_variant</find>
-      <find>_annotat</find>
-      <find>merge</find>
-      <find>gatk_combine_variants</find>
-      <find>functional_class_filter_positions</find>
-      <find>call</find>
-      <find>extract_only_ref_variant_fasta_unique_positions</find>
-      <find>barplot.pdf</find>
-      <find>pdf</find>
-      <find>_allele_variants.fa</find>
-      <find>allele_variant_fasta</find>
+      <find>All_</find>
+      <find>All_label</find>
+      <find>All_label_final_sorted.txt</find>
+      <find>All_label_final_raw</find>
+      <find>Final_vcf_no_proximate_snp.vcf</find>
+      <find>gatk</find>
+      <find>sorted</find>
+      <find>files_gatk</find>
+      <find>paste_label_files.sh</find>
+      <find>vcf_filenames</find>
+      <find>annotation</find>
+      <find>All_label_final_sorted</find>
+      <find>paste_label_files</find>
+      <find>paste_file</find>
+      <find>prepare_snpEff_db</find>
+      <find>_R1.fastq.gz</find>
+      <find>make_sure_path_exists</find>
+      <find>commun</find>
+      <find>parallel</find>
+      <find>run_command</find>
+      <find>.write</find>
       <find>annotated_snp_matrix</find>
+      <find>core_position</find>
+      <find>extract_only_ref_variant_fasta</find>
+      <find>create_job_fasta</find>
+      <find>Only_ref_variant_positions_for_closely_without_functional_filtered_positions</find>
+      <find>annotated</find>
+      <find>functional_filter_pos_array</find>
+      <find>functional_class_filter_positions</find>
+      <find>core_positions</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -144,14 +138,17 @@
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/find_repeats.py" />
         <option value="$PROJECT_DIR$/modules/stages.py" />
         <option value="$PROJECT_DIR$/pipeline.py" />
-        <option value="$PROJECT_DIR$/modules/gatk.py" />
-        <option value="$PROJECT_DIR$/modules/phage_detection.py" />
         <option value="$PROJECT_DIR$/modules/tabix.py" />
         <option value="$PROJECT_DIR$/config_ali" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/test" />
-        <option value="$PROJECT_DIR$/variant_call.py" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py" />
+        <option value="$PROJECT_DIR$/variant_call.py" />
+        <option value="$PROJECT_DIR$/modules/phage_detection.py" />
+        <option value="$PROJECT_DIR$/../../../scripts/Scripts_v2.0/scan_ncbi_mlst.py" />
+        <option value="$PROJECT_DIR$/modules/gubbins.py" />
+        <option value="$PROJECT_DIR$/modules/gatk.py" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
@@ -183,6 +180,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -201,41 +199,8 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="variant_calling_pipeline_dev" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="variant_calling_pipeline_dev" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="modules" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="variant_calling_pipeline_dev" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="variant_calling_pipeline_dev" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="modules" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="variant_diagnostics" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -410,20 +375,20 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.14583333" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.190625" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -456,88 +421,158 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/variant_call.py">
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="7729" max-vertical-offset="11160">
-          <caret line="552" column="0" selection-start-line="552" selection-start-column="0" selection-end-line="552" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/config" />
-    <entry file="file://$PROJECT_DIR$/pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
-    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
-    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py" />
-    <entry file="file://$PROJECT_DIR$/config" />
-    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
-    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
-    <entry file="file://$PROJECT_DIR$/pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py" />
-    <entry file="file://$PROJECT_DIR$/config" />
-    <entry file="file://$PROJECT_DIR$/pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
-    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/R_scripts/generate_diagnostics_plots.R" />
-    <entry file="file://$PROJECT_DIR$/modules/remove_5_bp_snp_indel.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/find_repeats.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/mask_regions.py" />
-    <entry file="file://$PROJECT_DIR$/modules/bedtools.py" />
-    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
-    <entry file="file://$PROJECT_DIR$/modules/phage_detection.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/reason_job.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/parse_vcf_for_reason_individual_jobs.py" />
-    <entry file="file://$PROJECT_DIR$/config_ali" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py" />
-    <entry file="file://$PROJECT_DIR$/pipeline.py" />
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/test" />
-    <entry file="file://$PROJECT_DIR$/modules/tabix.py" />
-    <entry file="file://$PROJECT_DIR$/modules/gatk.py" />
-    <entry file="file://$PROJECT_DIR$/variant_call.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="7729" max-vertical-offset="11160">
-          <caret line="552" column="0" selection-start-line="552" selection-start-column="0" selection-end-line="552" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/log_modules.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="510">
-          <caret line="24" column="106" selection-start-line="24" selection-start-column="34" selection-end-line="24" selection-end-column="106" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/logging_subprocess.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="856">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="48225">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="MarkdownPreviewEditor">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="5415" max-vertical-offset="9255">
+          <caret line="361" column="11" selection-start-line="361" selection-start-column="11" selection-end-line="361" selection-end-column="11" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1995" max-vertical-offset="2430">
+          <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="9.5489" vertical-offset="33799" max-vertical-offset="44325">
-          <caret line="2780" column="30" selection-start-line="2780" selection-start-column="30" selection-end-line="2780" selection-end-column="30" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="38670" max-vertical-offset="48060">
+          <caret line="2584" column="48" selection-start-line="2584" selection-start-column="48" selection-end-line="2584" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="MarkdownPreviewEditor">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="100">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1995" max-vertical-offset="2430">
+          <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="38670" max-vertical-offset="48060">
+          <caret line="2584" column="48" selection-start-line="2584" selection-start-column="48" selection-end-line="2584" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="MarkdownPreviewEditor">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="100">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1995" max-vertical-offset="2430">
+          <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="48060">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1995" max-vertical-offset="2430">
+          <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
+    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
+    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
+    <entry file="file://$PROJECT_DIR$/modules/trim.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/R_scripts/generate_diagnostics_plots.R" />
+    <entry file="file://$PROJECT_DIR$/modules/remove_5_bp_snp_indel.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/mask_regions.py" />
+    <entry file="file://$PROJECT_DIR$/modules/bedtools.py" />
+    <entry file="file://$PROJECT_DIR$/modules/stages.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/reason_job.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/parse_vcf_for_reason_individual_jobs.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/test" />
+    <entry file="file://$PROJECT_DIR$/modules/tabix.py" />
+    <entry file="file://$PROJECT_DIR$/modules/phage_detection.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/find_repeats.py" />
+    <entry file="file://$PROJECT_DIR$/modules/raxml.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py" />
+    <entry file="file://$PROJECT_DIR$/../../../scripts/Scripts_v2.0/scan_ncbi_mlst.py" />
+    <entry file="file://$PROJECT_DIR$/modules/gubbins.py" />
+    <entry file="file://$PROJECT_DIR$/modules/gatk.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1995" max-vertical-offset="2430">
+          <caret line="152" column="0" selection-start-line="152" selection-start-column="0" selection-end-line="152" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="MarkdownPreviewEditor">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-8.5" vertical-offset="4245" max-vertical-offset="9285">
+          <caret line="300" column="0" selection-start-line="300" selection-start-column="0" selection-end-line="300" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.23767383" vertical-offset="29932" max-vertical-offset="48255">
+          <caret line="2014" column="22" selection-start-line="2010" selection-start-column="4" selection-end-line="2014" selection-end-column="22" />
           <folding />
         </state>
       </provider>

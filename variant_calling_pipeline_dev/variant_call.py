@@ -549,7 +549,7 @@ if __name__ == '__main__':
         results = Parallel(n_jobs=num_cores)(delayed(run_command_list)(i) for i in gzipped_command_list)
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
-            list_of_vcf_files = generate_custom_vcf_file_list(list_of_files, logger)
+            list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
 
 
             keep_logging('Number of final variant call vcf files: %s' % len(list_of_vcf_files), 'Number of final variant call vcf files: %s' % len(list_of_vcf_files), logger, 'info')
@@ -566,6 +566,7 @@ if __name__ == '__main__':
             try:
                 list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
                 list_of_files = subprocess.check_output(list_cmd, shell=True)
+
                 keep_logging('Number of final variant call vcf files: %s' % len(list_of_files.splitlines()), 'Number of final variant call vcf files: %s' % len(list_of_files.splitlines()), logger, 'info')
                 keep_logging('Make sure the number of final variant call vcf files looks correct', 'Make sure the number of final variant call vcf files looks correct', logger, 'info')
                 keep_logging('Running core_prep on these files...', 'Running core_prep on these files...', logger, 'info')
@@ -605,8 +606,9 @@ if __name__ == '__main__':
         #make_sure_path_exists(core_results_dir)
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
-            list_of_vcf_files = generate_custom_vcf_file_list(list_of_files, logger)
+            list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
             list_of_label_files = []
+
             for i in list_of_vcf_files:
                 list_of_label_files.append(i + '_positions_label')
             if len(list_of_label_files) == len(list_of_vcf_files):
@@ -617,6 +619,7 @@ if __name__ == '__main__':
             else:
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
+
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_vcf_files:
                     out_fp.write(os.path.basename(file)+'\n')
@@ -624,6 +627,7 @@ if __name__ == '__main__':
         else:
             list_of_label_files = glob.glob("%s/*_no_proximate_snp.vcf_positions_label" % core_temp_dir)
             list_of_vcf_files = glob.glob("%s/*_filter2_final.vcf_no_proximate_snp.vcf" % core_temp_dir)
+            #print sorted(list_of_vcf_files)
             if len(list_of_label_files) == len(list_of_vcf_files):
                 for i in list_of_label_files:
                     if os.stat(i).st_size == 0:
@@ -633,7 +637,7 @@ if __name__ == '__main__':
                 keep_logging('Problem in core_prep results. Rerun the core_prep step\n', 'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
                 exit()
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_vcf_files:
+                for file in sorted(list_of_vcf_files):
                     out_fp.write(os.path.basename(file)+'\n')
             out_fp.close()
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
@@ -701,7 +705,9 @@ if __name__ == '__main__':
         proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output_folder], stdout=subprocess.PIPE, shell=True)
         (out2, err2) = proc.communicate()
         core_results_dir = out2.strip()
-        print core_results_dir
+        keep_logging('Moving final results and reports to %s' % core_results_dir,
+                     'Moving final results and reports to %s' % core_results_dir, logger, 'info')
+
 
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
@@ -730,6 +736,8 @@ if __name__ == '__main__':
                                 shell=True)
         (out2, err2) = proc.communicate()
         core_results_dir = out2.strip()
+        keep_logging('Generating RaxML and fasttree trees in %s/trees' % core_results_dir,
+                     'Generating RaxML and fasttree trees in %s/trees' % core_results_dir, logger, 'info')
         print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
@@ -745,6 +753,7 @@ if __name__ == '__main__':
         time_taken = datetime.now() - start_time_2
         keep_logging('Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % tree_logs_folder, logger, 'info')
         keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
+
     else:
         logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')

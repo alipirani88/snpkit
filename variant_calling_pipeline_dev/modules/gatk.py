@@ -112,8 +112,9 @@ def gatk_filter2_indel(final_raw_vcf, out_path, analysis, reference, logger, Con
     FQ_filter = "FQ < %s" % ConfigSectionMap(filter_criteria, Config)['fq']
     FQ_filter2 = "FQ < %s" % ConfigSectionMap(filter_criteria, Config)['fq2']
     QUAL_filter = "QUAL > %s" % ConfigSectionMap(filter_criteria, Config)['qual']
+    AF_filter = "AF1 > %s" % float(ConfigSectionMap(filter_criteria, Config)['af'])
 
-    gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, FQ_filter2)
+    gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, FQ_filter2, AF_filter)
     if os.path.exists(final_raw_vcf):
         gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_indel_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
     else:
