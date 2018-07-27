@@ -210,7 +210,8 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
             #variant_allele = ''.join(columns[i][1:])
             variant_allele = ""
             for ntd in columns[i][1:]:
-                if "/" in ntd:
+                #if "/" in ntd:
+                if "/" in ntd or len(ntd) > 1:
                     variant_allele = variant_allele + ntd[0]
                 else:
                     variant_allele = variant_allele + ntd
@@ -245,12 +246,12 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
                 #print positions
                 #pos_index = unique_position_array.index(positions)
 
-                if "/" in str(variant_allele_array_dict[positions]):
-                    allele_var = str(variant_allele_array_dict[positions])
+                if "/" in str(variant_allele_array_dict[positions]) or len(variant_allele_array_dict[positions]) > 1:
+                    allele_var = str(variant_allele_array_dict[positions][0])
                     #print allele_var
                 else:
                     allele_var = str(variant_allele_array_dict[positions])
-                # if str(positions) == "1709383":
+                # if str(positions) == "1477126":
                 #     print allele_var
                 ref_allele = str(get_reference.sequence({'chr': str(get_reference.keys()[0]), 'start': int(positions), 'stop': int(positions)}))
                 generate_vcf_string = "%s\t%s\t.\t%s\t%s\t221.999\t.\t.\t.\t.\n" % (ref_id[0].split(' ')[0], positions, ref_allele, allele_var)

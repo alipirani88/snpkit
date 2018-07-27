@@ -133,15 +133,19 @@ def create_positions_filestep(vcf_filenames):
         f = open(filess, 'r+')
         for line in f:
             line = line.strip()
-            position_array.append(line)
+            # Changed variable to suit sorting: 25-07-2018
+            position_array.append(int(line))
         f.close()
+    # Check why python sorting is not working
+    keep_logging('Sorting unique variant positions.\n', 'Sorting unique variant positions.\n', logger, 'info')
     position_array_unique = set(position_array)
     position_array_sort = sorted(position_array_unique)
     keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort), '\nThe number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
     unique_position_file = "%s/unique_positions_file" % args.filter2_only_snp_vcf_dir
     f=open(unique_position_file, 'w+')
     for i in position_array_sort:
-        f.write(i + "\n")
+        # Changed variable to suit sorting: 25-07-2018
+        f.write(str(i) + "\n")
     f.close()
     if len(position_array_sort) == 0:
         keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
@@ -180,7 +184,8 @@ def create_indel_positions_filestep(vcf_filenames):
         f = open(filess, 'r+')
         for line in f:
             line = line.strip()
-            position_array.append(line)
+            # Changed variable to suit sorting: 25-07-2018
+            position_array.append(int(line))
         f.close()
     position_array_unique = set(position_array)
     position_array_sort = sorted(position_array_unique)
@@ -188,7 +193,8 @@ def create_indel_positions_filestep(vcf_filenames):
     unique_indel_position_file = "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
     f=open(unique_indel_position_file, 'w+')
     for i in position_array_sort:
-        f.write(i + "\n")
+        # Changed variable to suit sorting: 25-07-2018
+        f.write(str(i) + "\n")
     f.close()
     if len(position_array_sort) == 0:
         keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
@@ -538,6 +544,9 @@ def generate_indel_paste_command():
     paste_command = paste_command + " > %s/All_indel_label_final_raw" % args.filter2_only_snp_vcf_dir
     f4.write(paste_command)
     f4.close()
+
+    call("bash %s" % paste_file, logger)
+
     sort_All_label_cmd = "sort -n -k1,1 %s/All_indel_label_final_raw > %s/All_indel_label_final_sorted.txt" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
     paste_command_header = "cat %s/header.txt %s/All_indel_label_final_sorted.txt > %s/All_indel_label_final_sorted_header.txt" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
@@ -547,13 +556,15 @@ def generate_indel_paste_command():
         ls.append(label_file)
     ls.insert(0, "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir)
 
-    with open('%s/All_indel_label_final_raw.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
-        outfile.write(paste_command)
-    outfile.close()
+    with open('%s/All_indel_label_final_raw.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
+        outfile2.write(paste_command)
+    outfile2.close()
 
-    with open('%s/temp_indel_label_final_raw.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
-        outfile.write(temp_paste_command)
-    outfile.close()
+    with open('%s/temp_indel_label_final_raw.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
+        outfile2.write(temp_paste_command)
+    outfile2.close()
+
+    # Why is this not working?
     call("bash %s/All_indel_label_final_raw.sh" % args.filter2_only_snp_vcf_dir, logger)
     call("bash %s/temp_indel_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
     keep_logging('Finished pasting...DONE', 'Finished pasting...DONE', logger, 'info')
@@ -1823,6 +1834,8 @@ def extract_only_ref_variant_fasta_from_reference():
     fp.write(final_fasta_string)
     fp.close()
 
+
+# This got affected by unsorted unique_positions_file
 def extract_only_ref_variant_fasta_from_reference_allele_variant():
     ffp = open("%s/unique_positions_file" % args.filter2_only_snp_vcf_dir).readlines()
     #unique_positions_array = []
