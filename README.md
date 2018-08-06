@@ -3,12 +3,12 @@
 ## Synopsis
 
 
-The pipeline call variants on Illumina PE/SE reads provided in a directory and generates various combination of core/non-core consesensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/Beast analysis.
+The pipeline call variants on Illumina PE/SE reads provided in a directory and generates various combination of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/Beast analysis.
 
 ## Contents
 
 - [Installation](#installation)
-- [Input](#input-requirements)
+- [Input](#input)
 - [Steps](#steps)
 - [Command line options](#command-line-options)
 - [Run pipeline on Compute cluster](#run-pipeline-on-compute-cluster)
@@ -32,9 +32,19 @@ Requires Python2 version:
 /nfs/esnitkin/bin_group/anaconda2/bin/python
 ```
 
-## Input Requirements
+## Input
 
-- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fastq.gz), other acceptable fastq extensions are: R1.fastq.gz/_R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, _1.fastq.gz/.1.fastq.gz.
+- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+
+```
+
+- R1.fastq.gz/_R1.fastq.gz, 
+- 1_combine.fastq.gz, 
+- 1_sequence.fastq.gz, 
+- _forward.fastq.gz, 
+- _1.fastq.gz/.1.fastq.gz.
+
+```
 
 - config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument.
 
