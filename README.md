@@ -3,7 +3,7 @@
 ## Synopsis
 
 
-The pipeline call variants on Illumina PE/SE reads provided in a directory and generates various combination of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/Beast analysis.
+The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generates various combinations of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/BEAST analysis.
 
 ## Contents
 
@@ -11,22 +11,22 @@ The pipeline call variants on Illumina PE/SE reads provided in a directory and g
 - [Input](#input)
 - [Steps](#steps)
 - [Command line options](#command-line-options)
-- [Run pipeline on Compute cluster](#run-pipeline-on-compute-cluster)
-- [Quick Start](#quick-start)
-- [Output Files](#output-files)
-- [Customizing Config file](#customizing-config-file)
+- [Run pipeline on compute cluster](#run-pipeline-on-compute-cluster)
+- [Quick start](#quick-start)
+- [Output files](#output-files)
+- [Customizing config file](#customizing-config-file)
 - [Log](#log)
 - [Bonus Ducks](#bonus-ducks)
 
 ## Installation
 
-The dependencies are already installed in Snitkin lab bin_group folder:
+The dependencies are already installed in the Snitkin lab bin_group folder:
 
 ```
 /nfs/esnitkin/bin_group/variant_calling_bin/
 ```
 
-Requires Python2 version:
+Requires Python2:
 
 ```
 /nfs/esnitkin/bin_group/anaconda2/bin/python
@@ -34,7 +34,7 @@ Requires Python2 version:
 
 ## Input
 
-- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+- readsdir: folder containing SE/PE reads. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
 ```
 
@@ -46,11 +46,11 @@ Requires Python2 version:
 
 ```
 
-- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument.
+- config: a config file to set pipeline configuration settings such as setting up the environment path for various tools, path to reference genomes, and filter parameters. This settings will be applied globally on all variant calling jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in the code folder. You can customize this config file and provide it with the -config argument.
 
-For more information, refer [Customizing Config file](#customizing-config-file)
+For more information, refer to [Customizing the config file](#customizing-config-file).
 
-<!--- Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
+<!--- Input is a directory (-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. These config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
 
 
 
@@ -59,39 +59,39 @@ For more information, refer [Customizing Config file](#customizing-config-file)
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/pipeline.png)
 
-Pipeline is divided into three individual steps(-steps option) which should be run in sequential order. 
+The pipeline is divided into three individual steps (-steps option) which should be run in sequential order (see below for command line arguments). 
 
-**1. Variant Calling:** This step will run all standard variant calling steps on sample reads residing in input reads directory.
+**1. Variant Calling:** This step will run all standard variant calling steps on sample reads residing in the input reads directory.
 
 The possible options are:
 
-Option ***All*** :  This will run all variant calling steps starting from read trimming to variant calling. 
+Option ***All***:  This will run all variant calling steps from read trimming to variant calling. 
 
-Option ***clean,align,post-align,varcall,filter,stats*** :  This option will run variant calling steps starting from read trimming, alignment to reference genome, post-alignment format conversion, variant call/filter and finally generates mapping/variant statistics.
+Option ***clean,align,post-align,varcall,filter,stats***:  This option will run variant calling steps starting from read trimming, alignment to reference genome, post-alignment format conversion, variant calling/filtering and finally generates mapping/variant statistics.
 
-You can run a part of the pipeline by customizing the order of -steps argument. For example, to skip Trimmomatic cleaning part, run it with following options: "align,post-align,varcall,filter,stats" 
-
-
-Note: The order of variant calling steps needs to be sequential. While skipping any of the steps, make sure those skipped steps finished without any errors.
+You can run a part of the pipeline by customizing the order of the -steps argument. For example, to skip the Trimmomatic cleaning part, run it with the following options: "align,post-align,varcall,filter,stats"
 
 
-**2. Preparing files for Core SNP extraction and diagnostics purposes:**
+Note: The order of variant calling steps needs to be sequential. If skipping any of the steps, make sure those skipped steps had previously finished without any errors.
 
 
-Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for generating core SNP matrix/consensus.
+**2. Preparing files for core SNP extraction and diagnostics purposes:**
 
 
-**3. Generate Core SNP consensus and data matrix for diagnostics plots:**
+Option ***core_prep***: Run this step before running the last core steps. This will prepare all the intermediate data required for generating a core SNP matrix/consensus fasta file.
 
-Option ***core*** : This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias. 
+
+**3. Generate core SNP consensus and data matrix for diagnostics plots:**
+
+Option ***core***: This step will generate core core SNP/Indel matrices and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criteria. 
 
 **4. Generate report and aggregate results for the pipeline:**
 
-Option ***report*** : This step will aggregate the results in prefix_core_results directory under the output directory.
+Option ***report***: This step will aggregate the results in a *_core_results directory under the output directory.
 
 **5. Phylogenetic reconstruction and recombination filtering using FastTree/RAxML/Gubbins:**
 
-Option ***tree*** : This step will generate FastTree/RAxML tree from pre-recombination filtered consensus files. If -gubbins option is set to yes, it will run gubbins on all final consensus files..
+Option ***tree***: This step will generate a FastTree and a RAxML tree from pre-recombination filtered consensus files. If the -gubbins option is set to yes, it will run gubbins on all final consensus files.
 
 ## Command line options
 
@@ -112,78 +112,75 @@ optional arguments:
 
 Required arguments:
   -type TYPE            Type of reads: SE or PE
-  -readsdir DIR         Path to Sequencing Reads Data directory. NOTE: Provide full/absolute path.
-  -outdir OUTPUT_FOLDER
-                        Output Folder Path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
-  -index INDEX          Reference Index Name. Most Frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris Make sure the paths are properly set in config file
-  -steps STEPS          Variant Calling Steps in sequential order.
+  -readsdir DIR         Path to sequencing reads data directory. NOTE: Provide full/absolute path.
+  -outdir OUTPUT_FOLDER Output folder path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
+  -index INDEX          Reference index name. Most frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris. Make sure the paths are properly set in config file.
+  -steps STEPS          Variant calling steps in sequential order.
                         1.   All: This will run all the steps starting from cleaning the reads to variant calling;
-                        2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. 
-                        You can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.
-                        The order is required to be sequential while using this option. Also, while skipping any of the step make sure you have results already present in your output folder.
-                        3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps
+                        2.   clean,align,post-align,varcall,filter,stats : This will also run all steps from cleaning to variant calling. 
+                        You can also run part of the pipeline by giving, for example, "align,post-align,varcall,filter,stats" which will skip the cleaning part.
+                        The order must be sequential while using this option. Also, if skipping any of the steps, make sure you have the results already present in your output folder.
+                        3.   coverage_depth_stats: Run only depth of coverage stats module after the cleaning and read mapping steps
                         4.   core_prep: Run this step before running the core steps. This will prepare the data required for generating core SNPs
                         5.   core: extract core snps and generate diagnostics plot data matrices to explore filtered snps.
-  -analysis ANALYSIS_NAME
-                        Unique analysis name that will be used as prefix to saving results and log files.
+  -analysis ANALYSIS_NAME Unique analysis name that will be used as a prefix when saving results and log files.
 
 Optional arguments:
-  -config CONFIG        Path to Config file, Make sure to check config settings before running pipeline
+  -config CONFIG        Path to config file. Make sure to check config settings before running the pipeline
   -suffix SUFFIX        Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz
   -filenames FILENAMES  fastq filenames with one single-end filename per line. 
-                        If the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. 
-                        Useful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. 
-                        Otherwise the pipeline will consider all the samples available in reads directory.
-  -cluster CLUSTER      Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option
+                        If the type is set to PE, it will detect the second paired-end filename with the suffix from the first filename. 
+                        Useful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in the input reads directory. 
+                        Otherwise the pipeline will consider all the samples available in the reads directory.
+  -cluster CLUSTER      Run variant calling pipeline in one of the four modes. Default: local. The suggested mode for core snp is a cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option
                         The possible modes are: cluster/parallel-cluster/parallel-local/local
                         cluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.
                         parallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.
                         parallel-local: Run variant call jobs for each sample in parallel locally.
                         local: Run variant call jobs locally.
-                        Make Sure to check if the [scheduler] section in config file is set up correctly for your cluster.
-  -clean CLEAN          clean up intermediate files. Default: OFF
-  -extract_unmapped EXTRACT_UNMAPPED
-                        Extract unmapped reads, assemble it and detect AMR genes using ariba
+                        Make sure to check if the [scheduler] section in the config file is set up correctly for your cluster.
+  -clean CLEAN          Clean up intermediate files. Default: OFF
+  -extract_unmapped     EXTRACT_UNMAPPED
+                        Extract unmapped reads, assemble them and detect antimicrobial resistance (AMR) genes using ariba
   -datadir DATADIR      Path to snpEff data directory
-  -snpeff_db SNPEFF_DB  Name of pre-build snpEff database to use for Annotation
-  -debug_mode DEBUG_MODE
-                        yes/no for debug mode
+  -snpeff_db SNPEFF_DB  Name of pre-built snpEff database to use for annotation
+  -debug_mode DEBUG_MODE yes/no for debug mode
   -gubbins GUBBINS      yes/no for running gubbins
 
 ```
 
-## Run pipeline on Compute cluster
+## Run pipeline on compute cluster
 
 
-Variant calling can be run in parallel on each sample using -cluster argument. Set pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. 
+Variant calling can be run in parallel on each sample using the -cluster argument. Set pbs resources such as resources (-l), email (-M), queue (-q), flux_account (-A) and notification (-m) under the [scheduler] section in config file. 
 
-For more details, refer UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website for detailed explanation of each pbs specifications.
+For more details, refer to the UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website for a detailed explanation of each pbs specification.
 
 
-Possible options for -cluster option(Supported system: pbs):
+Possible options for the -cluster option (Supported system: pbs):
 
-***local*** : This is the default option. When this option is set, the pipeline will analyze each sample one after the another. This will not make use of multiple cores present in your system or clusters. Use this option for few number of samples or for testing purposes.
+***local***: This is the default option. When this option is set, the pipeline will analyze each sample one after the another. This will not make use of multiple cores present in your system or clusters. Use this option for small numbers of samples or for testing purposes.
 
-***parallel-local*** :  This option will run the pipeline and analyze samples in parallel but on a local system. This is preferred for less than 20 sample size input and multiple core local system.
+***parallel-local***:  This option will run the pipeline and analyze samples in parallel but on a local system. This is preferred for an input sample size of less than 20  and a multiple core local system.
 
-***cluster*** : This option will run the pipeline on a single cluster. This option is similar to local but will rather run on a cluster node. It will not make use of multiple cores present on a cluster. Use this option for few number of samples or for testing purposes or for few number of large size samples which requires multiple cores to analyze individual samples.
+***cluster***: This option will run the pipeline on a single cluster. This option is similar to local but will rather run on a cluster node. It will not make use of multiple cores present on a cluster. Use this option for small numbers of samples or for testing purposes or for small numbers of large size samples which require multiple cores to analyze individual samples.
 
-***parallel-cluster*** : The variant call step(All) is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on individual compute cluster. When you set this option for each step in the pipeline, make sure all the jobs submitted by the pipeline at each step is completed before proceeding to another step. You can check the status of the job with: 
+***parallel-cluster***: The variant call step (All) is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on an individual compute cluster. When you set this option for each step in the pipeline, make sure all the jobs submitted by the pipeline at each step is completed before proceeding to another step. You can check the status of the job with: 
 
 ```
 qstat -u USERNAME  
 ```
 
-Note: Use parallel-cluster mode for All/clean,align,post-align,varcall,filter,stats steps. Use cluster/parallel-local mode for core_prep and core steps. parallel-cluster and cluster will be merged in next release.
+Note: Use parallel-cluster mode for All/clean,align,post-align,varcall,filter,stats steps. Use cluster/parallel-local mode for core_prep and core steps. parallel-cluster and cluster will be merged in the next release.
 
 ## Quick Start
 
-Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster(Time and memory efficient). The default pbs resources used for parallel jobs are: 
+Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on a cluster (time and memory efficient). The default pbs resources used for parallel jobs are: 
 
 ```
 nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
 ```
-See option resources in scheduler section of [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information in section [Customizing Config file](#customizing-config-file)
+See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-config-file)
 
 - Run variant calling step (All) on a set of PE reads with default parameters
 
@@ -192,9 +189,9 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-The above command will run variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the [config]() file or check the help menu of the pipeline.
+The above command will run the variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in the output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the [config]() file or check the help menu of the pipeline.
 
-The results of variant calling will be placed in an individual folder generated for each sample in output directory. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
+The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
 
 - Run core_prep step to generate files for core SNP calling.
 
@@ -482,7 +479,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-## Customizing Config file:
+## Customizing the config file:
 
 By default, the pipeline uses config file that comes with the pipeline. Make sure to edit this config file or copy it to your local system, edit it and provide path of this edited config file with -config argument.
 
