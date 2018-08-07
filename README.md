@@ -16,7 +16,7 @@ The pipeline call variants on Illumina PE/SE reads provided in a directory and g
 - [Output Files](#output-files)
 - [Customizing Config file](#customizing-config-file)
 - [Log](#log)
-- [Bonus Ducks](#bonus-ducks)
+- [Tips and Tricks](#tips-and-tricks)
 
 ## Installation
 
