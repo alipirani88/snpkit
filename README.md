@@ -189,11 +189,11 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-The above command will run the variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in the output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the [config]() file or check the help menu of the pipeline.
+The above command will run the variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in the output directory test_output_core. The config file contains options for some frequently used reference genomes. To know which reference genomes are included in the config file, look up the [config]() file or check the help menu of the pipeline.
 
-The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
+The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. A single log file of this step will be generated in the main output directory. For more information on log file prefix and convention, please refer to the [log](#log) section below.
 
-- Run core_prep step to generate files for core SNP calling.
+- Run the core_prep step to generate files for core SNP calling.
 
 Run this steps to generate various intermediate files that will be used for generating core SNPs.
 
@@ -202,9 +202,9 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-- Run core step to generate final core SNP consensus fasta files.
+- Run the core step to generate final core SNP consensus fasta files.
 
-Since this step compares multiple files simultaneously and involves multiple I/O operations, It is recommended to provide higher memory compute resources. 
+Since this step compares multiple files simultaneously and involves multiple I/O operations, it is recommended to provide higher memory compute resources. 
 
 example:
 
@@ -212,21 +212,21 @@ example:
 nodes=1:ppn=4,mem=47000mb,walltime=24:00:00
 ```
 
-Replace the resources option in scheduler section of config file with the above line before running the command.
+Replace the resources option in the scheduler section of the config file with the above line before running the command.
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster cluster
 
 ```
 
-- Run report step to aggregate results under prefix_core_results folder
+- Run the report step to aggregate results under the \*_core_results folder
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps report -cluster cluster
 
 ```
 
-- Run tree step to generate FastTree/RAxML phylogenetic tree and recombination filterating using Gubbins
+- Run the tree step to generate FastTree and RAxML phylogenetic trees and recombination filtering using Gubbins
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps tree -cluster cluster -gubbins yes
@@ -235,7 +235,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ## Output Files
 
-All the final results from report step will be saved under date_time_core_results directory under the output folder. 
+All the final results from the report step will be saved under the date_time_core_results directory under the output folder. 
 
 
 ```
@@ -274,44 +274,44 @@ All the final results from report step will be saved under date_time_core_result
 
 ```
 
-Four directories will be created after the report step where input for different downstream analysis and matrices for QC will be generated.
+Four directories will be created after the report step where input for different downstream analyses and matrices for QC will be generated.
 
 ### 1. core_snp_consensus
-This folder contain different combination of core/non-core consensus fasta for individual samples. core_vcf folder contain annotated vcf files used for generating the consensus. 
+This folder contain different combinations of core/non-core consensus fasta files for individual samples. The core_vcf folder contains annotated vcf files used for generating the consensus. 
 
-### 2. gubbins: 
-This folder contain different combination of core/non-core multi-fasta consensus generated by merging individual consensus files in core_snp_consensus folder. These multi-fasta consensus will be used as input for Gubbins recombination filtering and RAxML/FatTree phylogenetic tree construction.
+### 2. gubbins
+This folder contains different combinations of core/non-core multi-fasta consensus files generated by merging individual consensus files in core_snp_consensus folder. These multi-fasta consensus will be used as input for Gubbins recombination filtering and RAxML/FatTree phylogenetic tree construction.
 Output files from gubbins will be saved in this directory.
 
 **var_consensus.fa:** consensus generated from core variant positions.
 
-**ref_var_consensus.fa** full consensus relative to the reference genome generated from core variant positions (final core variants + reference alleles + non-core variants). 
+**ref_var_consensus.fa** full consensus relative to the reference genome generated from core variant positions (final core variants + reference alleles + non-core variants).
 
-Note: non-core variant in this consensus refers to positions where a variant was observed but was filtered out for not meeting one of three criteria. Therefore, it will be replaced by a reference allele observed at this position.
+Note: non-core variant in this consensus refers to positions where a variant was observed but was filtered out for not meeting one of three criteria. Therefore, it will be replaced by the reference allele observed at this position.
 
-- core variant criteria: Since this position was filtered out in another sample, this position will be regarded as non-core position.
-- hard variant filters: If the variant called at this position didn't meet hard variant filters such as DP(depth), MQ(Mapping quality), FQ(all reads supporting one variant), QUAL(variant quality), proximate_snp (the variant was in close proximity to another variant by 10 bp range), they would be filtered out from the final core SNPs.
-- functional filters: If the position fall in one of the three functional class (repetitive, masked or phage region), they would be filtered out from final core SNPs.
+- core variant criteria: Since this position was filtered out in another sample, this position will be regarded as a non-core position.
+- hard variant filters: If the variant called at this position didn't meet hard variant filters such as DP (depth), MQ (mapping quality), FQ (all reads supporting one variant), QUAL (variant quality), proximate_snp (the variant was in close proximity to another variant by 10 bp), they would be filtered out from the final core SNPs.
+- functional filters: If the position falls in one of the three functional class (repetitive, masked or phage region), they would be filtered out from final core SNPs.
 
-**allele_var_consensus.fa:** consensus generated from all unique variant positions that was called in any sample regardless of it being a core/non-core. This will contain all core variant positions, non-core variant positions will be substituted with dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filter. non-core variant that meet all filter parameters will be substituted with variant allele.
+**allele_var_consensus.fa:** consensus generated from all unique variant positions that were called in any sample regardless of it being a core/non-core position. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under a functional class filter. Non-core variants that meet all filter parameters will be substituted with the variant allele.
 
-**ref_allele_var_consensus.fa** full consensus relative to the reference genome generated from all unique variant positions that was called in any sample regardless of it being a core/non-core. This will contain all core variant positions, non-core variant positions will be substituted with dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filter. non-core variant that meet all filter parameters will be substituted with variant allele.
+**ref_allele_var_consensus.fa** full consensus relative to the reference genome generated from all unique variant positions that were called in any sample regardless of it being a core/non-core position. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under a functional class filter. Non-core variants that meet all filter parameters will be substituted with the variant allele. Positions that were unmapped in all samples relative to the reference genome will be denoted by the reference allele.
 
-**ref_allele_unmapped_consensus.fa:** full consensus relative to the reference genome generated from all unique variant positions that was called in any sample. This will contain all core variant positions, non-core variant positions will be substituted with dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filter. non-core variant that meet all filter parameters will be substituted with variant allele. Positions that were unmapped relative to the reference genome will be denoted by dashes.
+**ref_allele_unmapped_consensus.fa:** full consensus relative to the reference genome generated from all unique variant positions that were called in any sample. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filters. Non-core variants that meet all filter parameters will be substituted with the variant allele. Positions that were unmapped in all samples relative to the reference genome will be denoted by dashes.
 
 
 ### 3. data_matrix
-This folder contains different type of data matrices and reports that can be queried for variant diagnostics/QC plots. 
+This folder contains different types of data matrices and reports that can be queried for variant diagnostics/QC plots. 
 
 **SNP/Indel Matrix:**
 
-SNP_matrix_allele.csv and Indel_matrix_allele.csv: contain allele information for each unique variant position(rownames) called in individual sample(columns)
+SNP_matrix_allele.csv and Indel_matrix_allele.csv: contain allele information for each unique variant position (rownames) called in each individual sample (columns). Positions that were unmapped and filtered out are replaced by the reference allele.
 
-SNP_matrix_allele_new.csv will also contain allele information for each unique variant position(rownames) called in individual sample(columns) except the positions that were unmapped and filtered out will be substituted with dash(-) and N's.
+SNP_matrix_allele_new.csv will also contain allele information for each unique variant position (rownames) called in each individual sample (columns) except the positions that were unmapped and filtered out will be substituted with dash (-) and N's.
 
-SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status code for each unique variant position(rownames) called in individual sample(columns). 
+SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status codes for each unique variant position (rownames) called in individual sample (columns). 
 
-Different status codes are: 
+The different status codes are: 
 
 unmapped = -1
 
@@ -321,7 +321,7 @@ core = 1
 
 filtered = 2
 
-non-core or True variant but filtered out due to another sample = 3
+non-core or true variant but filtered out due to another sample = 3
 
 
 **Functional class:**
@@ -336,17 +336,17 @@ Functional_class_filter_positions.txt is an aggregated unique list of positions 
 
 **Bargraph matrices**
 
-bargraph_counts.txt and bargraph_indel_counts.txt contain distribution of all the variant positions called in individual sample. Each color represents a type of variant filter. The bar corresponds to the number of variants that got filtered out due to that particular hard filter parameter in each sample.
+bargraph_counts.txt and bargraph_indel_counts.txt contain distributions of all the variant positions called in each individual sample. Each color represents a type of variant filter. The bar corresponds to the number of variants that got filtered out due to that particular hard filter parameter in each sample.
 
-bargraph_indel_percentage.txt and bargraph_percentage.txt contain same distribution but the counts are transformed into percentage.
+bargraph_indel_percentage.txt and bargraph_percentage.txt contain same distribution but the counts are transformed into percentages.
 
-These matrices can be used for QC checks and understand effects of different variant filters on the total number of core variants. 
+These matrices can be used for QC checks and to understand the effects of different variant filters on the total number of core variants. 
 
-Note: Sample with unusual bar height should be considered as outlier samples.
+Note: Samples with an unusual bar height should be considered as outlier samples.
 
 Run generate_diagnostics_plots.R script created inside the data_matrix folder to generate various QC plots. 
 
-Require: ggplot2 and heatmap.3
+Requires: ggplot2 and heatmap.3
 
 ```
 
@@ -358,11 +358,11 @@ Rscript generate_diagnostics_plots.R
 
 | File | Description |
 | --------- | ----------- |
-| barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
-| barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
-| temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
+| barplot.pdf |  Distribution of filter-pass variant positions (variants observed in all the samples) in each sample. Colors represent the filter criteria that caused them to get filtered out in that particular sample.|
+| barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. Colors represent the read-depth range that they fall in. |
+| temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning the reference genome that shows positions that were filtered out due to low FQ values |
 | DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
-| temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low DP values |
+| temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning the reference genome that shows positions that were filtered out due to low DP values |
 
 
 - barplot
@@ -375,7 +375,7 @@ Rscript generate_diagnostics_plots.R
 
 
 ### 4. trees
-All the scripts used for running RAxML/FastTree and their output will be saved in this directory. Multi-fasta consensus files(pre-recombination filtered) residing in gubbins folder will be used for constructing RAxML/FastTree trees.
+All the scripts used for running RAxML/FastTree and their output will be saved in this directory. Multi-fasta consensus files (pre-recombination filtered) residing in the gubbins folder will be used for constructing RAxML/FastTree trees.
 
 
 <!-- 
@@ -400,7 +400,7 @@ Only_ref_variant_positions_for_closely_without_functional_filtered_positions
 
 | Extension | Description |
 | --------- | ----------- |
-| barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
+| barplot.pdf |  Distribution of filter-pass variant positions (variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
 | barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
 | temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
 | DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
