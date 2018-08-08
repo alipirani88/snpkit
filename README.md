@@ -3,7 +3,7 @@
 ## Synopsis
 
 
-The pipeline call variants on Illumina PE/SE reads provided in a directory and generates various combination of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/Beast analysis.
+The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generates various combinations of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/BEAST analysis.
 
 ## Contents
 
@@ -11,10 +11,10 @@ The pipeline call variants on Illumina PE/SE reads provided in a directory and g
 - [Input](#input)
 - [Steps](#steps)
 - [Command line options](#command-line-options)
-- [Run pipeline on Compute cluster](#run-pipeline-on-compute-cluster)
-- [Quick Start](#quick-start)
-- [Output Files](#output-files)
-- [Customizing Config file](#customizing-config-file)
+- [Run pipeline on compute cluster](#run-pipeline-on-compute-cluster)
+- [Quick start](#quick-start)
+- [Output files](#output-files)
+- [Customizing config file](#customizing-config-file)
 - [Log](#log)
 - [Tips and Tricks](#tips-and-tricks)
 
@@ -39,7 +39,7 @@ The dependencies are already installed in Snitkin lab bin_group folder:
 /nfs/esnitkin/bin_group/variant_calling_bin/
 ```
 
-Requires Python2 version:
+Requires Python2:
 
 ```
 /nfs/esnitkin/bin_group/anaconda2/bin/python
@@ -47,7 +47,7 @@ Requires Python2 version:
 
 ## Input
 
-- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+- readsdir: folder containing SE/PE reads. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
 ```
 
@@ -61,9 +61,9 @@ Requires Python2 version:
 
 - config: a config file to set pipeline configuration settings. Use this config file to set up environment path for various tools, path to reference genomes and variant filters. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with this pipeline. A customized config file can be provided with -config argument.
 
-For more information, refer [Customizing Config file](#customizing-config-file)
+For more information, refer to [Customizing the config file](#customizing-config-file).
 
-<!--- Input is a directory(-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. This config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters are included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
+<!--- Input is a directory (-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. These config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
 
 
 
@@ -72,39 +72,39 @@ For more information, refer [Customizing Config file](#customizing-config-file)
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/pipeline.png)
 
-Pipeline is divided into three individual steps(-steps option) which should be run in sequential order. 
+The pipeline is divided into three individual steps (-steps option) which should be run in sequential order (see below for command line arguments). 
 
-**1. Variant Calling:** This step will run all standard variant calling steps on sample reads residing in input reads directory.
+**1. Variant Calling:** This step will run all standard variant calling steps on sample reads residing in the input reads directory.
 
 The possible options are:
 
-Option ***All*** :  This will run all variant calling steps starting from read trimming to variant calling. 
+Option ***All***:  This will run all variant calling steps from read trimming to variant calling. 
 
-Option ***clean,align,post-align,varcall,filter,stats*** :  This option will run variant calling steps starting from read trimming, alignment to reference genome, post-alignment format conversion, variant call/filter and finally generates mapping/variant statistics.
+Option ***clean,align,post-align,varcall,filter,stats***:  This option will run variant calling steps starting from read trimming, alignment to reference genome, post-alignment format conversion, variant calling/filtering and finally generates mapping/variant statistics.
 
-You can run a part of the pipeline by customizing the order of -steps argument. For example, to skip Trimmomatic cleaning part, run it with following options: "align,post-align,varcall,filter,stats" 
+You can run a part of the pipeline by customizing the order of the -steps argument. For example, to skip the Trimmomatic cleaning part, run it with the following options: "align,post-align,varcall,filter,stats"
 
 
-Note: The order of variant calling steps needs to be sequential. While skipping any of the steps, make sure those skipped steps finished without any errors.
+Note: The order of variant calling steps needs to be sequential. If skipping any of the steps, make sure those skipped steps had previously finished without any errors.
 
 
 **2. Preparing files for Core SNP extraction and diagnostic purposes:**
 
 
-Option ***core_prep*** : Run this step before running the last core steps. This will generate all the intermediate data files required for core SNP matrix/consensus.
+Option ***core_prep***: Run this step before running the last core steps. This will generate all the intermediate data files required for core SNP matrix/consensus.
 
 
-**3. Generate Core SNP consensus and data matrix for diagnostics plots:**
+**3. Generate core SNP consensus and data matrix for diagnostics plots:**
 
-Option ***core*** : This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias and their impact on the overall distribution core variants. 
+Option ***core***: This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias and their impact on the overall distribution core variants. 
 
 **4. Generate report and aggregate results for the pipeline:**
 
-Option ***report*** : This step will aggregate and move final results to prefix_core_results directory under the output directory.
+Option ***report***: This step will aggregate and move final results to prefix_core_results directory under the output directory.
 
 **5. Phylogenetic reconstruction and recombination filtering using FastTree/RAxML/Gubbins:**
 
-Option ***tree*** : This step will generate FastTree/RAxML tree from pre-recombination filtered consensus files. If -gubbins option is set to yes, it will run gubbins on all final consensus files..
+Option ***tree***: This step will generate a FastTree and a RAxML tree from pre-recombination filtered consensus files. If the -gubbins option is set to yes, it will run gubbins on all final consensus files.
 
 ## Command line options
 
@@ -125,78 +125,75 @@ optional arguments:
 
 Required arguments:
   -type TYPE            Type of reads: SE or PE
-  -readsdir DIR         Path to Sequencing Reads Data directory. NOTE: Provide full/absolute path.
-  -outdir OUTPUT_FOLDER
-                        Output Folder Path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
-  -index INDEX          Reference Index Name. Most Frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris Make sure the paths are properly set in config file
-  -steps STEPS          Variant Calling Steps in sequential order.
+  -readsdir DIR         Path to sequencing reads data directory. NOTE: Provide full/absolute path.
+  -outdir OUTPUT_FOLDER Output folder path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
+  -index INDEX          Reference index name. Most frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris. Make sure the paths are properly set in config file.
+  -steps STEPS          Variant calling steps in sequential order.
                         1.   All: This will run all the steps starting from cleaning the reads to variant calling;
-                        2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. 
-                        You can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.
-                        The order is required to be sequential while using this option. Also, while skipping any of the step make sure you have results already present in your output folder.
-                        3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps
+                        2.   clean,align,post-align,varcall,filter,stats : This will also run all steps from cleaning to variant calling. 
+                        You can also run part of the pipeline by giving, for example, "align,post-align,varcall,filter,stats" which will skip the cleaning part.
+                        The order must be sequential while using this option. Also, if skipping any of the steps, make sure you have the results already present in your output folder.
+                        3.   coverage_depth_stats: Run only depth of coverage stats module after the cleaning and read mapping steps
                         4.   core_prep: Run this step before running the core steps. This will prepare the data required for generating core SNPs
                         5.   core: extract core snps and generate diagnostics plot data matrices to explore filtered snps.
-  -analysis ANALYSIS_NAME
-                        Unique analysis name that will be used as prefix to saving results and log files.
+  -analysis ANALYSIS_NAME Unique analysis name that will be used as a prefix when saving results and log files.
 
 Optional arguments:
-  -config CONFIG        Path to Config file, Make sure to check config settings before running pipeline
+  -config CONFIG        Path to config file. Make sure to check config settings before running the pipeline
   -suffix SUFFIX        Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz
   -filenames FILENAMES  fastq filenames with one single-end filename per line. 
-                        If the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. 
-                        Useful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. 
-                        Otherwise the pipeline will consider all the samples available in reads directory.
-  -cluster CLUSTER      Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option
+                        If the type is set to PE, it will detect the second paired-end filename with the suffix from the first filename. 
+                        Useful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in the input reads directory. 
+                        Otherwise the pipeline will consider all the samples available in the reads directory.
+  -cluster CLUSTER      Run variant calling pipeline in one of the four modes. Default: local. The suggested mode for core snp is a cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option
                         The possible modes are: cluster/parallel-cluster/parallel-local/local
                         cluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.
                         parallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.
                         parallel-local: Run variant call jobs for each sample in parallel locally.
                         local: Run variant call jobs locally.
-                        Make Sure to check if the [scheduler] section in config file is set up correctly for your cluster.
-  -clean CLEAN          clean up intermediate files. Default: OFF
-  -extract_unmapped EXTRACT_UNMAPPED
-                        Extract unmapped reads, assemble it and detect AMR genes using ariba
+                        Make sure to check if the [scheduler] section in the config file is set up correctly for your cluster.
+  -clean CLEAN          Clean up intermediate files. Default: OFF
+  -extract_unmapped     EXTRACT_UNMAPPED
+                        Extract unmapped reads, assemble them and detect antimicrobial resistance (AMR) genes using ariba
   -datadir DATADIR      Path to snpEff data directory
-  -snpeff_db SNPEFF_DB  Name of pre-build snpEff database to use for Annotation
-  -debug_mode DEBUG_MODE
-                        yes/no for debug mode
+  -snpeff_db SNPEFF_DB  Name of pre-built snpEff database to use for annotation
+  -debug_mode DEBUG_MODE yes/no for debug mode
   -gubbins GUBBINS      yes/no for running gubbins
 
 ```
 
-## Run pipeline on Compute cluster
+## Run pipeline on compute cluster
 
 
-Variant calling can be run in parallel on each sample using -cluster argument. Set pbs resources such as resources(-l), email(-M), queue(-q), flux_account(-A) and notification(-m) under [scheduler] section in config file. 
+Variant calling can be run in parallel on each sample using the -cluster argument. Set pbs resources such as resources (-l), email (-M), queue (-q), flux_account (-A) and notification (-m) under the [scheduler] section in config file. 
 
-For more details, refer UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website for detailed explanation of each pbs specifications.
+For more details, refer to the UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website for a detailed explanation of each pbs specification.
 
 
-Possible options for -cluster option(Supported system: pbs):
+Possible options for the -cluster option (Supported system: pbs):
 
-***local*** : This is the default option. When this option is set, the pipeline will analyze each sample one after the another. This will not make use of multiple cores present in your system or clusters. Use this option for few number of samples or for testing purposes.
+***local***: This is the default option. When this option is set, the pipeline will analyze each sample one after the another. This will not make use of multiple cores present in your system or clusters. Use this option for small numbers of samples or for testing purposes.
 
-***parallel-local*** :  This option will run the pipeline and analyze samples in parallel but on a local system. This is preferred for less than 20 sample size input and multiple core local system.
+***parallel-local***:  This option will run the pipeline and analyze samples in parallel but on a local system. This is preferred for an input sample size of less than 20  and a multiple core local system.
 
-***cluster*** : This option will run the pipeline on a single cluster. This option is similar to local but will rather run on a cluster node. It will not make use of multiple cores present on a cluster. Use this option for few number of samples or for testing purposes or for few number of large size samples which requires multiple cores to analyze individual samples.
+***cluster***: This option will run the pipeline on a single cluster. This option is similar to local but will rather run on a cluster node. It will not make use of multiple cores present on a cluster. Use this option for small numbers of samples or for testing purposes or for small numbers of large size samples which require multiple cores to analyze individual samples.
 
-***parallel-cluster*** : The variant call step(All) is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on individual compute cluster. When you set this option for each step in the pipeline, make sure all the jobs submitted by the pipeline at each step is completed before proceeding to another step. You can check the status of the job with: 
+***parallel-cluster***: The variant call step (All) is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on an individual compute cluster. When you set this option for each step in the pipeline, make sure all the jobs submitted by the pipeline at each step is completed before proceeding to another step. You can check the status of the job with: 
 
 ```
 qstat -u USERNAME  
 ```
 
-Note: Use parallel-cluster mode for All/clean,align,post-align,varcall,filter,stats steps. Use cluster/parallel-local mode for core_prep and core steps. parallel-cluster and cluster will be merged in next release.
+Note: Use parallel-cluster mode for All/clean,align,post-align,varcall,filter,stats steps. Use cluster/parallel-local mode for core_prep and core steps. parallel-cluster and cluster will be merged in the next release.
 
 ## Quick Start
 
-Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster(Time and memory efficient). The default pbs resources used for parallel jobs are: 
+Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on a cluster (time and memory efficient). The default pbs resources used for parallel jobs are: 
 
 ```
 nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
 ```
-See option resources in scheduler section of [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information in section [Customizing Config file](#customizing-config-file)
+See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-config-file)
 
 - Run variant calling step (All) on a set of PE reads with default parameters
 
@@ -205,11 +202,11 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-The above command will run variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in output directory test_output_core. The config file contains options for some frequently used reference genome. To know which reference genomes are included in config file, look up the [config]() file or check the help menu of the pipeline.
+The above command will run the variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in the output directory test_output_core. The config file contains options for some frequently used reference genomes. To know which reference genomes are included in the config file, look up the [config]() file or check the help menu of the pipeline.
 
-The results of variant calling will be placed in an individual folder generated for each sample in output directory. A log file for each sample will be generated and can be found in each sample folder inside the out directory. A single log file of this step will be generated in main output directory. For more information on log file prefix and convention, please refer [log](#log) section below.
+The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. A single log file of this step will be generated in the main output directory. For more information on log file prefix and convention, please refer to the [log](#log) section below.
 
-- Run core_prep step to generate files for core SNP calling.
+- Run the core_prep step to generate files for core SNP calling.
 
 Run this steps to generate various intermediate files that will be used for generating core SNPs.
 
@@ -218,9 +215,9 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-- Run core step to generate final core SNP consensus fasta files.
+- Run the core step to generate final core SNP consensus fasta files.
 
-Since this step compares multiple files simultaneously and involves multiple I/O operations, It is recommended to provide higher memory compute resources. 
+Since this step compares multiple files simultaneously and involves multiple I/O operations, it is recommended to provide higher memory compute resources. 
 
 example:
 
@@ -228,21 +225,21 @@ example:
 nodes=1:ppn=4,mem=47000mb,walltime=24:00:00
 ```
 
-Replace the resources option in scheduler section of config file with the above line before running the command.
+Replace the resources option in the scheduler section of the config file with the above line before running the command.
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster cluster
 
 ```
 
-- Run report step to aggregate results under prefix_core_results folder
+- Run the report step to aggregate results under the \*_core_results folder
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps report -cluster cluster
 
 ```
 
-- Run tree step to generate FastTree/RAxML phylogenetic tree and recombination filterating using Gubbins
+- Run the tree step to generate FastTree and RAxML phylogenetic trees and recombination filtering using Gubbins
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps tree -cluster cluster -gubbins yes
@@ -251,7 +248,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ## Output Files
 
-All the final results from report step will be saved under date_time_core_results directory under the output folder. 
+All the final results from the report step will be saved under the date_time_core_results directory under the output folder. 
 
 
 ```
@@ -290,44 +287,44 @@ All the final results from report step will be saved under date_time_core_result
 
 ```
 
-Four directories will be created after the report step where input for different downstream analysis and matrices for QC will be generated.
+Four directories will be created after the report step where input for different downstream analyses and matrices for QC will be generated.
 
 ### 1. core_snp_consensus
-This folder contain different combination of core/non-core consensus fasta for individual samples. core_vcf folder contain annotated vcf files used for generating the consensus. 
+This folder contain different combinations of core/non-core consensus fasta files for individual samples. The core_vcf folder contains annotated vcf files used for generating the consensus. 
 
-### 2. gubbins: 
-This folder contain different combination of core/non-core multi-fasta consensus generated by merging individual consensus files in core_snp_consensus folder. These multi-fasta consensus will be used as input for Gubbins recombination filtering and RAxML/FatTree phylogenetic tree construction.
+### 2. gubbins
+This folder contains different combinations of core/non-core multi-fasta consensus files generated by merging individual consensus files in core_snp_consensus folder. These multi-fasta consensus will be used as input for Gubbins recombination filtering and RAxML/FatTree phylogenetic tree construction.
 Output files from gubbins will be saved in this directory.
 
 **var_consensus.fa:** consensus generated from core variant positions.
 
-**ref_var_consensus.fa** full consensus relative to the reference genome generated from core variant positions (final core variants + reference alleles + non-core variants). 
+**ref_var_consensus.fa** full consensus relative to the reference genome generated from core variant positions (final core variants + reference alleles + non-core variants).
 
-Note: non-core variant in this consensus refers to positions where a variant was observed but was filtered out for not meeting one of three criteria. Therefore, it will be replaced by a reference allele observed at this position.
+Note: non-core variant in this consensus refers to positions where a variant was observed but was filtered out for not meeting one of three criteria. Therefore, it will be replaced by the reference allele observed at this position.
 
-- core variant criteria: Since this position was filtered out in another sample, this position will be regarded as non-core position.
-- hard variant filters: If the variant called at this position didn't meet hard variant filters such as DP(depth), MQ(Mapping quality), FQ(all reads supporting one variant), QUAL(variant quality), proximate_snp (the variant was in close proximity to another variant by 10 bp range), they would be filtered out from the final core SNPs.
-- functional filters: If the position fall in one of the three functional class (repetitive, masked or phage region), they would be filtered out from final core SNPs.
+- core variant criteria: Since this position was filtered out in another sample, this position will be regarded as a non-core position.
+- hard variant filters: If the variant called at this position didn't meet hard variant filters such as DP (depth), MQ (mapping quality), FQ (all reads supporting one variant), QUAL (variant quality), proximate_snp (the variant was in close proximity to another variant by 10 bp), they would be filtered out from the final core SNPs.
+- functional filters: If the position falls in one of the three functional class (repetitive, masked or phage region), they would be filtered out from final core SNPs.
 
-**allele_var_consensus.fa:** consensus generated from all unique variant positions that was called in any sample regardless of it being a core/non-core. This will contain all core variant positions, non-core variant positions will be substituted with dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filter. non-core variant that meet all filter parameters will be substituted with variant allele.
+**allele_var_consensus.fa:** consensus generated from all unique variant positions that were called in any sample regardless of it being a core/non-core position. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under a functional class filter. Non-core variants that meet all filter parameters will be substituted with the variant allele.
 
-**ref_allele_var_consensus.fa** full consensus relative to the reference genome generated from all unique variant positions that was called in any sample regardless of it being a core/non-core. This will contain all core variant positions, non-core variant positions will be substituted with dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filter. non-core variant that meet all filter parameters will be substituted with variant allele.
+**ref_allele_var_consensus.fa** full consensus relative to the reference genome generated from all unique variant positions that were called in any sample regardless of it being a core/non-core position. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under a functional class filter. Non-core variants that meet all filter parameters will be substituted with the variant allele. Positions that were unmapped in all samples relative to the reference genome will be denoted by the reference allele.
 
-**ref_allele_unmapped_consensus.fa:** full consensus relative to the reference genome generated from all unique variant positions that was called in any sample. This will contain all core variant positions, non-core variant positions will be substituted with dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filter. non-core variant that meet all filter parameters will be substituted with variant allele. Positions that were unmapped relative to the reference genome will be denoted by dashes.
+**ref_allele_unmapped_consensus.fa:** full consensus relative to the reference genome generated from all unique variant positions that were called in any sample. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filters. Non-core variants that meet all filter parameters will be substituted with the variant allele. Positions that were unmapped in all samples relative to the reference genome will be denoted by dashes.
 
 
 ### 3. data_matrix
-This folder contains different type of data matrices and reports that can be queried for variant diagnostics/QC plots. 
+This folder contains different types of data matrices and reports that can be queried for variant diagnostics/QC plots. 
 
 **SNP/Indel Matrix:**
 
-SNP_matrix_allele.csv and Indel_matrix_allele.csv: contain allele information for each unique variant position(rownames) called in individual sample(columns)
+SNP_matrix_allele.csv and Indel_matrix_allele.csv: contain allele information for each unique variant position (rownames) called in each individual sample (columns). Positions that were unmapped and filtered out are replaced by the reference allele.
 
-SNP_matrix_allele_new.csv will also contain allele information for each unique variant position(rownames) called in individual sample(columns) except the positions that were unmapped and filtered out will be substituted with dash(-) and N's.
+SNP_matrix_allele_new.csv will also contain allele information for each unique variant position (rownames) called in each individual sample (columns) except the positions that were unmapped and filtered out will be substituted with dash (-) and N's.
 
-SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status code for each unique variant position(rownames) called in individual sample(columns). 
+SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status codes for each unique variant position (rownames) called in individual sample (columns). 
 
-Different status codes are: 
+The different status codes are: 
 
 unmapped = -1
 
@@ -337,7 +334,7 @@ core = 1
 
 filtered = 2
 
-non-core or True variant but filtered out due to another sample = 3
+non-core or true variant but filtered out due to another sample = 3
 
 
 **Functional class:**
@@ -352,17 +349,17 @@ Functional_class_filter_positions.txt is an aggregated unique list of positions 
 
 **Bargraph matrices**
 
-bargraph_counts.txt and bargraph_indel_counts.txt contain distribution of all the variant positions called in individual sample. Each color represents a type of variant filter. The bar corresponds to the number of variants that got filtered out due to that particular hard filter parameter in each sample.
+bargraph_counts.txt and bargraph_indel_counts.txt contain distributions of all the variant positions called in each individual sample. Each color represents a type of variant filter. The bar corresponds to the number of variants that got filtered out due to that particular hard filter parameter in each sample.
 
-bargraph_indel_percentage.txt and bargraph_percentage.txt contain same distribution but the counts are transformed into percentage.
+bargraph_indel_percentage.txt and bargraph_percentage.txt contain same distribution but the counts are transformed into percentages.
 
-These matrices can be used for QC checks and understand effects of different variant filters on the total number of core variants. 
+These matrices can be used for QC checks and to understand the effects of different variant filters on the total number of core variants. 
 
-Note: Sample with unusual bar height should be considered as outlier samples.
+Note: Samples with an unusual bar height should be considered as outlier samples.
 
 Run generate_diagnostics_plots.R script created inside the data_matrix folder to generate various QC plots. 
 
-Require: ggplot2 and heatmap.3
+Requires: ggplot2 and heatmap.3
 
 ```
 
@@ -374,11 +371,11 @@ Rscript generate_diagnostics_plots.R
 
 | File | Description |
 | --------- | ----------- |
-| barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
-| barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
-| temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
+| barplot.pdf |  Distribution of filter-pass variant positions (variants observed in all the samples) in each sample. Colors represent the filter criteria that caused them to get filtered out in that particular sample.|
+| barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. Colors represent the read-depth range that they fall in. |
+| temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning the reference genome that shows positions that were filtered out due to low FQ values |
 | DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
-| temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low DP values |
+| temp_Only_filtered_positions_for_closely_matrix_DP.pdf | Heatmap spanning the reference genome that shows positions that were filtered out due to low DP values |
 
 
 - barplot
@@ -391,7 +388,7 @@ Rscript generate_diagnostics_plots.R
 
 
 ### 4. trees
-All the scripts used for running RAxML/FastTree and their output will be saved in this directory. Multi-fasta consensus files(pre-recombination filtered) residing in gubbins folder will be used for constructing RAxML/FastTree trees.
+All the scripts used for running RAxML/FastTree and their output will be saved in this directory. Multi-fasta consensus files (pre-recombination filtered) residing in the gubbins folder will be used for constructing RAxML/FastTree trees.
 
 
 <!-- 
@@ -416,7 +413,7 @@ Only_ref_variant_positions_for_closely_without_functional_filtered_positions
 
 | Extension | Description |
 | --------- | ----------- |
-| barplot.pdf |  Distribution of filter-pass variant positions(variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
+| barplot.pdf |  Distribution of filter-pass variant positions (variants observed in all the samples) in each sample. colors represents the filter criteria that caused them to get filtered out in that particular sample.|
 | barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. color represents the read-depth range that they fall in. |
 | temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning reference genome and shows positions that were filtered out due to low FQ values |
 | DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
@@ -495,7 +492,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-## Customizing Config file:
+## Customizing the config file:
 
 By default, the pipeline uses config file that comes with the pipeline. Make sure to edit this config file or copy it to your local system, edit it and provide path of this edited config file with -config argument.
 
