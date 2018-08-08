@@ -20,6 +20,20 @@ The pipeline call variants on Illumina PE/SE reads provided in a directory and g
 
 ## Installation
 
+Required dependencies:
+
+- Python2 version >= 2.6.1
+- Trimmomatic
+- BWA
+- samtools
+- gatk toolkit
+- picard
+- vcftools
+- bedtools
+- bioawk
+- fasttree, raxml, gubbins
+
+
 The dependencies are already installed in Snitkin lab bin_group folder:
 
 ```
@@ -34,7 +48,7 @@ Requires Python2 version:
 
 ## Input
 
-- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+- readsdir: folder containing SE/PE reads in fastq format. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
 ```
 
