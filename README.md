@@ -20,6 +20,19 @@ The pipeline call variants on Illumina PE/SE reads provided in a directory and g
 
 ## Installation
 
+Required dependencies:
+
+- Python2 version >= 2.6.1
+- Trimmomatic
+- BWA
+- samtools
+- gatk toolkit
+- picard
+- vcftools
+- bedtools
+- bioawk
+- fasttree, raxml, gubbins
+
 The dependencies are already installed in Snitkin lab bin_group folder:
 
 ```
@@ -627,4 +640,5 @@ The pipeline generates various output files from different tools at different st
 >3. ***analysisname_depth_of_coverage***: Depth of Coverage generated using GATK Depth of Coverage.
 >4. ***analysisname_markduplicates_metrics***: Mark Duplicates metrics generated during Picard Mark Duplicates step.
 --->
+
 
