@@ -20,6 +20,19 @@ The pipeline call variants on Illumina PE/SE reads provided in a directory and g
 
 ## Installation
 
+Required dependencies:
+
+- Python2 version >= 2.6.1
+- Trimmomatic
+- BWA
+- samtools
+- gatk toolkit
+- picard
+- vcftools
+- bedtools
+- bioawk
+- fasttree, raxml, gubbins
+
 The dependencies are already installed in Snitkin lab bin_group folder:
 
 ```
