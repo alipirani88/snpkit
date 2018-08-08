@@ -917,7 +917,6 @@ def generate_indel_position_label_data_matrix():
     """
     def generate_indel_position_label_data_matrix_All_label():
         position_label = OrderedDict()
-        print "Generating Only_ref_indel_positions_for_closely"
         f1=open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'w+')
         f2=open("%s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f3=open("%s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -2414,7 +2413,7 @@ def annotated_snp_matrix():
                 else:
                     snp_type = "Non-coding SNP"
             else:
-                snp_type = "Non-coding SNP"
+                snp_type = "None"
 
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
 
@@ -2604,7 +2603,7 @@ def annotated_snp_matrix():
                 else:
                     snp_type = "Non-coding INDEL"
             else:
-                snp_type = "Non-coding INDEL"
+                snp_type = "None"
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
 
         if variants.INFO.get('ANN'):
@@ -2794,7 +2793,6 @@ def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
         #os.system("qsub %s" % job_file_name)
         call("qsub %s" % job_file_name, logger)
 
-
 """
 Pending inclusion
 
@@ -2983,13 +2981,9 @@ if __name__ == '__main__':
         #     f1.close()
 
         # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
-        core_prep_indel(core_vcf_fasta_dir)
-
-
         core_prep_snp(core_vcf_fasta_dir)
 
-        # Moving this up before core_prep_snp; for some weird reason, it is failing to generate Only_ref_indel
-        #core_prep_indel(core_vcf_fasta_dir)
+        core_prep_indel(core_vcf_fasta_dir)
 
         # Annotate core variants. Generate SNP and Indel matrix.
         annotated_snp_matrix()
