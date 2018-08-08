@@ -33,7 +33,6 @@ Required dependencies:
 - bioawk
 - fasttree, raxml, gubbins
 
-
 The dependencies are already installed in Snitkin lab bin_group folder:
 
 ```
@@ -48,7 +47,7 @@ Requires Python2 version:
 
 ## Input
 
-- readsdir: folder containing SE/PE reads in fastq format. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
 ```
 
@@ -641,4 +640,5 @@ The pipeline generates various output files from different tools at different st
 >3. ***analysisname_depth_of_coverage***: Depth of Coverage generated using GATK Depth of Coverage.
 >4. ***analysisname_markduplicates_metrics***: Mark Duplicates metrics generated during Picard Mark Duplicates step.
 --->
+
 
