@@ -14,7 +14,7 @@ The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads p
 - [Run pipeline on compute cluster](#run-pipeline-on-compute-cluster)
 - [Quick start](#quick-start)
 - [Output files](#output-files)
-- [Customizing config file](#customizing-config-file)
+- [Customizing the config file](#customizing-the-config-file)
 - [Log](#log)
 - [Tips and Tricks](#tips-and-tricks)
 
@@ -61,7 +61,7 @@ Requires Python2:
 
 - config: a config file to set pipeline configuration settings. Use this config file to set up environment path for various tools, path to reference genomes and variant filters. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with this pipeline. A customized config file can be provided with -config argument.
 
-For more information, refer to [Customizing the config file](#customizing-config-file).
+For more information, refer to [Customizing the config file](#customizing-the-config-file).
 
 <!--- Input is a directory (-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. These config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
 
@@ -193,7 +193,7 @@ Assuming you want to generate core snps for more than a few hundred samples and 
 ```
 nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
 ```
-See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-config-file)
+See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-the-config-file)
 
 - Run variant calling step (All) on a set of PE reads with default parameters
 
@@ -326,38 +326,36 @@ SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status co
 
 The different status codes are: 
 
-unmapped = -1
-
-reference allele = 0
-
-core = 1
-
-filtered = 2
-
-non-core or true variant but filtered out due to another sample = 3
+| Code | Description |
+| --------- | ----------- |
+| -1 | unmapped |
+| 0 | reference allele |
+| 1 | core |
+| 2 | filtered |
+| 3 | non-core or true variant but filtered out due to another sample |
 
 
 **Functional class:**
 
-phage_region_positions.txt contain positions identified by Phaster as phage region.
+phage_region_positions.txt contains positions identified by Phaster as phage regions.
 
-repeat_region_positions.txt contain positions identified by nucmer as tandem repeats.
+repeat_region_positions.txt contains positions identified by nucmer as tandem repeats.
 
-mask_positions.txt contain positions set by user to mask from final core position list.
+mask_positions.txt contains positions set by the user to mask from the final core position list.
 
-Functional_class_filter_positions.txt is an aggregated unique list of positions that fall under repeat, mask and phage region.
+Functional_class_filter_positions.txt is an aggregated unique list of positions that fall under repeat, mask and phage region (REPEAT_MASK_PHAGE).
 
 **Bargraph matrices**
 
 bargraph_counts.txt and bargraph_indel_counts.txt contain distributions of all the variant positions called in each individual sample. Each color represents a type of variant filter. The bar corresponds to the number of variants that got filtered out due to that particular hard filter parameter in each sample.
 
-bargraph_indel_percentage.txt and bargraph_percentage.txt contain same distribution but the counts are transformed into percentages.
+bargraph_indel_percentage.txt and bargraph_percentage.txt contain same distribution as the counts bargraphs but the counts are transformed into percentages.
 
 These matrices can be used for QC checks and to understand the effects of different variant filters on the total number of core variants. 
 
-Note: Samples with an unusual bar height should be considered as outlier samples.
+Note: Samples with an unusual bar height should be considered outlier samples.
 
-Run generate_diagnostics_plots.R script created inside the data_matrix folder to generate various QC plots. 
+Run the generate_diagnostics_plots.R script created inside the data_matrix folder to generate various QC plots. 
 
 Requires: ggplot2 and heatmap.3
 
@@ -388,7 +386,7 @@ Rscript generate_diagnostics_plots.R
 
 
 ### 4. trees
-All the scripts used for running RAxML/FastTree and their output will be saved in this directory. Multi-fasta consensus files (pre-recombination filtered) residing in the gubbins folder will be used for constructing RAxML/FastTree trees.
+All the scripts used for running RAxML/FastTree and their output are saved in this directory. Multi-fasta consensus files (pre-recombination filtered) residing in the gubbins folder will be used for constructing RAxML/FastTree trees.
 
 
 <!-- 
@@ -464,9 +462,9 @@ Pending...
 
 ## Tips and Tricks
 
-- Run only a part of variant calling step
+- Run only part of a variant calling step
 
-OPTIONAL: In case, you want to rerun the above analysis with different variant call/filter parameters (i.e skip the read cleaning, alignment and post-alignment steps), you can do it as follows:
+OPTIONAL: If you want to rerun the above analysis with different variant call/filter parameters (i.e skip the read cleaning, alignment and post-alignment steps), you can do it as follows:
 
 NOTE: OPTIONAL
 ```
@@ -475,7 +473,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-- Run variant calling step on selected samples provided in filenames.txt. filenames.txt should contain fastq filenames with one single-end filename per line.
+- Run the variant calling steps on selected samples provided in filenames.txt. filenames.txt should contain fastq filenames with one single-end filename per line.
 
 ```
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps varcall,filter,stats -cluster parallel-cluster -filenames filenames.txt
@@ -483,8 +481,7 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 - Run core_prep and core steps on selected files
 
-If you decide to exclude some samples from core snp analysis step (step 3), there is a way to do that without running the entire pipeline. 
-
+If you decide to exclude some samples from the core snp analysis step (step 3), there is a way to run core_prep and core steps on selected files without running the entire pipeline. 
 
 ```
 
@@ -492,9 +489,9 @@ python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_
 
 ```
 
-## Customizing the config file:
+## Customizing the config file
 
-By default, the pipeline uses config file that comes with the pipeline. Make sure to edit this config file or copy it to your local system, edit it and provide path of this edited config file with -config argument.
+By default, the pipeline uses the config file that comes with the pipeline. Make sure to edit this config file or copy it to your local system, edit it and provide the path of this edited config file with the -config argument.
 
 ```
 
@@ -502,8 +499,8 @@ cp variant_calling_pipeline/config /Path-to-local/config_edit
 
 ```
 
-The pipeline implements customisable variant calling configurations using config file. Config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
-Currently, The pipeline supports BWA aligner(mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
+The pipeline implements customisable variant calling configurations using the config file. The config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
+Currently, The pipeline supports BWA aligner (mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
 
 ```
 # Set which tools to use in pipeline:
@@ -515,21 +512,21 @@ variant_caller: samtools
 
 ```
 
-Make sure you have downloaded all the dependencies for the pipeline in a folder path provided in binbase option of [bin_path] section.
+Make sure you have downloaded all the dependencies for the pipeline in a folder path provided in the binbase option of the [bin_path] section.
 
 ```
-# Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
+# Set bin folder path. Please make sure all the executables are placed in the bin folder. Also make sure the path for individual tools are correct.
 [bin_path]
 binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 ```
 
-NOTE: Add the required perl libraries(such as in the case of vcftools) PERL5LIB environment variable. For flux users, you can do that by loading perl-modules
+NOTE: Add the required perl libraries (such as in the case of vcftools) PERL5LIB environment variable. For flux users, you can do that by loading perl-modules
 
 ```
 module load perl-modules
 ```
 
-If you wish to run the jobs on clsuter, make sure you cahnge the necessary schedular parameters in scheduler section shown below: for more information, visit [flux](http://arc-ts.umich.edu/systems-and-services/flux/) homepage.
+If you wish to run the jobs on a cluster, make sure you cahnge the necessary scheduler parameters in the scheduler section shown below: for more information, visit the [flux](http://arc-ts.umich.edu/systems-and-services/flux/) homepage.
 
 ```
 
@@ -542,7 +539,7 @@ notification: a
 
 ```
 
-Every tool has its own *_bin option where you can set the folder name in which the tool resides. For example, in the below Trimmomatic section example, the Trimmomatic tool resides in /Trimmomatic/ folder that is set with trimmomatic_bin option which in itself resides in /nfs/esnitkin/bin_group/variant_calling_bin/ folder that was set in binbase option above.
+Every tool has its own *_bin option where you can set the folder name in which the tool resides. For example, in the below Trimmomatic section example, the Trimmomatic tool resides in the /Trimmomatic/ folder that is set with the trimmomatic_bin option which in itself resides in /nfs/esnitkin/bin_group/variant_calling_bin/ folder that was set in the binbase option above.
 
 ```
 [Trimmomatic]
@@ -566,7 +563,7 @@ r_p: reverse_paired.fq.gz
 r_up: reverse_unpaired.fq.gz
 ```
 
-Parameters for each tools can be customised under the 'tool_parameter' attribute of each tool in config file.
+Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in the config file.
 
 
 For example, to change the minadapterlength parameter of Trimmomatic from 8 to 10, replace minadapterlength of 8 with suppose 10 and restart the pipeline.
@@ -577,7 +574,7 @@ The pipeline generates a log file following the naming convention: yyyy_mm_dd_hr
 
 ***INFO*** to print STDOUT messages; 
 
-***DEBUG*** to print commands ran by pipeline, 
+***DEBUG*** to print commands run by the pipeline, 
 
 ***ERROR*** to print STDERR messages and 
 
