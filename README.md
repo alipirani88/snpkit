@@ -78,23 +78,15 @@ Note: The order of variant calling steps needs to be sequential. If skipping any
 **2. Preparing files for Core SNP extraction and diagnostics purposes:**
 
 
-<<<<<<< HEAD
-Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for generating core SNP matrix/consensus.
-=======
 Option ***core_prep***: Run this step before running the last core steps. This will generate all the intermediate data files required for core SNP matrix/consensus.
->>>>>>> d023537902c7581fb534f62f3fe237d0c95f89ce
-
 
 **3. Generate core SNP consensus and data matrix for diagnostics plots:**
 
-<<<<<<< HEAD
-Option ***core*** : This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias. 
+Option ***core***: This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias and their impact on the overall distribution core variants. 
 
 **4. Generate report and aggregate results for the pipeline:**
 
 Option ***report*** : This step will aggregate the results in prefix_core_results directory under the output directory.
-=======
-Option ***core***: This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias and their impact on the overall distribution core variants. 
 
 **4. Generate report and aggregate results for the pipeline:**
 
