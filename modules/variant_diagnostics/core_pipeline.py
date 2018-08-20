@@ -3197,10 +3197,10 @@ if __name__ == '__main__':
         # os.system(prepare_ref_var_consensus_input_cmd)
         # os.system(prepare_var_consensus_input_cmd)
 
-        # fasttree(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
-        # fasttree(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
-        # fasttree(tree_dir, prepare_allele_var_consensus_input, args.jobrun, logger, Config)
-        # fasttree(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
+        fasttree(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
+        fasttree(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
+        fasttree(tree_dir, prepare_allele_var_consensus_input, args.jobrun, logger, Config)
+        fasttree(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
 
         raxml(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
         raxml(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
