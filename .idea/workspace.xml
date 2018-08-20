@@ -1,7 +1,105 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c3112279-5bdf-4974-a669-714b164d9334" name="Default" comment="" />
+    <list default="true" id="c3112279-5bdf-4974-a669-714b164d9334" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/.name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/dictionaries/alipirani.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/dictionaries/apirani.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/libraries/R_User_Library.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/scopes/scope_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/variant_calling_pipeline_dev.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/barplot.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/barplot_DP.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/config" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/config_ali" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/config_ali_backup" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/config_settings.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/log_modules.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/logging_subprocess.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/bedtools.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/bioawk.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/bowtie.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/bwa.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/cluster_based_prep/log_modules.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/cluster_based_prep/logging_subprocess.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/cluster_based_prep/prep_cluster_calling.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/core_prep_sanity_checks.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/fasttree.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/gatk.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/gubbins.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/log_modules.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/logging_subprocess.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/organize_jobs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/phage_detection.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/picard.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/qualimap.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/raxml.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/remove_5_bp_snp_indel.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/samtools.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/stages.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/tabix.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/trim.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/.name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/dictionaries/alipirani.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/scopes/scope_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/variants_position_analysis.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/DP_position_analysis.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/barplot.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/barplot.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/barplot_DP.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/barplot_DP.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/generate_diagnostics_plots.R" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/temp_Only_filtered_positions_for_closely_matrix_DP.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/R_scripts/temp_Only_filtered_positions_for_closely_matrix_FQ.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/config_settings.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/core_pipeline.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/core_pipeline_debug.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/core_prep.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_alternate.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_ref_allele_variants.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_ref_variant_position.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/find_repeats.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/log_modules.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/logging_subprocess.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/mask_gubbins_variants.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/mask_regions.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/parse_vcf_for_reason_individual_jobs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job_debug.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job_indel_debug.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/run_commands_parallel.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/test" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/variant_diagnostics/test.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/modules/vcftools.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/other" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/pipeline.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/plots/Sample_barplot.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/variant_call.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/variant_call_backup.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/variant_calling_pipeline_dev/variant_call_debug.py" beforeDir="false" />
+    </list>
     <ignored path="variant_calling_pipeline.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -19,19 +117,40 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="variant_call.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="variant_call.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/variant_call.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="580">
-              <caret line="249" column="99" lean-forward="true" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
-              <folding>
-                <element signature="e#26#36#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="5229">
+              <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="3122">
+                <caret line="289" column="9" lean-forward="true" selection-start-line="289" selection-start-column="9" selection-end-line="289" selection-end-column="9" />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="config_ali" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/config_ali">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1239">
+              <caret line="59" column="9" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="9" />
             </state>
           </provider>
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
@@ -41,7 +160,6 @@
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/reason_job.py" />
         <option value="$PROJECT_DIR$/README_detail.md" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py" />
-        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/pipeline.py" />
         <option value="$PROJECT_DIR$/config" />
         <option value="$PROJECT_DIR$/docs/source/index_backup" />
@@ -49,6 +167,7 @@
         <option value="$PROJECT_DIR$/docs/source/index.rst" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
         <option value="$PROJECT_DIR$/variant_call.py" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
@@ -57,20 +176,31 @@
     <option name="width" value="2488" />
     <option name="height" value="1321" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="ProjectPane" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="variant_calling_pipeline" type="b2602c69:ProjectViewProjectNode" />
+              <item name="variant_calling_pipeline" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
       <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="options.lastSelected" value="configurable.group.build" />
-    <property name="options.splitter.main.proportions" value="0.3" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="options.lastSelected" value="configurable.group.build" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.splitter.main.proportions" value="0.3" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -265,24 +395,24 @@
     <frame x="0" y="24" width="2488" height="1321" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.078086674" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.0997547" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="right" id="R Packages" />
-      <window_info anchor="right" id="R Graphics" />
+      <window_info anchor="right" id="R Packages" order="3" />
+      <window_info anchor="right" id="R Graphics" order="3" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info anchor="bottom" id="Version Control" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Application Servers" order="7" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="Changes" order="7" />
-      <window_info anchor="bottom" id="Application Servers" order="7" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Find" order="1" />
@@ -302,11 +432,45 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/variant_call.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor />
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor />
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" lean-forward="true" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="336">
           <caret line="16" column="41" selection-start-line="16" selection-end-line="16" selection-end-column="41" />
-          <folding>
-            <element signature="e#26#36#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -323,14 +487,27 @@
     <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
     <entry file="file://$PROJECT_DIR$/variant_call.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="580">
-          <caret line="249" column="99" lean-forward="true" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
-          <folding>
-            <element signature="e#26#36#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/README.md" />
+    <entry file="file://$PROJECT_DIR$/config_ali">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1239">
+          <caret line="59" column="9" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="3122">
+            <caret line="289" column="9" lean-forward="true" selection-start-line="289" selection-start-column="9" selection-end-line="289" selection-end-column="9" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
   </component>
 </project>
