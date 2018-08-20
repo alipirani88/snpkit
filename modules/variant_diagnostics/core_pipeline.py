@@ -2022,24 +2022,28 @@ def annotated_snp_matrix():
     This dictionary will then be used to insert annotation into SNP/Indel matrix
     """
 
-    # # """ Run snpEff annotation step """
+    """Run SNPeff on all the raw and filtered vcf files"""
+    # """ Run snpEff annotation step """
     variant_annotation()
-    #
-    # # """ Run snpEff annotation step """
+
+    # """ Run snpEff annotation step """
     indel_annotation()
 
-    # Check if Reference genome Genbank file exists. Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
+    """ Check if Reference genome Genbank file exists. """
     reference_basename = (os.path.basename(args.reference)).split(".")
     if os.path.isfile("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0])):
         handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'rU')
     else:
         raise IOError('%s/%s.gbf does not exist.' % (os.path.dirname(args.reference), reference_basename[0]))
         exit()
+
+    """ Initiate dictionaries to map locus tag to gene name and product"""
     locus_tag_to_gene_name = {}
     locus_tag_to_product = {}
     #locus_tag_to_uniprot = {}
     #locus_tag_to_ec_number = {}
 
+    """ Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name """
     keep_logging(
         'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
         'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
@@ -2064,7 +2068,7 @@ def annotated_snp_matrix():
                     logger, 'exception')
 
 
-    """ Merge Annotated final vcf file """
+    """ Merge Individual Annotated raw and filtered vcf files to generate a Final merged vcf file that will be used to parse and generate matrix """
     keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, logger, 'info')
 
     files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
@@ -2075,22 +2079,19 @@ def annotated_snp_matrix():
     files = ' '.join(vcf_filenames)
 
 
-    #Merge with bcftools, ** Deprecated **
+    """ bcftools merging is deprecated. Replaced with GATK combinevariants """
     merge_commands_file = "%s/bcftools_merge.sh" % args.filter2_only_snp_vcf_dir
     #"_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
     with open(merge_commands_file, 'w+') as fopen:
         fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
         fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir,files.replace("_filter2_final.vcf_no_proximate_snp.vcf","_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
 
-
     fopen.close()
 
     os.system("bash %s" % merge_commands_file)
 
 
-
-
-    # Merge with Gatk combine variants method
+    """ Merge with Gatk combine variants method """
     merged_file_suffix = "_no_proximate_snp.vcf"
 
     annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
@@ -2117,12 +2118,12 @@ def annotated_snp_matrix():
                                                       args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
                                                       logger, Config)
 
-    # Tabix index GATK combined Final vcf file
+    """ Tabix index the combined GATK Final vcf file """
     files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
 
 
-    # Extract ANN information from bcftools Final vcf file
+    """ Extract ANN information from bcftools Final vcf file. (There is a reason why i am using bcftools merged file to extract ANN information) """
     snp_var_ann_dict = {}
     indel_var_ann_dict = {}
 
@@ -2155,11 +2156,13 @@ def annotated_snp_matrix():
     # csv_file.close()
 
     # Generate a header of file names
+
+    """ print_string_header will be the column names of SNP matrix. Column names = Sample names"""
     print_string_header = "\t"
     for i in vcf_filenames:
         print_string_header = print_string_header + os.path.basename(i) + "\t"
 
-    # Get the final core variant positions
+    """ Read Only_ref_variant_positions_for_closely* to get final core variant positions into core_positions array"""
     core_positions = []
     if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
         core_positions_file = "%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir
@@ -2182,12 +2185,13 @@ def annotated_snp_matrix():
             indel_core_positions.append(line)
         fp.close()
 
+    """ Read in functional class filter positions. """
     functional_filter_pos_array = []
     with open(functional_class_filter_positions, 'rU') as f_functional:
         for line_func in f_functional:
             functional_filter_pos_array.append(line_func.strip())
 
-    # GET PHAGE/Repetitive region/mask region positions
+    """ GET individual PHAGE/Repetitive/masked region positions to assign functional class group string """
     phage_positions = []
     repetitive_positions = []
     mask_positions = []
@@ -2219,22 +2223,22 @@ def annotated_snp_matrix():
                 fmask.close()
 
 
-    # Prepare SNP/Indel Matrix strings to print
-
-    # Read merged vcf files using cyvcf library
+    """ Read and parse final GATK merged vcf file cyvcf library """
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
 
+    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
     header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos"
     for sample in final_merge_anno_file.samples:
         # header_print_string = header_print_string + "," + sample
         header_print_string = header_print_string + "\t" + sample
     header_print_string = header_print_string + "\n"
+
     # header_print_string = header_print_string.replace(':::,', ':::')
     # changing to tab-delimited
     #header_print_string = header_print_string.replace(':::,', '\t')
 
-    ######Make changes in generating a new All_label_final_sorted.txt file that should have similar columns to Final_gatk vcf file
-    # Get all the unique variant positions from the matrix All_label_final_sorted/All_indel_label_final_sorted
+
+    """ Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
     paste_label_command = "paste %s/unique_positions_file " % args.filter2_only_snp_vcf_dir
     paste_indel_label_command = "paste %s/unique_indel_positions_file " % args.filter2_only_snp_vcf_dir
     for filename_base in final_merge_anno_file.samples:
@@ -2303,6 +2307,7 @@ def annotated_snp_matrix():
     os.system(paste_indel_label_command)
     os.system(sort_ordered_indel_label_cmd)
 
+    # Just in case if os.system past commands doesn't work
     with open('%s/All_label_final_ordered.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
         outfile.write(paste_label_command + '\n')
         outfile.write(sort_ordered_label_cmd + '\n')
@@ -2312,6 +2317,7 @@ def annotated_snp_matrix():
 
     os.system("bash %s/All_label_final_ordered.sh" % args.filter2_only_snp_vcf_dir)
 
+    """ position_label and  position_indel_label will contain information about each unique variant position that passed variant filters in any sample and reasons for being filtered out in any sample """
     position_label = OrderedDict()
     with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
         keep_logging('Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -2338,7 +2344,7 @@ def annotated_snp_matrix():
                              'Warning: position %s already present as a SNP' % row[0], logger, 'info')
     csv_file.close()
 
-    # Open files to write the strings
+    """ Open Matrix files to write strings """
     fp_code = open("%s/SNP_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_allele = open("%s/SNP_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_allele_new = open("%s/SNP_matrix_allele_new.csv" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -2346,8 +2352,10 @@ def annotated_snp_matrix():
     fp_allele.write(header_print_string)
     fp_allele_new.write(header_print_string)
 
-    # Parse variant positions from the loaded cyvcf VCF object and generate the print strings
+    """ Parse variant positions from the loaded cyvcf VCF object and generate the matrix row information """
     for variants in VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
+        # Initiate print_string variable to add matrix row information.
+        # print_string generator no. 1
         print_string = ""
 
         # Initiate and assign Functional Field filter string => PHAGE/REPEAT/MASK/NULL
@@ -2365,7 +2373,10 @@ def annotated_snp_matrix():
         else:
             functional_field = functional_field + "NULL"
 
-        # Initiate variant code string => REF allele = 0, core = 1, Filtered = 2, unmapped = -1, True but non-core = 3
+        # Initiate variant code string where the code means:
+        # REF allele = 0, core = 1, Filtered = 2, unmapped = -1, True but non-core = 3
+        # This will be used as row information for SNP_matrix_code file
+
         code_string = position_label[str(variants.POS)]
         code_string = code_string.replace('reference_allele', '0')
         code_string = code_string.replace('reference_unmapped_position', '-1')
@@ -2416,6 +2427,7 @@ def annotated_snp_matrix():
             else:
                 snp_type = "Non-coding SNP"
 
+        # print_string generator no. 2
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
 
         # Get ANN field from variant INFO column and save it as an array. Split and Go through each elements, add bells and whistles
@@ -2462,9 +2474,13 @@ def annotated_snp_matrix():
             else:
                 ann_string = ";None"
 
+        # print_string generator no. 3
+        print_string = print_string + " locus_tag=" + tag + ann_string
+        ann_string_split = ann_string.split('|')
+        if len(ann_string_split) != 10:
+            print ann_string
 
-        print_string = print_string + ann_string
-
+        """ Go over each genotype for a variant and generate a gt_string variable """
         gt_string = ""
         for gt in variants.gt_bases:
             gt = gt.replace('./.', '.')
@@ -2480,6 +2496,8 @@ def annotated_snp_matrix():
         # #print print_string + "," + code_string + '\n'
         # fp_code.write(print_string + "," + code_string + '\n')
 
+        # print_string generator no. 4
+        # Replace various seperators that were used in old matrix. Clean up this block of code
         final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
         final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
         final_allele_string = final_allele_string.replace(',|', '|')
@@ -2497,6 +2515,7 @@ def annotated_snp_matrix():
 
         # print code_string
         # print gt_string[1:]
+
         ntd_string = ""
         count = 0
         code_string_array = code_string.split(',')
@@ -2513,6 +2532,8 @@ def annotated_snp_matrix():
             if str(code_string_array[count]) == "2":
                 ntd_string = ntd_string + "\t" + "N"
             count += 1
+
+        # print_string generator no. 5
         print_string = print_string + ntd_string + "\n"
         print_string.replace(',;,', '\t')
         print_string.replace(';,', '\t')
@@ -3176,10 +3197,10 @@ if __name__ == '__main__':
         # os.system(prepare_ref_var_consensus_input_cmd)
         # os.system(prepare_var_consensus_input_cmd)
 
-        fasttree(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
-        fasttree(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
-        fasttree(tree_dir, prepare_allele_var_consensus_input, args.jobrun, logger, Config)
-        fasttree(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
+        # fasttree(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
+        # fasttree(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
+        # fasttree(tree_dir, prepare_allele_var_consensus_input, args.jobrun, logger, Config)
+        # fasttree(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
 
         raxml(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
         raxml(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)

@@ -14,8 +14,8 @@ binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
 large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
-queue: fluxod
-flux_account: esnitkin_fluxod
+queue: flux
+flux_account: esnitkin_flux
 notification: ae
 
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
@@ -113,8 +113,9 @@ base_cmd: FastTree
 
 [raxml]
 raxml_bin: /raxml/
+openmpi_bin: /openmpi/bin/
 # Other raxml executable available to use: raxmlHPC-PTHREADS,raxmlHPC-PTHREADS-SSE3,raxmlHPC-SSE3
-base_cmd: raxmlHPC-SSE3
+base_cmd: raxmlHPC-HYBRID-SSE3
 parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
 
 [gubbins]
@@ -151,7 +152,7 @@ qual: 100
 # Filter variants with AF1 less than the below threshold
 af: 0.9
 # Filter Variants that are proximate to each other
-prox: 10
+prox: 0
 
 [rna_filters]
 avg_depth: no
@@ -948,3 +949,18 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/SRR3334137/
 Ref_Name: helicobacter_hepaticus_ATCC_51449.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/helicobacter_hepaticus_ATCC_51449/
+
+
+##Steph Lab Confirmation Project
+[MRSA_USA300_FPR3757]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_USA300_FPR3757.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA300_FPR3757/
+
+[MRSA_Newman]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_Newman.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_Newman/
+

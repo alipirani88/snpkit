@@ -7,7 +7,13 @@ from log_modules import *
 
 def raxml(tree_dir, input_fasta, jobrun, logger, Config):
     keep_logging('Running RAXML on input: %s' % input_fasta, 'Running RAXML on input: %s' % input_fasta, logger, 'info')
-    raxml_cmd = "%s/%s/%s %s -s %s -n %s_raxML" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'], ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta, (os.path.basename(input_fasta)).replace('.fa', ''))
+    #raxml_cmd = "%s/%s/%s %s -s %s -n %s_raxML" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'], ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta, (os.path.basename(input_fasta)).replace('.fa', ''))
+
+    raxml_cmd = "%s/%s/mpirun -np 2 %s/%s/%s -T 6 %s -s %s -n %s_raxML" % (
+        ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['openmpi_bin'], ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'],
+    ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta,
+    (os.path.basename(input_fasta)).replace('.fa', ''))
+
     keep_logging('%s' % raxml_cmd, '%s' % raxml_cmd, logger, 'info')
     if jobrun == "parallel-local" or jobrun == "local":
         call("cd %s" % tree_dir, logger)

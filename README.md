@@ -3,12 +3,12 @@
 ## Synopsis
 
 
-The pipeline call variants on Illumina PE/SE reads provided in a directory and generates various combination of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/Beast analysis.
+The pipeline call variants on Illumina PE/SE reads provided in a directory and generates various combination of core/non-core consesensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/Beast analysis.
 
 ## Contents
 
 - [Installation](#installation)
-- [Input](#input)
+- [Input](#input-requirements)
 - [Steps](#steps)
 - [Command line options](#command-line-options)
 - [Run pipeline on Compute cluster](#run-pipeline-on-compute-cluster)
@@ -16,22 +16,9 @@ The pipeline call variants on Illumina PE/SE reads provided in a directory and g
 - [Output Files](#output-files)
 - [Customizing Config file](#customizing-config-file)
 - [Log](#log)
-- [Tips and Tricks](#tips-and-tricks)
+- [Bonus Ducks](#bonus-ducks)
 
 ## Installation
-
-Required dependencies:
-
-- Python2 version >= 2.6.1
-- Trimmomatic
-- BWA
-- samtools
-- gatk toolkit
-- picard
-- vcftools
-- bedtools
-- bioawk
-- fasttree, raxml, gubbins
 
 The dependencies are already installed in Snitkin lab bin_group folder:
 
@@ -45,21 +32,11 @@ Requires Python2 version:
 /nfs/esnitkin/bin_group/anaconda2/bin/python
 ```
 
-## Input
+## Input Requirements
 
-- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+- readsdir: folder containing SE/PE reads. Apart from standard Miseq/Hiseq fastq naming extensions (R1_001_final.fastq.gz), other acceptable fastq extensions are: R1.fastq.gz/_R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, _1.fastq.gz/.1.fastq.gz.
 
-```
-
-- R1.fastq.gz/_R1.fastq.gz, 
-- 1_combine.fastq.gz, 
-- 1_sequence.fastq.gz, 
-- _forward.fastq.gz, 
-- _1.fastq.gz/.1.fastq.gz.
-
-```
-
-- config: a config file to set pipeline configuration settings. Use this config file to set up environment path for various tools, path to reference genomes and variant filters. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with this pipeline. A customized config file can be provided with -config argument.
+- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument.
 
 For more information, refer [Customizing Config file](#customizing-config-file)
 
@@ -88,19 +65,19 @@ You can run a part of the pipeline by customizing the order of -steps argument. 
 Note: The order of variant calling steps needs to be sequential. While skipping any of the steps, make sure those skipped steps finished without any errors.
 
 
-**2. Preparing files for Core SNP extraction and diagnostic purposes:**
+**2. Preparing files for Core SNP extraction and diagnostics purposes:**
 
 
-Option ***core_prep*** : Run this step before running the last core steps. This will generate all the intermediate data files required for core SNP matrix/consensus.
+Option ***core_prep*** : Run this step before running the last core steps. This will prepare all the intermediate data required for generating core SNP matrix/consensus.
 
 
 **3. Generate Core SNP consensus and data matrix for diagnostics plots:**
 
-Option ***core*** : This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias and their impact on the overall distribution core variants. 
+Option ***core*** : This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias. 
 
 **4. Generate report and aggregate results for the pipeline:**
 
-Option ***report*** : This step will aggregate and move final results to prefix_core_results directory under the output directory.
+Option ***report*** : This step will aggregate the results in prefix_core_results directory under the output directory.
 
 **5. Phylogenetic reconstruction and recombination filtering using FastTree/RAxML/Gubbins:**
 
