@@ -118,6 +118,11 @@ openmpi_bin: /openmpi/bin/
 base_cmd: raxmlHPC-HYBRID-SSE3
 parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
 
+[iqtree]
+iqtree_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
+base_cmd: iqtree
+parameters: -nt AUTO -bb 1000 -m GTR+G+ASC
+
 [gubbins]
 # Change this path to wherever gubbins is located/installed. Right now, installed using conda from anaconda3 package installed in bin_group.
 gubbins_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
@@ -964,3 +969,8 @@ Ref_Name: MRSA_Newman.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_Newman/
 
+[AB030]
+# Name of reference genome fasta file.
+Ref_Name: AB030.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/AB030/

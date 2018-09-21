@@ -96,13 +96,19 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
 
     for file in filenames_array:
         filename_base = os.path.basename(file)
-        if "R1_001_final.fastq.gz" in filename_base or "R1.fastq.gz" in filename_base or "1_combine.fastq.gz" in filename_base or "1_sequence.fastq.gz" in filename_base or "_forward.fastq.gz" in filename_base or "R1_001.fastq.gz" in filename_base or "_1.fastq.gz" in filename_base or ".1.fastq.gz" in filename_base or "_R1.fastq.gz" in filename_base:
+        #print filename_base
+        if "R1_001_final.fastq.gz" in filename_base or "R1.fastq.gz" in filename_base or "1_combine.fastq.gz" in filename_base or "1_sequence.fastq.gz" in filename_base or "_forward.fastq.gz" in filename_base or "R1_001.fastq.gz" in filename_base or "_1.fastq.gz" in filename_base or ".1.fastq.gz" in filename_base or "_R1.fastq.gz" in filename_base or "_L001_R1_001.fastq.gz" in filename_base:
             # Forward reads file name and get analysis name from its name
             first_file = file
             # Get the name of reverse reads files
             if "R1_001_final.fastq.gz" in filename_base:
                 second_part = filename_base.replace("R1_001_final.fastq.gz", "R2_001_final.fastq.gz")
                 first_part_split = filename_base.split('R1_001_final.fastq.gz')
+                first_part = first_part_split[0].replace('_L001', '')
+                first_part = re.sub("_S.*_", "", first_part)
+            elif "R1_001.fastq.gz" in filename_base:
+                second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
+                first_part_split = filename_base.split('R1_001.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
                 first_part = re.sub("_S.*_", "", first_part)
             elif "_R1.fastq.gz" in filename_base:
@@ -175,6 +181,7 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
             continue
         else:
             keep_logging('Error while generating cluster jobs. Make sure the fastq filenames ends with one of these suffix: R1_001_final.fastq.gz, R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, R1_001.fastq.gz, _1.fastq.gz, .1.fastq.gz, _R1.fastq.gz', 'Error while generating cluster jobs. Make sure the fastq filenames ends with one of these suffix: R1_001_final.fastq.gz, R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, R1_001.fastq.gz, _1.fastq.gz, .1.fastq.gz, _R1.fastq.gz', logger, 'exception')
+            print filename_base
             exit()
     list_of_jobs = glob.glob("%s/*.pbs" % jobs_temp_dir)
     return list_of_jobs

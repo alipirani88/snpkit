@@ -214,8 +214,8 @@ def pipeline(args, logger):
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             stats()
-	elif steps_list[0] == "bedtools":
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+        elif steps_list[0] == "bedtools":
+                out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
     # Run individual variant calling steps: clean, align, post-align, varcall, filter, stats etc
     else:
@@ -384,7 +384,7 @@ def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffi
     aligner = ConfigSectionMap("pipeline", Config)['aligner']
     keep_logging('Creating Index of reference fasta file for {} aligner.'.format(aligner), 'Creating Index of reference fasta file for {} aligner'.format(aligner), logger, 'info')
     if aligner == "bwa":
-        cmd = "%s %s %s" % (ConfigSectionMap("bwa", Config)['base_cmd'], ConfigSectionMap("bwa", Config)['index'], reference)
+        cmd = "%s/%s/%s %s %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bwa", Config)['bwa_bin'], ConfigSectionMap("bwa", Config)['base_cmd'], ConfigSectionMap("bwa", Config)['index'], reference)
         keep_logging(cmd, cmd, logger, 'debug')
         try:
             call(cmd, logger)

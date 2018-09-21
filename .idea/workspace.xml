@@ -120,7 +120,7 @@
       <file leaf-file-name="variant_call.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/variant_call.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5229">
+            <state relative-caret-position="4872">
               <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
             </state>
           </provider>
@@ -130,19 +130,10 @@
         <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="SPLIT">
-              <first_editor relative-caret-position="3122">
-                <caret line="289" column="9" lean-forward="true" selection-start-line="289" selection-start-column="9" selection-end-line="289" selection-end-column="9" />
+              <first_editor relative-caret-position="1117">
+                <caret line="289" selection-start-line="289" selection-end-line="289" />
               </first_editor>
               <second_editor />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="config_ali" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config_ali">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1239">
-              <caret line="59" column="9" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -171,7 +162,7 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="y" value="24" />
     <option name="width" value="2488" />
     <option name="height" value="1321" />
@@ -182,6 +173,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -193,7 +185,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -392,10 +383,9 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="24" width="2488" height="1321" extended-state="0" />
-    <editor active="true" />
+    <frame x="0" y="24" width="2560" height="1321" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.0997547" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.098490864" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="right" id="R Packages" order="3" />
       <window_info anchor="right" id="R Graphics" order="3" />
@@ -430,6 +420,41 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="6069">
+            <caret line="289" selection-start-line="289" selection-end-line="289" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4872">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config_ali" />
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="6069">
+            <caret line="289" lean-forward="true" selection-start-line="289" selection-end-line="289" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/variant_call.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="5229">
@@ -487,23 +512,17 @@
     <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
     <entry file="file://$PROJECT_DIR$/variant_call.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5229">
+        <state relative-caret-position="4872">
           <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config_ali">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1239">
-          <caret line="59" column="9" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/config_ali" />
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="SPLIT">
-          <first_editor relative-caret-position="3122">
-            <caret line="289" column="9" lean-forward="true" selection-start-line="289" selection-start-column="9" selection-end-line="289" selection-end-column="9" />
+          <first_editor relative-caret-position="1117">
+            <caret line="289" selection-start-line="289" selection-end-line="289" />
           </first_editor>
           <second_editor />
         </state>
