@@ -93,6 +93,6 @@ def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_
     if len(found_incomplete) > 0:
         for i in found_incomplete:
             tmp_file = os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
-            keep_logging('core_prep step failed for: %s. Rerun %s.pbs' % (tmp_file, i),
-                         'core_prep step failed for: %s. Rerun %s.pbs' % (tmp_file, i), logger, 'exception')
+            keep_logging('core_prep step failed for: %s. The number of unique positions doesn\'t match. Rerun %s.pbs' % (tmp_file, i),
+                         'core_prep step failed for: %s. The number of unique positions doesn\'t match. Rerun %s.pbs' % (tmp_file, i), logger, 'exception')
         exit()

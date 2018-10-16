@@ -216,7 +216,7 @@ def pipeline(args, logger):
             stats()
         elif steps_list[0] == "bedtools":
                 out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
+                only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
     # Run individual variant calling steps: clean, align, post-align, varcall, filter, stats etc
     else:
 

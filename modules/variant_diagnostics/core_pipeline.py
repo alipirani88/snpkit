@@ -3061,7 +3061,7 @@ if __name__ == '__main__':
         # Move results to the results directory
         move_data_matrix_results = "cp -r %s/*.csv %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
-        move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+        move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
         move_core_vcf = "mv %s/*_core.vcf.gz %s/" % (core_vcf_fasta_dir, core_vcf_dir)
@@ -3094,7 +3094,8 @@ if __name__ == '__main__':
             ref_variants = count - 1
         variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
         for f in variant_consensus_files:
-            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
+            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (
+            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
             proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
             (out2, err2) = proc.communicate()
 
@@ -3104,8 +3105,26 @@ if __name__ == '__main__':
                 if exception.errno != errno.EEXIST:
                     keep_logging('Error generating variant consensus position file: %s' % f,
                                  'Error generating variant consensus position file: %s' % f, logger, 'info')
-                    keep_logging('Error generating variant consensus position file: %s' % f, 'Error generating variant consensus position file: %s' % f, logger, 'exception')
+                    keep_logging('Error generating variant consensus position file: %s' % f,
+                                 'Error generating variant consensus position file: %s' % f, logger, 'exception')
                     exit()
+
+        # Move and organize data_matrix_dir directory
+        os.chdir(data_matrix_dir)
+        plots_dir = "%s/plots" % data_matrix_dir
+        matrices_dir = "%s/matrices" % data_matrix_dir
+        functional_ann_dir = "%s/Functional_annotation_results" % data_matrix_dir
+        logs_dir = "%s/logs" % data_matrix_dir
+        make_sure_path_exists(plots_dir)
+        make_sure_path_exists(matrices_dir)
+        make_sure_path_exists(functional_ann_dir)
+        make_sure_path_exists(logs_dir)
+        call("mv *.log.txt %s" % logs_dir, logger)
+        call("mv summary.txt detail.txt Functional_class_filter_positions.txt inexact_repeat_region_positions.txt phage_region_positions.txt repeat_region_positions.txt %s" % functional_ann_dir, logger)
+        call("mv temp_* All* Only* SNP_matrix_* Indel* extract_DP_positions.txt header.txt %s" % matrices_dir, logger)
+        call("mv annotated_no_proximate_snp_* %s/snpEff_results/" % data_matrix_dir, logger)
+        call("mv bargraph* generate_diagnostics_plots.R %s" % plots_dir, logger)
+        call("cp %s/temp_Only_filtered_positions_for_closely_matrix_FQ.txt %s/" % (matrices_dir, plots_dir), logger)
 
         # """ Generate alignment report """
         # alignment_report(data_matrix_dir)
@@ -3114,13 +3133,12 @@ if __name__ == '__main__':
         # variant_report(data_matrix_dir)
 
         """ Generating Gubbins MFA files"""
-        #parse_phaster(args.reference)
         reference_base = os.path.basename(args.reference).split('.')[0]
         gubbins_dir = args.results_dir + '/gubbins'
         tree_dir = args.results_dir + '/trees'
 
         make_sure_path_exists(gubbins_dir)
-        make_sure_path_exists(tree_dir)
+        #make_sure_path_exists(tree_dir)
 
 
         prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
@@ -3169,7 +3187,7 @@ if __name__ == '__main__':
         tree_dir = args.results_dir + '/trees'
 
         make_sure_path_exists(gubbins_dir)
-        make_sure_path_exists(tree_dir)
+        #make_sure_path_exists(tree_dir)
 
 
         prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
@@ -3215,12 +3233,9 @@ if __name__ == '__main__':
             #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
             #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
         else:
-            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (
-            os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input)
-            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (
-            os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
-            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (
-            os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input)
+            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input)
+            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
+            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input)
 
         call("cp %s %s/Logs/tree/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
@@ -3257,7 +3272,7 @@ if __name__ == '__main__':
         tree_dir = args.results_dir + '/trees'
 
         make_sure_path_exists(gubbins_dir)
-        make_sure_path_exists(tree_dir)
+        #make_sure_path_exists(tree_dir)
 
 
         prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
@@ -3288,7 +3303,7 @@ if __name__ == '__main__':
         tree_dir = args.results_dir + '/trees'
 
         make_sure_path_exists(gubbins_dir)
-        make_sure_path_exists(tree_dir)
+        #make_sure_path_exists(tree_dir)
 
 
         prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)

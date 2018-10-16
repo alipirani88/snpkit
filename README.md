@@ -359,7 +359,7 @@ Rscript generate_diagnostics_plots.R
 
 | File | Description |
 | --------- | ----------- |
-| barplot.pdf |  Distribution of filter-pass variant positions (positions that contain a variant in at least one sample) in each sample. Colors represent the filter criteria that caused them to get filtered out in that particular sample.|
+| barplot.pdf |  Distribution of filter-pass variant positions (variants observed in all the samples) in each sample. Colors represent the filter criteria that caused them to get filtered out in that particular sample.|
 | barplot_DP.pdf | Distribution of filter-pass variant positions in each sample. Colors represent the read-depth range that they fall in. |
 | temp_Only_filtered_positions_for_closely_matrix_FQ.pdf | Heatmap spanning the reference genome that shows positions that were filtered out due to low FQ values |
 | DP_position_analysis.pdf | same information as in barplot_DP.pdf but shown in heatmap format|
