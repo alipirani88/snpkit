@@ -57,7 +57,7 @@ For more information, refer to [Customizing the config file](#customizing-the-co
 ## Steps
 
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/pipeline.png)
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/pipeline.png)
 
 The pipeline is divided into three individual steps (-steps option) which should be run in sequential order (see below for command line arguments). 
 
@@ -368,11 +368,11 @@ Rscript generate_diagnostics_plots.R
 
 - barplot
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/barplot.png)
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/barplot.png)
 
 - barplot_DP
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/barplot_DP.png)
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/barplot_DP.png)
 
 
 ### 4. trees
