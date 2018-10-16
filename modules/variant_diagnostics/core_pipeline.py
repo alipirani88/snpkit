@@ -3059,9 +3059,9 @@ if __name__ == '__main__':
         make_sure_path_exists(consensus_ref_allele_unmapped_variant_dir)
         reference_base = os.path.basename(args.reference).split('.')[0]
         # Move results to the results directory
-        move_data_matrix_results = "cp -r %s/*.csv %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
+        move_data_matrix_results = "cp -r %s/unique_positions_file %s/unique_indel_positions_file %s/*.csv %s/*.txt %s/temp_* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
-        move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+        move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz* %s/*_ANN* %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
         move_core_vcf = "mv %s/*_core.vcf.gz %s/" % (core_vcf_fasta_dir, core_vcf_dir)
@@ -3121,7 +3121,7 @@ if __name__ == '__main__':
         make_sure_path_exists(logs_dir)
         call("mv *.log.txt %s" % logs_dir, logger)
         call("mv summary.txt detail.txt Functional_class_filter_positions.txt inexact_repeat_region_positions.txt phage_region_positions.txt repeat_region_positions.txt %s" % functional_ann_dir, logger)
-        call("mv temp_* All* Only* SNP_matrix_* Indel* extract_DP_positions.txt header.txt %s" % matrices_dir, logger)
+        call("mv temp_* All* Only* SNP_matrix_* Indel* extract_DP_positions.txt header.txt unique_indel_positions_file unique_positions_file %s" % matrices_dir, logger)
         call("mv annotated_no_proximate_snp_* %s/snpEff_results/" % data_matrix_dir, logger)
         call("mv bargraph* generate_diagnostics_plots.R %s" % plots_dir, logger)
         call("cp %s/temp_Only_filtered_positions_for_closely_matrix_FQ.txt %s/" % (matrices_dir, plots_dir), logger)

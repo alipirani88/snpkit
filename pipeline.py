@@ -38,7 +38,7 @@ def parser():
                                                                      '2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. \nYou can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.\nThe order is required to be sequential. Also, while skipping any of the step make sure you have results already present in your output folder.\n'
                                                                      '3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps')
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run pipeline on cluster/parallel-local/local. Make Sure to check if the [CLUSTER] section in config file is set up correctly.')
-    #optional.add_argument('-noclean', action='store', dest="noclean", help='Do not clean up intermediate files. Default: OFF')
+    optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: OFF')
     return parser
 
 # Main Pipeline method
@@ -434,6 +434,18 @@ def picard_seqdict(dict_name, reference):
         keep_logging('Error in Picard Sequence Dictionary creation step. Exiting.', 'Error in Picard Sequence Dictionary creation step. Exiting.', logger, 'exception')
         sys.exit(1)
 
+def cleanup(args, logger):
+    if args.clean:
+        keep_logging('Removing Intermediate Temporary files', 'Removing Intermediate Temporary files', logger, 'info')
+        os.chdir(args.output_folder)
+        os.system("rm %s/*.fq.gz %s/*.sam %s/*_aln.bam %s/*_marked.bam %s/*_marked.bai %s/*_unmapped.bed" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder))
+    make_sure_path_exists("%s/%s_stats_results" % (args.output_folder, args.analysis_name))
+    os.system("mv %s/*depth_of_coverage* %s/*_stats %s/*_markduplicates_metrics %s/*_values.txt %s/*_INFO.txt %s/%s_stats_results" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+    make_sure_path_exists("%s/%s_logs" % (args.output_folder, args.analysis_name))
+    os.system("mv %s/*.log.txt %s/%s_logs" % (args.output_folder, args.output_folder, args.analysis_name))
+    make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
+    os.system("mv %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.analysis_name))
+
 # Start of Main Method/Pipeline
 if __name__ == '__main__':
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -456,6 +468,7 @@ if __name__ == '__main__':
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
     pipeline(args, logger)
+    cleanup(args, logger)
     keep_logging('End: Pipeline', 'End: Pipeline', logger, 'info')
     time_taken = datetime.now() - start_time_2
     keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')

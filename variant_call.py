@@ -39,7 +39,7 @@ def parser():
     optional.add_argument('-suffix', action='store', dest="suffix", help='Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz', required=False)
     optional.add_argument('-filenames', action='store', dest="filenames", help='fastq filenames with one single-end filename per line. \nIf the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. \nUseful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. \nOtherwise the pipeline will consider all the samples available in reads directory.', required=False)
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option\nThe possible modes are: cluster/parallel-cluster/parallel-local/local\ncluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.\nparallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.\nparallel-local: Run variant call jobs for each sample in parallel locally.\nlocal: Run variant call jobs locally.\nMake Sure to check if the [scheduler] section in config file is set up correctly for your cluster.')
-    optional.add_argument('-clean', action='store', dest="clean", help='clean up intermediate files. Default: OFF')
+    optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: OFF')
     optional.add_argument('-extract_unmapped', action='store', dest="extract_unmapped", help='Extract unmapped reads, assemble it and detect AMR genes using ariba')
     optional.add_argument('-datadir', action='store', dest="datadir", help='Path to snpEff data directory')
     optional.add_argument('-snpeff_db', action='store', dest="snpeff_db", help='Name of pre-build snpEff database to use for Annotation')
@@ -164,9 +164,20 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
             if not steps:
                 steps == "All"
             if type == "SE":
-                command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
+                if args.clean:
+                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s -clean" % (
+                    os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part,
+                    reference, config_file, steps)
+                else:
+                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
+
             else:
-                command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
+                if args.clean:
+                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (
+                    os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part,
+                    first_part, reference, config_file, steps)
+                else:
+                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
 
             with open(job_name, 'w') as out:
                 job_title = "#PBS -N %s" % first_part
@@ -491,28 +502,34 @@ if __name__ == '__main__':
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()
 
+    # Pass arguments to args object
     args = parser().parse_args()
 
     global config_file
     global log_unique_time
+    global Config
+    global files_to_delete
+    global logger
+
     if args.output_folder != '':
         args.output_folder += '/'
     make_sure_path_exists(args.output_folder)
+
     log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+
     if args.config:
         config_file = args.config
     else:
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
-    global logger
+
+
     logs_folder = args.output_folder + "/Logs"
     make_sure_path_exists(logs_folder)
     # logger = generate_logger(logs_folder, args.analysis_name, log_unique_time)
-    global Config
-    global files_to_delete
+
     files_to_delete = []
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
-
 
     # Run pipeline steps
     if "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps:
@@ -545,7 +562,10 @@ if __name__ == '__main__':
 
         make_sure_path_exists(core_temp_dir)
         keep_logging('Copying vcf files to %s' % core_temp_dir, 'Copying vcf files to %s' % core_temp_dir, logger, 'info')
-        cp_command = "cp %s/*/*_filter2_indel_final.vcf %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*filter2_final.vcf.gz %s/*/*vcf_no_proximate_snp.vcf* %s/*/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
+        cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*_vcf_results/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
+        # cp_command = "cp %s/*/*_filter2_indel_final.vcf %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*filter2_final.vcf* %s/*/*vcf_no_proximate_snp.vcf* %s/*/*array %s/*/*unmapped.bed_positions %s" % (
+        # args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder,
+        # args.output_folder, args.output_folder, core_temp_dir)
         call(cp_command, logger)
         list_of_gzipped_files = glob.glob("%s/*.gz" % core_temp_dir)
         keep_logging('Decompressing gzipped files in %s' % core_temp_dir, 'Decompressing gzipped files in %s' % core_temp_dir, logger, 'info')

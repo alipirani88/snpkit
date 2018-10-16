@@ -143,14 +143,14 @@ def filter2_variants(final_raw_vcf, out_path, analysis, ref_index, logger, Confi
     gatk_filter2_final_vcf_contamination_file = gatk_filter2_contamination(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp)
     gatk_filter2_final_vcf_file_no_proximate_snp = remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
     keep_logging('The vcf file with no proximate snp: {}'.format(gatk_filter2_final_vcf_file_no_proximate_snp), 'The vcf file with no proximate snp: {}'.format(gatk_filter2_final_vcf_file_no_proximate_snp), logger, 'debug')
-    gatk_vcf2fasta_filter2_file = gatk_vcf2fasta_filter2(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
-    gatk_vcf2fasta_filter2_file_no_proximate = gatk_vcf2fasta_filter2(gatk_filter2_final_vcf_file_no_proximate_snp, out_path, analysis, reference, logger, Config)
-    vcftools_vcf2fasta_filter2_file = vcftools_vcf2fasta_filter2(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
-    vcftools_vcf2fasta_filter2_file_no_proximate = vcftools_vcf2fasta_filter2(gatk_filter2_final_vcf_file_no_proximate_snp, out_path, analysis, reference, logger, Config)
-    keep_logging('The final Consensus Fasta file: {}'.format(gatk_vcf2fasta_filter2_file), 'The final Consensus Fasta file: {}'.format(gatk_vcf2fasta_filter2_file), logger, 'debug')
-    keep_logging('The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
-    keep_logging('The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), 'The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), logger, 'debug')
-    keep_logging('The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
+    #gatk_vcf2fasta_filter2_file = gatk_vcf2fasta_filter2(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
+    #gatk_vcf2fasta_filter2_file_no_proximate = gatk_vcf2fasta_filter2(gatk_filter2_final_vcf_file_no_proximate_snp, out_path, analysis, reference, logger, Config)
+    #vcftools_vcf2fasta_filter2_file = vcftools_vcf2fasta_filter2(gatk_filter2_final_vcf_file, out_path, analysis, reference, logger, Config)
+    #vcftools_vcf2fasta_filter2_file_no_proximate = vcftools_vcf2fasta_filter2(gatk_filter2_final_vcf_file_no_proximate_snp, out_path, analysis, reference, logger, Config)
+    #keep_logging('The final Consensus Fasta file: {}'.format(gatk_vcf2fasta_filter2_file), 'The final Consensus Fasta file: {}'.format(gatk_vcf2fasta_filter2_file), logger, 'debug')
+    #keep_logging('The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file with no proximate: {}'.format(gatk_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
+    #keep_logging('The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), 'The final Consensus Fasta file from VCF-consensus: {}'.format(vcftools_vcf2fasta_filter2_file), logger, 'debug')
+    #keep_logging('The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), 'The final Consensus Fasta file from VCF-consensus with no proximate: {}'.format(vcftools_vcf2fasta_filter2_file_no_proximate), logger, 'debug')
 
 def filter2_indels(final_raw_indel_vcf, out_path, analysis, ref_index, logger, Config, Avg_dp):
     reference = ConfigSectionMap(ref_index, Config)['ref_path'] + "/" + ConfigSectionMap(ref_index, Config)['ref_name']
