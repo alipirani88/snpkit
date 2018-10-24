@@ -93,10 +93,10 @@ This step will run in sequential order and generate:
 usage: variant_call.py [-h] -type TYPE -readsdir DIR -outdir OUTPUT_FOLDER
                        -index INDEX [-steps STEPS] -analysis ANALYSIS_NAME
                        [-config CONFIG] [-suffix SUFFIX]
-                       [-filenames FILENAMES] [-cluster CLUSTER]
-                       [-clean CLEAN] [-extract_unmapped EXTRACT_UNMAPPED]
-                       [-datadir DATADIR] [-snpeff_db SNPEFF_DB]
-                       [-debug_mode DEBUG_MODE] [-gubbins GUBBINS]
+                       [-filenames FILENAMES] [-cluster CLUSTER] [-clean]
+                       [-extract_unmapped EXTRACT_UNMAPPED] [-datadir DATADIR]
+                       [-snpeff_db SNPEFF_DB] [-debug_mode DEBUG_MODE]
+                       [-gubbins GUBBINS]
 
 Variant Calling pipeline for Illumina PE/SE data.
 
@@ -105,39 +105,33 @@ optional arguments:
 
 Required arguments:
   -type TYPE            Type of reads: SE or PE
-  -readsdir DIR         Path to sequencing reads data directory. NOTE: Provide full/absolute path.
-  -outdir OUTPUT_FOLDER Output folder path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
-  -index INDEX          Reference index name. Most frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris. Make sure the paths are properly set in config file.
-  -steps STEPS          Variant calling steps in sequential order.
-                        1.   All: This will run all the steps starting from cleaning the reads to variant calling;
-                        2.   clean,align,post-align,varcall,filter,stats : This will also run all steps from cleaning to variant calling. 
-                        You can also run part of the pipeline by giving, for example, "align,post-align,varcall,filter,stats" which will skip the cleaning part.
-                        The order must be sequential while using this option. Also, if skipping any of the steps, make sure you have the results already present in your output folder.
-                        3.   coverage_depth_stats: Run only depth of coverage stats module after the cleaning and read mapping steps
-                        4.   core_prep: Run this step before running the core steps. This will prepare the data required for generating core SNPs
-                        5.   core: extract core snps and generate diagnostics plot data matrices to explore filtered snps.
-  -analysis ANALYSIS_NAME Unique analysis name that will be used as a prefix when saving results and log files.
+  -readsdir DIR         Path to Sequencing Reads Data directory. NOTE: Provide full/absolute path.
+  -outdir OUTPUT_FOLDER
+                        Output Folder Path ending with output directory name to save the results. Creates a new output directory path if it doesn't exist. NOTE: Provide full/absolute path.
+  -index INDEX          Reference Index Name. Most Frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris Make sure the paths are properly set in config file
+  -steps STEPS          Variant Calling Steps in sequential order.
+                        1.   All: Run all variant calling  steps starting from trimming the reads, mapping, post-processing the alignments and calling variants;
+                        2.   core_All: Extract core snps and generate different types of alignments, SNP/Indel Matrices and diagnostics plots to explore filtered snps.
+  -analysis ANALYSIS_NAME
+                        Unique analysis name that will be used as prefix to saving results and log files.
 
 Optional arguments:
-  -config CONFIG        Path to config file. Make sure to check config settings before running the pipeline
+  -config CONFIG        Path to Config file, Make sure to check config settings before running pipeline
   -suffix SUFFIX        Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz
   -filenames FILENAMES  fastq filenames with one single-end filename per line. 
-                        If the type is set to PE, it will detect the second paired-end filename with the suffix from the first filename. 
-                        Useful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in the input reads directory. 
-                        Otherwise the pipeline will consider all the samples available in the reads directory.
-  -cluster CLUSTER      Run variant calling pipeline in one of the four modes. Default: local. The suggested mode for core snp is a cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option
-                        The possible modes are: cluster/parallel-cluster/parallel-local/local
-                        cluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.
-                        parallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.
-                        parallel-local: Run variant call jobs for each sample in parallel locally.
-                        local: Run variant call jobs locally.
-                        Make sure to check if the [scheduler] section in the config file is set up correctly for your cluster.
-  -clean CLEAN          Clean up intermediate files. Default: OFF
-  -extract_unmapped     EXTRACT_UNMAPPED
-                        Extract unmapped reads, assemble them and detect antimicrobial resistance (AMR) genes using ariba
+                        If the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. 
+                        Useful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. 
+                        Otherwise the pipeline will consider all the samples available in reads directory.
+  -cluster CLUSTER      Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is "cluster" that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option
+                        The possible modes are: cluster/parallel-local/local
+                        Set your specific hpc cluster parameters in config file under the [scheduler] section. Supports only PBS scheduling system. 
+  -clean                clean up intermediate files. Default: OFF
+  -extract_unmapped EXTRACT_UNMAPPED
+                        Extract unmapped reads, assemble it and detect AMR genes using ariba
   -datadir DATADIR      Path to snpEff data directory
-  -snpeff_db SNPEFF_DB  Name of pre-built snpEff database to use for annotation
-  -debug_mode DEBUG_MODE yes/no for debug mode
+  -snpeff_db SNPEFF_DB  Name of pre-build snpEff database to use for Annotation
+  -debug_mode DEBUG_MODE
+                        yes/no for debug mode
   -gubbins GUBBINS      yes/no for running gubbins
 
 ```
