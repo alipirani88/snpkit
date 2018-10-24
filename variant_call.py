@@ -29,16 +29,13 @@ def parser():
     required.add_argument('-outdir', action='store', dest="output_folder", help='Output Folder Path ending with output directory name to save the results. Creates a new output directory path if it doesn\'t exist. NOTE: Provide full/absolute path.', required=True)
     required.add_argument('-index', action='store', dest="index", help='Reference Index Name. Most Frequently used reference genomes index options: KPNIH1 | MRSA_USA_300 | MRSA_USA_100 | CDIFF_630 | paris Make sure the paths are properly set in config file', required=True)
     required.add_argument('-steps', action='store', dest="steps", help='Variant Calling Steps in sequential order.\n'
-                                                                     '1.   All: This will run all the steps starting from cleaning the reads to variant calling;\n'
-                                                                     '2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. \nYou can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.\nThe order is required to be sequential while using this option. Also, while skipping any of the step make sure you have results already present in your output folder.\n'
-                                                                     '3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps\n'
-                                                                     '4.   core_prep: Run this step before running the core steps. This will prepare the data required for generating core SNPs\n'
-                                                                     '5.   core: extract core snps and generate diagnostics plot data matrices to explore filtered snps.')
+                                                                     '1.   All: Run all variant calling  steps starting from trimming the reads, mapping, post-processing the alignments and calling variants;\n'
+                                                                     '2.   core_All: Extract core snps and generate different types of alignments, SNP/Indel Matrices and diagnostics plots.')
     required.add_argument('-analysis', action='store', dest="analysis_name", help='Unique analysis name that will be used as prefix to saving results and log files.', required=True)
     optional.add_argument('-config', action='store', dest="config", help='Path to Config file, Make sure to check config settings before running pipeline', required=False)
     optional.add_argument('-suffix', action='store', dest="suffix", help='Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz', required=False)
     optional.add_argument('-filenames', action='store', dest="filenames", help='fastq filenames with one single-end filename per line. \nIf the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. \nUseful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. \nOtherwise the pipeline will consider all the samples available in reads directory.', required=False)
-    optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is cluster that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option\nThe possible modes are: cluster/parallel-cluster/parallel-local/local\ncluster: Runs all the jobs on a single large cluster. This will mimic the local run but rather on a large compute node.\nparallel-cluster: Submit variant call jobs for each sample in parallel on compute nodes. This mode is no available for core snp extraction step.\nparallel-local: Run variant call jobs for each sample in parallel locally.\nlocal: Run variant call jobs locally.\nMake Sure to check if the [scheduler] section in config file is set up correctly for your cluster.')
+    optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is \"cluster\" that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option\nThe possible modes are: cluster/parallel-local/local\nSet your specific hpc cluster parameters in config file under the [scheduler] section. Supports only PBS scheduling system. ')
     optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: OFF')
     optional.add_argument('-extract_unmapped', action='store', dest="extract_unmapped", help='Extract unmapped reads, assemble it and detect AMR genes using ariba')
     optional.add_argument('-datadir', action='store', dest="datadir", help='Path to snpEff data directory')
@@ -297,7 +294,7 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
         # print qid.split('.')[0]
         # keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
-        keep_logging('Running Jobs in parallel-cluster mode', 'Running Jobs in parallel-cluster mode', logger, 'info')
+        keep_logging('Running Jobs in cluster mode', 'Running Jobs in cluster mode', logger, 'info')
         for job in command_list_qsub:
             keep_logging('Submitting Job: qsub %s' % job, 'Submitting Job: qsub %s' % job, logger, 'info')
             call("qsub %s" % job, logger)
@@ -583,7 +580,7 @@ if __name__ == '__main__':
     Config.read(config_file)
 
     # Run pipeline steps
-    if "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps:
+    if "core_All" not in args.steps and "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps:
         """ Set Up variant calling logs folder/logger object, cluster mode and copy config files to it"""
         vc_logs_folder = logs_folder + "/variant_calling"
         make_sure_path_exists(vc_logs_folder)

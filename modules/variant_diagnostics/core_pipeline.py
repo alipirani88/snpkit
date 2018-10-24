@@ -3065,13 +3065,14 @@ if __name__ == '__main__':
         move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz* %s/*_ANN* %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
-        move_core_vcf = "mv %s/*_core.vcf.gz %s/" % (core_vcf_fasta_dir, core_vcf_dir)
+        move_core_vcf = "mv %s/*_core.vcf.gz %s/*vcf_core.vcf.gz.tbi %s/" % (core_vcf_fasta_dir, core_vcf_fasta_dir, core_vcf_dir)
         move_consensus_allele_var_fasta_results = "mv %s/*allele_variants.fa %s/" % (consensus_var_dir, consensus_allele_var_dir)
         move_consensus_ref_allele_var_fasta_results = "mv %s/*_ref_allele_variants.fa %s/" % (
             consensus_allele_var_dir, consensus_ref_allele_var_dir)
         move_consensus_ref_allele_unmapped_var_fasta_results = "mv %s/*_ref_allele_unmapped_variants.fa %s/" % (
             consensus_var_dir, consensus_ref_allele_unmapped_variant_dir)
         move_snpeff_results = "mv %s/*ANN* %s/" % (data_matrix_dir, data_matrix_snpeff_dir)
+        move_snpeff_vcf_results = "mv %s/*ANN* %s/" % (core_vcf_fasta_dir, data_matrix_snpeff_dir)
         copy_reference = "cp %s %s/%s.fa" % (args.reference, consensus_ref_var_dir, reference_base)
         copy_reference_2 = "cp %s %s/%s.fa" % (args.reference, consensus_ref_allele_var_dir, reference_base)
 
@@ -3086,6 +3087,7 @@ if __name__ == '__main__':
         call("%s" % copy_reference, logger)
         call("%s" % copy_reference_2, logger)
         call("%s" % move_snpeff_results, logger)
+        call("%s" % move_snpeff_vcf_results, logger)
         subprocess.call(["sed -i 's/title_here/%s/g' %s/generate_diagnostics_plots.R" % (os.path.basename(args.results_dir), data_matrix_dir)], shell=True)
 
         # Sanity Check if the variant consensus files generated are of same length
@@ -3223,6 +3225,7 @@ if __name__ == '__main__':
         # raxml(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
 
         if args.gubbins and args.gubbins == "yes":
+            os.chdir(gubbins_dir)
             call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input), logger)
             call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
             #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
