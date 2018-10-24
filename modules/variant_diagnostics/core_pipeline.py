@@ -2857,7 +2857,6 @@ if __name__ == '__main__':
     global logger
     analysis_name_log = "step_" + str(args.steps)
     logger = generate_logger(args.filter2_only_snp_vcf_dir, analysis_name_log, log_unique_time)
-    keep_logging('test log', 'test log', logger, 'info')
     keep_logging('\nThe Script started at: %s' % start_time, '\nThe Script started at: %s' % start_time, logger, 'info')
     print_details = "This step will parse final vcf files(*_no_proximate_snp.vcf) generated at the end of Variant Calling Pipeline. At the end of this step, the following results will be generated and placed in output directory:\n\n" \
           "1. Final Core SNP Positions list(Variant positions that were not filtered out in any of the samples and passed all the filters)\n" \
@@ -2915,12 +2914,14 @@ if __name__ == '__main__':
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
         tabix(files_for_tabix, "vcf", logger, Config)
 
-        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-            keep_logging('Functional class filter is set to yes. Preparing Functional class filters\n', 'Functional class filter is set to yes. Preparing Functional class filters\n', logger,
-                         'info')
-            if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
-                # Submit Phaster jobs to find ProPhage region in reference genome.
-                run_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
+        # If Phaster Summary file doesn't exist in reference genome folder
+        if not os.path.isfile("%s/summary.txt" % os.path.dirname(args.reference)):
+            if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                keep_logging('Functional class filter is set to yes. Preparing Functional class filters\n', 'Functional class filter is set to yes. Preparing Functional class filters\n', logger,
+                             'info')
+                if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                    # Submit Phaster jobs to find ProPhage region in reference genome.
+                    run_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
 
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
@@ -3141,26 +3142,24 @@ if __name__ == '__main__':
         #make_sure_path_exists(tree_dir)
 
 
-        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_ref_allele_gubbins.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_core_var_aln.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_noncore_plus_core_variants_aln.fa" % (
         args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
         reference_base)
-        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
-            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-            reference_base)
-        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_ref_allele_unmapped_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        #prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),reference_base)
+        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_alt_allele_unmapped_gubbins.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+
         prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
         prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
         prepare_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_allele_variant_positions/*_allele_variants.fa > %s" % (
         args.results_dir, prepare_allele_var_consensus_input)
-        prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (
-            args.results_dir, prepare_ref_allele_var_consensus_input)
+        #prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_allele_var_consensus_input)
         prepare_ref_allele_unmapped_consensus_input_cmd = "cat %s %s/core_snp_consensus/consensus_ref_allele_unmapped_variant/*.fa > %s" % (args.reference, args.results_dir, prepare_ref_allele_unmapped_consensus_input)
         call("%s" % prepare_ref_var_consensus_input_cmd, logger)
         call("%s" % prepare_var_consensus_input_cmd, logger)
         call("%s" % prepare_allele_var_consensus_input_cmd, logger)
-        call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
+        #call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
         # os.system(prepare_ref_var_consensus_input_cmd)
         # os.system(prepare_var_consensus_input_cmd)
@@ -3176,10 +3175,10 @@ if __name__ == '__main__':
 
     if "4" in args.steps:
         """ 
-        tree step 
+        Gubbins/Raxml step
         """
 
-        keep_logging('Step 4: Generate FastTree and RAxML trees for core consensus fasta files.', 'Step 4: Generate FastTree and RAxML trees for core consensus fasta files.', logger, 'info')
+        keep_logging('Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.', 'Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.', logger, 'info')
 
         #parse_phaster(args.reference)
         reference_base = os.path.basename(args.reference).split('.')[0]
@@ -3190,29 +3189,24 @@ if __name__ == '__main__':
         #make_sure_path_exists(tree_dir)
 
 
-        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_ref_allele_gubbins.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_core_var_aln.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_noncore_plus_core_variants_aln.fa" % (
         args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
         reference_base)
-        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
-            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-            reference_base)
-        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_ref_allele_unmapped_consensus.fa" % (
-        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-        reference_base)
+        #prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),reference_base)
+        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_alt_allele_unmapped_gubbins.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+
         prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
         prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
         prepare_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_allele_variant_positions/*_allele_variants.fa > %s" % (
         args.results_dir, prepare_allele_var_consensus_input)
-        prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (
-            args.results_dir, prepare_ref_allele_var_consensus_input)
-        prepare_ref_allele_unmapped_consensus_input_cmd = "cat %s %s/core_snp_consensus/consensus_ref_allele_unmapped_variant/*.fa > %s" % (
-        args.reference, args.results_dir, prepare_ref_allele_unmapped_consensus_input)
+        #prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_allele_var_consensus_input)
+        prepare_ref_allele_unmapped_consensus_input_cmd = "cat %s %s/core_snp_consensus/consensus_ref_allele_unmapped_variant/*.fa > %s" % (args.reference, args.results_dir, prepare_ref_allele_unmapped_consensus_input)
         call("%s" % prepare_ref_var_consensus_input_cmd, logger)
         call("%s" % prepare_var_consensus_input_cmd, logger)
         call("%s" % prepare_allele_var_consensus_input_cmd, logger)
-        call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
+        #call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
         # os.system(prepare_ref_var_consensus_input_cmd)
         # os.system(prepare_var_consensus_input_cmd)
@@ -3230,12 +3224,12 @@ if __name__ == '__main__':
 
         if args.gubbins and args.gubbins == "yes":
             call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input), logger)
-            #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
+            call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
             #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
         else:
+            keep_logging('The gubbins argument is set to No.', 'The gubbins argument is set to No.', logger, 'info')
             print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input)
             print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
-            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input)
 
         call("cp %s %s/Logs/tree/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)

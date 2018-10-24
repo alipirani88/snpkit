@@ -438,13 +438,13 @@ def cleanup(args, logger):
     if args.clean:
         keep_logging('Removing Intermediate Temporary files', 'Removing Intermediate Temporary files', logger, 'info')
         os.chdir(args.output_folder)
-        os.system("rm %s/*.fq.gz %s/*.sam %s/*_aln.bam %s/*_marked.bam %s/*_marked.bai %s/*_unmapped.bed" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder))
+        os.system("rm %s/*.fq.gz %s/*.sam %s/*_aln.bam %s/*_marked.bam %s/*_marked.bai %s/*_unmapped.bed %s/*_temp_paste_file.txt" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder))
     make_sure_path_exists("%s/%s_stats_results" % (args.output_folder, args.analysis_name))
     os.system("mv %s/*depth_of_coverage* %s/*_stats %s/*_markduplicates_metrics %s/*_values.txt %s/*_INFO.txt %s/%s_stats_results" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
     make_sure_path_exists("%s/%s_logs" % (args.output_folder, args.analysis_name))
     os.system("mv %s/*.log.txt %s/%s_logs" % (args.output_folder, args.output_folder, args.analysis_name))
     make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
-    os.system("mv %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.analysis_name))
+    os.system("mv %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
 
 # Start of Main Method/Pipeline
 if __name__ == '__main__':

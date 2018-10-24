@@ -99,7 +99,28 @@ def parse_phaster(reference_genome, outdir, logger, Config):
         f_open = open("%s/phage_region_positions.txt" % outdir, 'w+')
         for pos in phage_positions:
             f_open.write(str(pos) + "\n")
-    else:
+
+
+
+    if os.path.isfile("%s/summary.txt" % os.path.dirname(reference_genome)):
+        keep_logging('Extracting Phage region information from %s/summary.txt' % os.path.dirname(reference_genome), 'Extracting Phage region information from %s/summary.txt' % os.path.dirname(reference_genome), logger, 'info')
+        get_phage_regions = "sed -n -e '/REGION/,$p' %s/summary.txt | awk 'NR>2' | awk -F' ' '{print $5}'" % os.path.dirname(reference_genome)
+        proc = subprocess.Popen([get_phage_regions], stdout=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate()
+        out = (out.strip()).split('\n')
+        #print out
+        phage_positions = []
+        for i in out:
+            i_range = i.split('-')
+            end_range = int(i_range[1]) + 1
+            phage_positions.extend(list(range(int(i_range[0]), end_range)))
+
+        f_open = open("%s/phage_region_positions.txt" % outdir, 'w+')
+        for pos in phage_positions:
+            f_open.write(str(pos) + "\n")
+
+
+    if not os.path.isfile("%s/phage_region_positions.txt" % outdir):
         keep_logging('Phaster output file %s/summary.txt not found. Phaster job is still running or Phaster get json results were empty.' % outdir,
                      'Phaster output file %s/summary.txt not found. Phaster job is still running or Phaster get json results were empty.' % outdir, logger, 'exception')
         exit()
