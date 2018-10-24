@@ -74,27 +74,17 @@ You can run a part of the pipeline by customizing the order of the -steps argume
 
 Note: The order of variant calling steps needs to be sequential. If skipping any of the steps, make sure those skipped steps had previously finished without any errors.
 
+**2. Generate various Core/Non-core SNP consensus, SNP/Indel Matrices and recombination filtering with Gubbins:**
 
-**2. Preparing files for Core SNP extraction and diagnostics purposes:**
+Option ***core_All***: This will run all the core SNP consensus/matrix generating steps.
 
+This step will run in sequential order and generate:
 
-Option ***core_prep***: Run this step before running the last core steps. This will generate all the intermediate data files required for core SNP matrix/consensus.
+- intermediate data files required for generating core SNP matrix/consensus.
+- Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias and their impact on overall distribution of core variants.
+- prefix_core_results directory under the output directory which will be the final results folder.
+- Gubbins recombination filtered consensus fasta files and RaxML/Iqtree trees generated from this recombination filtered consensus.
 
-**3. Generate core SNP consensus and data matrix for diagnostics plots:**
-
-Option ***core***: This step will generate core SNP/Indel Matrix and different types of consensus fasta files. Various data matrices will be generated during this step that can be used for diagnosing variant filter criterias and their impact on the overall distribution core variants. 
-
-**4. Generate report and aggregate results for the pipeline:**
-
-Option ***report*** : This step will aggregate the results in prefix_core_results directory under the output directory.
-
-**4. Generate report and aggregate results for the pipeline:**
-
-Option ***report***: This step will aggregate and move final results to prefix_core_results directory under the output directory.
-
-**5. Phylogenetic reconstruction and recombination filtering using FastTree/RAxML/Gubbins:**
-
-Option ***tree***: This step will generate a FastTree and a RAxML tree from pre-recombination filtered consensus files. If the -gubbins option is set to yes, it will run gubbins on all final consensus files.
 
 ## Command line options
 
@@ -166,15 +156,8 @@ Possible options for the -cluster option (Supported system: pbs):
 
 ***parallel-local***:  This option will run the pipeline and analyze samples in parallel but on a local system. This is preferred for an input sample size of less than 20  and a multiple core local system.
 
-***cluster***: This option will run the pipeline on a single cluster. This option is similar to local but will rather run on a cluster node. It will not make use of multiple cores present on a cluster. Use this option for small numbers of samples or for testing purposes or for small numbers of large size samples which require multiple cores to analyze individual samples.
+***cluster***: The pipeline is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on individual small compute clusters or on a single large cluster for core snp generation step. 
 
-***parallel-cluster***: The variant call step (All) is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on an individual compute cluster. When you set this option for each step in the pipeline, make sure all the jobs submitted by the pipeline at each step is completed before proceeding to another step. You can check the status of the job with: 
-
-```
-qstat -u USERNAME  
-```
-
-Note: Use parallel-cluster mode for All/clean,align,post-align,varcall,filter,stats steps. Use cluster/parallel-local mode for core_prep and core steps. parallel-cluster and cluster will be merged in the next release.
 
 ## Quick Start
 
@@ -188,7 +171,7 @@ See option resources in the scheduler section of the [config](https://github.com
 - Run variant calling step (All) on a set of PE reads with default parameters
 
 ```
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps All -cluster parallel-cluster
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps All -cluster cluster
 
 ```
 
@@ -196,117 +179,53 @@ The above command will run the variant calling (step 1) pipeline on a set of PE 
 
 The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. A single log file of this step will be generated in the main output directory. For more information on log file prefix and convention, please refer to the [log](#log) section below.
 
-- Run the core_prep step to generate files for core SNP calling.
-
-Run this steps to generate various intermediate files that will be used for generating core SNPs.
-
-```
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core_prep -cluster cluster
-
-```
-
-- Run the core step to generate final core SNP consensus fasta files.
+- Generate core SNPs/Matrices from variant calling results 
 
 Since this step compares multiple files simultaneously and involves multiple I/O operations, it is recommended to provide higher memory compute resources. 
 
 example:
 
 ```
-nodes=1:ppn=4,mem=47000mb,walltime=24:00:00
+nodes=1:ppn=12,mem=47000mb,walltime=250:00:00
 ```
 
 Replace the resources option in the scheduler section of the config file with the above line before running the command.
 
 ```
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster cluster
-
-```
-
-- Run the report step to aggregate results under the \*_core_results folder
-
-```
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps report -cluster cluster
-
-```
-
-- Run the tree step to generate FastTree and RAxML phylogenetic trees and recombination filtering using Gubbins
-
-```
-python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps tree -cluster cluster -gubbins yes
+python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core_All -cluster cluster -gubbins yes
 
 ```
 
 ## Output Files
 
-All the final results from the report step will be saved under the date_time_core_results directory under the output folder. 
-
+All the final results will be saved under the date_time_core_results directory under the output folder. There will be three directories with different types of results.
 
 ```
 
-2018_01_13_13_18_03_core_results
+2018_10_23_17_25_08_core_results
 ├── core_snp_consensus
-│   ├── consensus_allele_variant_positions
-│   ├── consensus_ref_allele_unmapped_variant
-│   ├── consensus_ref_allele_variant_positions
-│   ├── consensus_ref_variant_positions
-│   ├── consensus_variant_positions
-│   └── core_vcf
 ├── data_matrix
-│   ├── Indel_matrix_allele.csv
-│   ├── Indel_matrix_code.csv
-│   ├── SNP_matrix_allele.csv
-│   ├── SNP_matrix_allele_new.csv
-│   ├── SNP_matrix_code.csv
-│   ├── phage_region_positions.txt
-│   ├── repeat_region_positions.txt
-│   ├── mask_positions.txt
-│   ├── Functional_class_filter_positions.txt
-│   ├── bargraph_counts.txt
-│   ├── bargraph_indel_counts.txt
-│   ├── bargraph_indel_percentage.txt
-│   ├── bargraph_percentage.txt
-│   ├── snpEff_results
-│   └── temp
-├── gubbins
-│   ├── 2018_07_11_14_45_01_KPNIH1_allele_var_consensus.fa
-│   ├── 2018_07_11_14_45_01_KPNIH1_ref_allele_unmapped_consensus.fa
-│   ├── 2018_07_11_14_45_01_KPNIH1_ref_allele_var_consensus.fa
-│   ├── 2018_07_11_14_45_01_KPNIH1_ref_var_consensus.fa
-│   └── 2018_07_11_14_45_01_KPNIH1_var_consensus.fa
-└── trees
+└── gubbins
 
 ```
 
-Four directories will be created after the report step where input for different downstream analyses and matrices for QC will be generated.
+**core_snp_consensus** The core_vcf folder contains annotated core vcf files used for generating the core SNP consensus. Other folders contains different combination of core/non-core consensus fasta files for individual samples.
 
-### 1. core_snp_consensus
-This folder contain different combinations of core/non-core consensus fasta files for individual samples. The core_vcf folder contains annotated vcf files used for generating the consensus. 
+**gubbins** contains different combinations of core/non-core multi-fasta alignments. Alignments with "gubbins.fa" extension will be used as an input for Gubbins. The pipeline will run RaxML and Iqtree on gubbins recombination filtered consensus fasta and the final output from all the three three programs will be saved under this folder.
 
-### 2. gubbins
-This folder contains different combinations of core/non-core multi-fasta consensus files generated by merging individual consensus files in core_snp_consensus folder. These multi-fasta consensus will be used as input for Gubbins recombination filtering and RAxML/FatTree phylogenetic tree construction.
-Output files from gubbins will be saved in this directory.
+- core_var_aln: alignment generated from only core variant positions.
 
-**var_consensus.fa:** consensus generated from core variant positions.
+- genome_aln_w_ref_allele_gubbins: genome alignment relative to the reference genome generated from core variant positions (final core variants + reference alleles).
 
-**ref_var_consensus.fa** full consensus relative to the reference genome generated from core variant positions (final core variants + reference alleles + non-core variants).
+Note: non-core variants will be replaced by reference allele.
 
-Note: non-core variant in this consensus refers to positions where a variant was observed but was filtered out for not meeting one of three criteria. Therefore, it will be replaced by the reference allele observed at this position.
+- noncore_plus_core_variants_aln: alignment contains only non-core and core variant positions. Unmapped position will be denoted by a dash(-), variant position (uncertain) that didn't meet the hard variant filter threshold or fell under functional class filter will be denoted by "N". Variant position that met all filter threshold will be substituted with the variant allele.
 
-- core variant criteria: Since this position was filtered out in another sample, this position will be regarded as a non-core position.
-- hard variant filters: If the variant called at this position didn't meet hard variant filters such as DP (depth), MQ (mapping quality), FQ (all reads supporting one variant), QUAL (variant quality), proximate_snp (the variant was in close proximity to another variant by 10 bp), they would be filtered out from the final core SNPs.
-- functional filters: If the position falls in one of the three functional class (repetitive, masked or phage region), they would be filtered out from final core SNPs.
+- genome_aln_w_alt_allele_unmapped_gubbins: genome alignment relative to the reference genome with positions that were unmapped in all samples relative to the reference genome will be denoted by dashes. It contains all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filter thresholds or falling under functional class filters. Non-core variants that met all filter thresholds will be substituted with variant allele. 
 
-**allele_var_consensus.fa:** consensus generated from all unique variant positions that were called in any sample regardless of it being a core/non-core position. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under a functional class filter. Non-core variants that meet all filter parameters will be substituted with the variant allele.
+**data_matrix** This folder contains different types of data matrices and reports that can be queried for variant diagnostics/QC plots. 
 
-**ref_allele_var_consensus.fa** full consensus relative to the reference genome generated from all unique variant positions that were called in any sample regardless of it being a core/non-core position. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under a functional class filter. Non-core variants that meet all filter parameters will be substituted with the variant allele. Positions that were unmapped in all samples relative to the reference genome will be denoted by the reference allele.
-
-**ref_allele_unmapped_consensus.fa:** full consensus relative to the reference genome generated from all unique variant positions that were called in any sample. This will contain all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filters or falling under functional class filters. Non-core variants that meet all filter parameters will be substituted with the variant allele. Positions that were unmapped in all samples relative to the reference genome will be denoted by dashes.
-
-
-### 3. data_matrix
-This folder contains different types of data matrices and reports that can be queried for variant diagnostics/QC plots. 
-
-**SNP/Indel Matrix:**
+- matrices/SNP_matrix*.csv:
 
 SNP_matrix_allele.csv and Indel_matrix_allele.csv: contain allele information for each unique variant position (rownames) called in each individual sample (columns). Positions that were unmapped and filtered out are replaced by the reference allele.
 
@@ -325,7 +244,7 @@ The different status codes are:
 | 3 | non-core or true variant but filtered out due to another sample |
 
 
-**Functional class:**
+- Functional_annotation_results:
 
 phage_region_positions.txt contains positions identified by Phaster as phage regions.
 
@@ -373,10 +292,6 @@ Rscript generate_diagnostics_plots.R
 - barplot_DP
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/barplot_DP.png)
-
-
-### 4. trees
-All the scripts used for running RAxML/FastTree and their output are saved in this directory. Multi-fasta consensus files (pre-recombination filtered) residing in the gubbins folder will be used for constructing RAxML/FastTree trees.
 
 
 <!-- 
