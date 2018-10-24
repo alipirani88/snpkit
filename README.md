@@ -225,13 +225,11 @@ Note: non-core variants will be replaced by reference allele.
 
 **data_matrix** This folder contains different types of data matrices and reports that can be queried for variant diagnostics/QC plots. 
 
-- matrices/SNP_matrix*.csv:
+- matrices/SNP_matrix_allele.csv and Indel_matrix_allele.csv: contain allele information for each unique variant position (rownames) called in each individual sample (columns). Positions that were unmapped and filtered out are replaced by the reference allele.
 
-SNP_matrix_allele.csv and Indel_matrix_allele.csv: contain allele information for each unique variant position (rownames) called in each individual sample (columns). Positions that were unmapped and filtered out are replaced by the reference allele.
+- matrices/SNP_matrix_allele_new.csv will also contain allele information for each unique variant position (rownames) called in each individual sample (columns) except the positions that were unmapped and filtered out will be substituted with dash (-) and N's.
 
-SNP_matrix_allele_new.csv will also contain allele information for each unique variant position (rownames) called in each individual sample (columns) except the positions that were unmapped and filtered out will be substituted with dash (-) and N's.
-
-SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status codes for each unique variant position (rownames) called in individual sample (columns). 
+- matrices/SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the five status codes for each unique variant position (rownames) called in individual sample (columns). 
 
 The different status codes are: 
 
@@ -244,15 +242,13 @@ The different status codes are:
 | 3 | non-core or true variant but filtered out due to another sample |
 
 
-- Functional_annotation_results:
+- Functional_annotation_results/phage_region_positions.txt contains positions identified by Phaster as phage regions.
 
-phage_region_positions.txt contains positions identified by Phaster as phage regions.
+- Functional_annotation_results/repeat_region_positions.txt contains positions identified by nucmer as tandem repeats.
 
-repeat_region_positions.txt contains positions identified by nucmer as tandem repeats.
+- Functional_annotation_results/mask_positions.txt contains positions set by the user to mask from the final core position list.
 
-mask_positions.txt contains positions set by the user to mask from the final core position list.
-
-Functional_class_filter_positions.txt is an aggregated unique list of positions that fall under repeat, mask and phage region (REPEAT_MASK_PHAGE).
+- Functional_annotation_results/Functional_class_filter_positions.txt is an aggregated unique list of positions that fall under repeat, mask and phage region (REPEAT_MASK_PHAGE).
 
 **Bargraph matrices**
 
