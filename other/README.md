@@ -1,2 +1,0 @@
-# varcall_umich
-VariantCalling
