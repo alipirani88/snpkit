@@ -2112,11 +2112,9 @@ def annotated_snp_matrix():
         files_gatk = files_gatk + " --variant " + i
     final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
 
-    # Test this merge and annote this merged file
-    merged_file_suffix = "_no_proximate_snp_1.vcf"
-    final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,
-                                                      args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
-                                                      logger, Config)
+    # Test this merge and annotate this merged file - Testing Mode Right now.
+    #merged_file_suffix = "_no_proximate_snp_1.vcf"
+    #final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
     merged_file_suffix = "_indel.vcf"
     final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
                                                                          '_filter2_indel_final.vcf_ANN.vcf.gz'),
@@ -2914,19 +2912,20 @@ if __name__ == '__main__':
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
         tabix(files_for_tabix, "vcf", logger, Config)
 
-        # If Phaster Summary file doesn't exist in reference genome folder
-        if not os.path.isfile("%s/summary.txt" % os.path.dirname(args.reference)):
-            if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-                keep_logging('Functional class filter is set to yes. Preparing Functional class filters\n', 'Functional class filter is set to yes. Preparing Functional class filters\n', logger,
-                             'info')
-                if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
-                    # Submit Phaster jobs to find ProPhage region in reference genome.
-                    run_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
-
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
+
+        # If Phaster Summary file doesn't exist in reference genome folder
+        if not os.path.isfile("%s/summary.txt" % os.path.dirname(args.reference)):
+            if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                keep_logging('Functional class filter is set to yes. Preparing Functional class filters\n',
+                             'Functional class filter is set to yes. Preparing Functional class filters\n', logger,
+                             'info')
+                if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                    # Submit Phaster jobs to find ProPhage region in reference genome.
+                    run_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
 
         call("cp %s %s/Logs/core_prep/" % (log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
@@ -3253,9 +3252,9 @@ if __name__ == '__main__':
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')
 
-        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
+        #create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
 
-        extract_only_ref_variant_fasta_from_reference_allele_variant()
+        #extract_only_ref_variant_fasta_from_reference_allele_variant()
 
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)

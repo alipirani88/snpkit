@@ -385,6 +385,7 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
 
     return core_prep_pipeline
+
 def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     file_exists(reference)
     if args.debug_mode == "yes":
@@ -543,6 +544,7 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         print qid.split('.')[0]
     #keep_logging('You can check the job status with: qstat -u USERNAME', 'You can check the job status with: qstat -u USERNAME', logger, 'info')
     return core_pipeline
+
 """ Start of Main Method/Pipeline """
 if __name__ == '__main__':
 
@@ -580,7 +582,7 @@ if __name__ == '__main__':
     Config.read(config_file)
 
     # Run pipeline steps
-    if "core_All" not in args.steps and "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps:
+    if "core_All" not in args.steps and "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps and "2" not in args.steps:
         """ Set Up variant calling logs folder/logger object, cluster mode and copy config files to it"""
         vc_logs_folder = logs_folder + "/variant_calling"
         make_sure_path_exists(vc_logs_folder)
@@ -602,7 +604,7 @@ if __name__ == '__main__':
         keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
         keep_logging('End: Variant calling Pipeline', 'End: Variant calling Pipeline', logger, 'info')
 
-    elif "core_All" in args.steps:
+    elif "core_All" in args.steps or "2" in args.steps:
         core_All_cmds = []
         """ Set Up Core Prep logs folder/logger object, cluster mode and copy config files to it"""
         core_prep_logs_folder = logs_folder + "/core_prep"
@@ -736,9 +738,20 @@ if __name__ == '__main__':
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)[
             'ref_name']
 
+        """ If Phaster Summary file doesn't exist in reference genome folder """
+        if not os.path.isfile("%s/summary.txt" % os.path.dirname(reference)):
+            if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+                             'info')
+                if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                    # Submit Phaster jobs to find ProPhage region in reference genome.
+                    run_phaster(reference, os.path.dirname(reference), logger, Config)
+
+
+
         # Parse Phaster results file to extract phage region.
         if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-            keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
+            keep_logging('Parsing Functional class filters\n', 'Parsing Functional class filters\n', logger,
                          'info')
             functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % core_temp_dir
             f1 = open(functional_class_filter_positions, 'w+')

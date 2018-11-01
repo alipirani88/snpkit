@@ -26,19 +26,17 @@ parser = argparse.ArgumentParser(
                     (1) Masked whole genome alignment file in FASTA format
                     (2) Text file with list of masked positions in each genome
                     ''')
-parser.add_argument('-a', '--alignment', metavar='FASTA', type=str,
-                    required=True,
+parser.add_argument('fasta', metavar='FASTA', type=str,
                     help='whole genome alignment file in FASTA format')
-parser.add_argument('-g', '--gff', metavar='GFF', type=str,
-                    required=True,
+parser.add_argument('gff', metavar='GFF', type=str,
                     help='gubbins GFF output file')
-parser.add_argument('-o', '--outdir', metavar='OUTFILE', type=str,
+parser.add_argument('-o', '--outdir', metavar='OUTDIR', type=str,
                     default='.',
                     help='''output fasta file directory
                     (default: .)''')
 args = parser.parse_args()
 
-aln_path = args.alignment
+aln_path = args.fasta
 gubbins_gff_path = args.gff
 outdir = args.outdir
 
