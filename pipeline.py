@@ -38,7 +38,7 @@ def parser():
                                                                      '2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. \nYou can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.\nThe order is required to be sequential. Also, while skipping any of the step make sure you have results already present in your output folder.\n'
                                                                      '3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps')
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run pipeline on cluster/parallel-local/local. Make Sure to check if the [CLUSTER] section in config file is set up correctly.')
-    #optional.add_argument('-noclean', action='store', dest="noclean", help='Do not clean up intermediate files. Default: OFF')
+    optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: OFF')
     return parser
 
 # Main Pipeline method
@@ -118,29 +118,31 @@ def pipeline(args, logger):
     def varcall():
         keep_logging('START: Variant Calling', 'START: Variant Calling', logger, 'info')
         caller = ConfigSectionMap("pipeline", Config)['variant_caller']
-        if caller == "samtoolswithpostalignbam":
-            keep_logging('START: Variant Calling using Samtools and post-align bam input files', 'START: Variant Calling using Samtools and post-align bam input files', logger, 'info')
-            out_finalbam = post_align_bam(out_sorted_bam, args.output_folder, args.index, args.analysis_name)
-            final_raw_vcf = variant_calling(out_finalbam, args.output_folder, args.index, args.analysis_name)
-            keep_logging('The final raw VCF file: {}'.format(final_raw_vcf), 'The final raw VCF file: {}'.format(final_raw_vcf), logger, 'debug')
-            keep_logging('END: Variant Calling using Samtools and post-align bam input files', 'END: Variant Calling using Samtools and post-align bam input files', logger, 'info')
-        elif caller == "gatkhaplotypecaller":
-            keep_logging('START: Variant Calling using GATK haplotyper and post-align bam input files', 'START: Variant Calling using GATK haplotyper and post-align bam input files', logger, 'info')
-            out_finalbam = post_align_bam(out_sorted_bam, args.output_folder, args.index, args.analysis_name)
-            final_raw_vcf = variant_calling(out_finalbam, args.output_folder, args.index, args.analysis_name)
-            keep_logging('The final raw VCF file: {}'.format(final_raw_vcf), 'The final raw VCF file: {}'.format(final_raw_vcf), logger, 'debug')
-            keep_logging('END: Variant Calling using GATK haplotyper and post-align bam input files', 'END: Variant Calling using GATK haplotyper and post-align bam input files', logger, 'info')
-        elif caller == "samtools":
-            keep_logging('START: Variant Calling using Samtools without post-align bam input files.', 'START: Variant Calling using Samtools without post-align bam input files.', logger, 'info')
+        if caller == "gatkhaplotypecaller":
+            keep_logging('START: Variant Calling using GATK haplotyper.', 'START: Variant Calling using GATK haplotyper.', logger, 'info')
             final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
             #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
             final_raw_vcf = remove_5_bp_snp_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             keep_logging('The final raw VCF file: {}'.format(final_raw_vcf), 'The final raw VCF file: {}'.format(final_raw_vcf), logger, 'debug')
+            keep_logging('The final raw Indel VCF file: {}'.format(final_raw_indel_vcf),
+                         'The final raw Indel VCF file: {}'.format(final_raw_indel_vcf), logger, 'debug')
+            keep_logging('END: Variant Calling using Samtools without post-align bam input files.', 'END: Variant Calling using Samtools without post-align bam input files.', logger, 'info')
+            return final_raw_vcf, final_raw_indel_vcf
+
+        elif caller == "samtools":
+            keep_logging('START: Variant Calling using Samtools without post-align bam input files.', 'START: Variant Calling using Samtools without post-align bam input files.', logger, 'info')
+            final_raw_indel_vcf = prepare_indel_gatk(out_sorted_bam, args.output_folder, args.analysis_name, args.index, logger, Config)
+            final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
+            #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
+            final_raw_vcf = remove_5_bp_snp_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
+            # GATK indel calling integration
+            #final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
+            keep_logging('The final raw VCF file: {}'.format(final_raw_vcf), 'The final raw VCF file: {}'.format(final_raw_vcf), logger, 'debug')
             keep_logging('END: Variant Calling using Samtools without post-align bam input files.', 'END: Variant Calling using Samtools without post-align bam input files.', logger, 'info')
             return final_raw_vcf, final_raw_indel_vcf
         else:
-            keep_logging('Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. samtoolswithpostalignbam 3. gatkhaplotypecaller', 'Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. samtoolswithpostalignbam 3. gatkhaplotypecaller', logger, 'info')
+            keep_logging('Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. gatkhaplotypecaller', 'Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. gatkhaplotypecaller', logger, 'info')
             exit()
         keep_logging('END: Variant Calling', 'END: Variant Calling', logger, 'info')
 
@@ -148,7 +150,7 @@ def pipeline(args, logger):
     def filter(gatk_depth_of_coverage_file):
         keep_logging('START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
         final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
-        final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
+        #final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
         if not os.path.isfile(gatk_depth_of_coverage_file):
             file_basename = os.path.basename(gatk_depth_of_coverage_file)
             keep_logging('The input file {} does not exists. Please provide another file with full path or check the files path.\n'.format(file_basename), 'The input file {} does not exists. Please provide another file or check the files path.\n'.format(file_basename), logger, 'exception')
@@ -158,8 +160,9 @@ def pipeline(args, logger):
         (out, err) = proc.communicate()
         Avg_dp = float(out)
         print "The Average Depth per reference genome base is: %s" % Avg_dp
-        filter2_variants(final_raw_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
-        filter2_indels(final_raw_indel_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
+        filter_variants(final_raw_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
+        final_raw_indel_vcf = final_raw_vcf_mpileup + "_indel.vcf"
+        filter_indels(final_raw_indel_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
         keep_logging('END: Variant Filteration', 'END: Variant Filteration', logger, 'info')
 
     ## 6. Stages: Statistics
@@ -190,7 +193,7 @@ def pipeline(args, logger):
         if steps_list[0] == "filter":
             #Sanity Check Post-varcall vcf and other files here
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf.gz" % (args.output_folder, args.analysis_name)
+            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
@@ -217,6 +220,17 @@ def pipeline(args, logger):
         elif steps_list[0] == "bedtools":
                 out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
                 only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
+
+        elif steps_list[0] == "varcall":
+            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (
+            args.output_folder, args.analysis_name)
+            if not os.path.exists(gatk_depth_of_coverage_file):
+                gatk_depth_of_coverage_file = coverage_depth_stats()
+            final_raw_vcf, final_raw_indel_vcf = varcall()
+
+
+
     # Run individual variant calling steps: clean, align, post-align, varcall, filter, stats etc
     else:
 
@@ -261,7 +275,7 @@ def pipeline(args, logger):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf, final_raw_indel_vcf = varcall()
             filter(gatk_depth_of_coverage_file)
-            #stats()
+            stats()
 
         elif steps_list[0] == "filter":
             #Sanity Check Post-varcall vcf and other files here
@@ -434,6 +448,18 @@ def picard_seqdict(dict_name, reference):
         keep_logging('Error in Picard Sequence Dictionary creation step. Exiting.', 'Error in Picard Sequence Dictionary creation step. Exiting.', logger, 'exception')
         sys.exit(1)
 
+def cleanup(args, logger):
+    if args.clean:
+        keep_logging('Removing Intermediate Temporary files', 'Removing Intermediate Temporary files', logger, 'info')
+        os.chdir(args.output_folder)
+        os.system("rm %s/*.fq.gz %s/*.sam %s/*_aln.bam %s/*_marked.bam %s/*_marked.bai %s/*_unmapped.bed %s/*_temp_paste_file.txt" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder))
+    make_sure_path_exists("%s/%s_stats_results" % (args.output_folder, args.analysis_name))
+    os.system("mv %s/*depth_of_coverage* %s/*_stats %s/*_markduplicates_metrics %s/*_values.txt %s/*_INFO.txt %s/%s_stats_results" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+    make_sure_path_exists("%s/%s_logs" % (args.output_folder, args.analysis_name))
+    os.system("mv %s/*.log.txt %s/%s_logs" % (args.output_folder, args.output_folder, args.analysis_name))
+    make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
+    os.system("mv %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+
 # Start of Main Method/Pipeline
 if __name__ == '__main__':
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -455,7 +481,8 @@ if __name__ == '__main__':
     files_to_delete = []
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
-    pipeline(args, logger)
+    #pipeline(args, logger)
+    cleanup(args, logger)
     keep_logging('End: Pipeline', 'End: Pipeline', logger, 'info')
     time_taken = datetime.now() - start_time_2
     keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')

@@ -56,7 +56,9 @@ array_name = os.path.basename(out_file_name)
 ori_unmapped_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "unmapped.bed_positions")
 ori_proximate_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "filter2_final.vcf_no_proximate_snp.vcf_positions_array")
 ori_variant_position_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "filter2_indel_final.vcf")
-ori_mpileup_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "aln_mpileup_raw.vcf")
+#ori_mpileup_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "aln_mpileup_raw.vcf")
+ori_mpileup_file = out_file_name.replace("filter2_indel_final.vcf_indel_positions_label", "filter2_indel_gatk.vcf")
+
 
 current_unmapped_file = args.tmp_dir + "/%s" % (os.path.basename(ori_unmapped_file))
 current_proximate_file = args.tmp_dir + "/%s" % (os.path.basename(ori_proximate_file))
@@ -121,10 +123,12 @@ for variants in VCF(indel_file + ".gz"):
 
 for variants in VCF(ori_mpileup_file + ".gz"):
     positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('DP'))
-    positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('FQ'))
-    positions_mpileup_vcf[int(variants.POS)].append(variants.QUAL)
+    #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('FQ'))
+    #positions_mpileup_vcf[int(variants.POS)].append(variants.QUAL)
+    positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('QD'))
     positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('MQ'))
-    positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
+    positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF'))
+    #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
 
 
 
@@ -146,17 +150,17 @@ def get_reason():
                     pst = "_proximate_SNP"
                 else:
                     pst = ""
-                if positions_mpileup_vcf[int(j)][1] < -40:
-                    st = "HighFQ"
-                    if positions_mpileup_vcf[int(j)][2] < 100.00:
+                if positions_mpileup_vcf[int(j)][3] < 0.9:
+                    st = "LowAF"
+                    if positions_mpileup_vcf[int(j)][1] < 2.00:
                         st = st + "_QUAL"
                     if positions_mpileup_vcf[int(j)][0] < 10:
                         st = st + "_DP"
                 else:
-                    st = "LowFQ"
-                    if positions_mpileup_vcf[int(j)][2] < 100.00:
+                    st = "HighAF"
+                    if positions_mpileup_vcf[int(j)][1] < 2.00:
                         st = st + "_QUAL"
-                    if positions_mpileup_vcf[int(j)][0] < 10:
+                    if positions_mpileup_vcf[int(j)][0] < 15:
                         st = st + "_DP"
                 st = st + pst + "\n"
                 f1.write(st)

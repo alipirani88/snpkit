@@ -106,18 +106,24 @@ def extract_only_ref_variant_fasta_unique_positions():
                     variant_allele = variant_allele + ntd
             #print variant_allele
             print_string = print_string + str(variant_allele) + "\n"
+
             allele_variant_fasta = open("%s/%s_allele_variants.fa" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
+            allele_variant_fasta.write(print_string)
+            allele_variant_fasta.close()
+
             allele_ref_variant_fasta = open("%s/%s_ref_allele_variants.fa" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
             allele_ref_variant_vcf = open("%s/%s_ref_allele_variants.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
             allele_ref_variant_vcf.write(vcf_header)
-            allele_variant_fasta.write(print_string)
-            allele_variant_fasta.close()
+
             variant_allele_array = []
             variant_allele_array.append(columns[i][1:])
+
             get_sample_reference = Fasta("%s/%s_allele_variants.fa" % (args.filter2_only_snp_vcf_dir, sample_name_re))
             if len(get_sample_reference.keys()) == 1:
                 sample_ref_id = get_sample_reference.keys()
+
             for positions in unique_position_array:
+
                 pos_index = unique_position_array.index(positions)
 
                 if "/" in str(variant_allele_array[0][pos_index]):
@@ -125,9 +131,11 @@ def extract_only_ref_variant_fasta_unique_positions():
                     #print allele_var
                 else:
                     allele_var = str(variant_allele_array[0][pos_index])
+
                 ref_allele = str(get_reference.sequence({'chr': str(get_reference.keys()[0]), 'start': int(positions), 'stop': int(positions)}))
                 generate_vcf_string = "%s\t%s\t.\t%s\t%s\t221.999\t.\t.\t.\n" % (ref_id[0].split(' ')[0], positions, ref_allele, allele_var)
                 allele_ref_variant_vcf.write(generate_vcf_string)
+
             allele_ref_variant_vcf.close()
             filename = "%s/consensus_ref_allele_variant.sh" % args.filter2_only_snp_vcf_dir
 
@@ -159,20 +167,18 @@ def extract_only_ref_variant_fasta_unique_positions():
 
 
 def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
-    #print "here"
-
-    # Get reference genome ID
+    # Get reference genome ID from reference fasta file
     get_reference = Fasta(args.reference)
     if len(get_reference.keys()) == 1:
         ref_id = get_reference.keys()
 
-
+    # Read in the SNP Matrix file and seperate the columns.
     c_reader = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     ncol = len(next(c_reader_2))
 
-
+    # Generate an array of all the unique variant positions that were called in all the samples
     unique_position_array = []
     for i in columns[0][1:]:
         replace_string = i.split(' ')
@@ -180,10 +186,10 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
             unique_position_array.append(int(replace_string[3]))
         else:
             unique_position_array.append(int(replace_string[2]))
-    #print unique_position_array
 
     counts = 1
     end = ncol
+    # Loop over each column, check if the column name matches the sample name provided with argument args.filter2_only_snp_vcf_filename
     for i in xrange(1, end, 1):
         print_string = ""
         ref_print_string = ""
