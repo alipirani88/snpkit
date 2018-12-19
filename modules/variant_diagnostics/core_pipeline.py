@@ -3386,7 +3386,11 @@ if __name__ == '__main__':
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
         tabix(files_for_tabix, "vcf", logger, Config)
 
+<<<<<<< HEAD
         # # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
+=======
+        # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
@@ -3681,6 +3685,10 @@ if __name__ == '__main__':
         call("%s" % prepare_ref_var_consensus_input_cmd, logger)
         call("%s" % prepare_var_consensus_input_cmd, logger)
         call("%s" % prepare_allele_var_consensus_input_cmd, logger)
+<<<<<<< HEAD
+=======
+        #call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
 
 
@@ -3713,9 +3721,15 @@ if __name__ == '__main__':
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')
 
+<<<<<<< HEAD
         # create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
         #
         # extract_only_ref_variant_fasta_from_reference_allele_variant()
+=======
+        #create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
+
+        #extract_only_ref_variant_fasta_from_reference_allele_variant()
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)

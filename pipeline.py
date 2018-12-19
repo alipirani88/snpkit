@@ -481,7 +481,11 @@ if __name__ == '__main__':
     files_to_delete = []
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
+<<<<<<< HEAD
     #pipeline(args, logger)
+=======
+    pipeline(args, logger)
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
     cleanup(args, logger)
     keep_logging('End: Pipeline', 'End: Pipeline', logger, 'info')
     time_taken = datetime.now() - start_time_2

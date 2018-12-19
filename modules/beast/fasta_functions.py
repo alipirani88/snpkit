@@ -17,16 +17,25 @@ from collections import Counter
 import re
 import os
 
+<<<<<<< HEAD
 def subset_fasta(ids, fastain, fastaout):
     """Creates a new fasta file with a subset of original sequences.
 
     Args:
         idnames: List of sequence names to be extracted.
+=======
+def subset_fasta(idnames, fastain, fastaout):
+    """Creates a new fasta file with a subset of original sequences.
+
+    Args:
+        idnames: Text file with list of names of sequences to be extracted.
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
         fastain: Path to fasta file containing all sequences of interest.
         fastaout: Name of output fasta file containing only the sequences of interest.
 
     Output:
         Fasta file containing only the sequences of interest.
+<<<<<<< HEAD
     """    
 
     with open(fastaout, 'w') as f:
@@ -62,6 +71,28 @@ def get_fasta_subsets(csv, fasta):
             fas.append(fa)
 
     return(fas)
+=======
+
+    Returns:
+        Path to subsetted fasta file.
+    """    
+
+    ids = []
+
+    for line in open(idnames, 'r'):
+        if line.strip() == 'x':
+            pass
+        else:
+            ids.append(line.strip())
+
+    with open(fastaout, 'w') as f:
+        for rec in SeqIO.parse(fastain, 'fasta'):
+            if str(rec.id) in ids:
+                f.write('>' + names[ids.index(rec.id)] + '\n')
+                f.write(str(rec.seq) + '\n')
+
+    return(fastaout)
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 
 
 def rm_invar_sites(fasta, outfile=None, outfmt=['fasta','vcf'], outdir='.', 
@@ -82,7 +113,11 @@ def rm_invar_sites(fasta, outfile=None, outfmt=['fasta','vcf'], outdir='.',
         Path to output file.
     """
 
+<<<<<<< HEAD
     if len(outfmt) > 1:
+=======
+   if len(outfmt) > 1:
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
        outfmt = outfmt[0]
 
     # Get output fasta file name
@@ -237,13 +272,18 @@ def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/
             if not li.startswith("#"):
                 positions.append(line.split('\t')[1])
 
+<<<<<<< HEAD
     # Get allele for invariant sites
     invar_sites = []
+=======
+    # Get ref allele for invariant sites
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
     for record in aln:
         seq_str = list(str(record.seq))
         for index in positions:
             index = int(index)
             seq_str[index] = ''
+<<<<<<< HEAD
         #tmp = ''.join(seq_str)
         if len(invar_sites) == 0:
             invar_sites = seq_str
@@ -260,6 +300,14 @@ def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/
     # Get invariant site count for each base
     #print('Counting bases.')
     #invar_counts = Counter(invar_sites)
+=======
+        invar_sites = ''.join(seq_str)
+        break
+
+    # Get invariant site count for each base
+    print('Counting bases.')
+    invar_counts = Counter(invar_sites)
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 
     # Write base counts to files
     invar_counts_file = outdir + '/' + re.split('/|\.', aln_file)[-2] + \
@@ -267,9 +315,14 @@ def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/
     print('Writing ', invar_counts_file, ' (order: A C G T).', sep='')
     with open(invar_counts_file, 'w') as f:
         for base, count in sorted(invar_counts.items()):
+<<<<<<< HEAD
             #if base in ['A','a','C','c','G','g','T','t']:
             print(base + ' ' + str(count))
             f.write('%s ' % (count))
             #else:
             #    print(base + ' ' + str(count))
+=======
+            f.write('%s ' % (count))
+
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
     return(invar_counts_file)

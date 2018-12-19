@@ -3,7 +3,10 @@
 #Takes as input:
 #		1) config_file	- A 1-column file where each line is the file name (minus the .xml extension) for a beast run
 # UPDATED 2017-09-21 from beast2/2.4.5 to beast2/2.4.7
+<<<<<<< HEAD
 # UPDATED 2018-11-19 from beast2/2.4.7 to /nfs/esnitkin/bin_group/beast_v2.5.1/beast/bin/beast
+=======
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 
 #PRINT USAGE
 if(@ARGV == 0)
@@ -75,6 +78,7 @@ foreach my $job (<CONFIG>)
 	print PBS "cd $out_dir";
 	print PBS "\n";
 	print PBS "#Load modules\n";
+<<<<<<< HEAD
 	#print PBS "module load beast2/2.4.7\n";
     print PBS "module load beagle\n";
     #print PBS "addonmanager -add BEAST_CLASSIC\n";
@@ -82,6 +86,15 @@ foreach my $job (<CONFIG>)
 	print PBS "\n";
 	print PBS "#  Put your job commands here:\n";
 	print PBS "/nfs/esnitkin/bin_group/beast_v2.5.1/beast/bin/beast -beagle_SSE -instances 12 -threads 12 beast$count\_$fnameorig\n";
+=======
+	print PBS "module load beast2/2.4.7\n";
+        print PBS "module load beagle\n";
+        #print PBS "addonmanager -add BEAST_CLASSIC\n";
+        #print PBS "addonmanager -add SCOTTI\n";
+	print PBS "\n";
+	print PBS "#  Put your job commands here:\n";
+	print PBS "beast -beagle_SSE -instances 12 -threads 12 beast$count\_$fnameorig\n";
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 	print PBS "\n";
 
 	close PBS;

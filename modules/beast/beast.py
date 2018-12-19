@@ -6,7 +6,10 @@ import os
 import argparse
 from subprocess import call
 import re
+<<<<<<< HEAD
 from fasta_functions import *
+=======
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 
 # Get command line arguments
 parser = argparse.ArgumentParser(description='Run BEAST pipeline.')
@@ -27,17 +30,43 @@ gubbins_gff = args.gubbins_gff
 tree = args.tree
 scripts_dir = args.scripts_dir
 
+<<<<<<< HEAD
+=======
+# Set paths
+python = '/nfs/esnitkin/bin_group/anaconda3/bin/python'
+mask_vars_path = '/nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/mask_gubbins_variants.py'
+
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 # Get invariant site counts
 if invar_sites is not None:
     if not invar_sites.endswith(tuple(['fa','fasta'])):
         # Path to file with invariant site counts
         invar_counts_file = invar_sites
     else:
+<<<<<<< HEAD
         # Count invariant sites in whole genome alignment
         invar_counts_file = count_invar_sites(invar_sites, gubbins_gff)
     with open(invar_counts_file) as f:
         invar_counts = f.readline().strip()
 
+=======
+        # Mask recombinant regions before counting invariant sites
+        if gubbins_gff is not None:
+            call([python, mask_vars_path, invar_sites, gubbins_gff])
+            aln_file = re.split('/|\.', invar_sites)[-2] + \
+                      '_gubbins_masked.fa'
+        else:
+            aln_file = invar_sites
+        # Count invariant sites in whole genome alignment
+        call([python, scripts_dir + '/get_num_invariant_sites_v2.py', aln_file])
+        invar_counts_file = re.split('/|\.', aln_file)[-2] + \
+                          '_invar_site_counts.txt'
+    # Read file with invariant site counts
+    with open(invar_counts_file) as f:
+        invar_counts = f.readline().strip()
+
+
+>>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 # Final xmls for beast
 xmls_for_beast = []
 
