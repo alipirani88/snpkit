@@ -46,7 +46,23 @@ Requires Python2:
 
 ```
 
-- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument.
+- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
+
+- index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
+
+[KPNIH1]
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1.fasta
+
+Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section with a different index name.
+
+[KPNIH1_new]
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1_new.fasta
 
 For more information, refer to [Customizing the config file](#customizing-the-config-file).
 
@@ -74,6 +90,8 @@ You can run a part of the pipeline by customizing the order of the -steps argume
 
 Note: The order of variant calling steps needs to be sequential. If skipping any of the steps, make sure those skipped steps had previously finished without any errors.
 
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/pipeline_All.png)
+
 **2. Generate various Core/Non-core SNP consensus, SNP/Indel Matrices and recombination filtering with Gubbins:**
 
 Option ***core_All***: This will run all the core SNP consensus/matrix generating steps.
@@ -85,6 +103,7 @@ This step will run in sequential order and generate:
 - prefix_core_results directory under the output directory which will be the final results folder.
 - Gubbins recombination filtered consensus fasta files and RaxML/Iqtree trees generated from this recombination filtered consensus.
 
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/pipeline_core_All.png)
 
 ## Command line options
 
