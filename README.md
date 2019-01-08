@@ -48,6 +48,11 @@ Requires Python2:
 
 - config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
 
+```
+[bin_path]
+binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
+```
+
 - index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
 
 ```
