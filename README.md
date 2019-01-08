@@ -50,19 +50,23 @@ Requires Python2:
 
 - index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
 
+```
 [KPNIH1]
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1.fasta
+```
 
 Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section with a different index name.
 
+```
 [KPNIH1_new]
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1_new.fasta
+```
 
 For more information, refer to [Customizing the config file](#customizing-the-config-file).
 
