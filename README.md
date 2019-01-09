@@ -233,6 +233,10 @@ All the final results will be saved under date_time_core_results directory under
 
 ```
 
+The subdirectories for each of the above directories will be arranged in following fashion:
+
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/core_results_dir.png)
+
 **core_snp_consensus** The core_vcf folder under this directory contains annotated core vcf files that were used for generating core SNP consensus fasta results. Other folders contain different combination of core/non-core consensus fasta files for individual samples. The consensus file from these folders are concatenated to generate the multiple sequence alignment file which are then placed in gubbins folder and are used as an input for gubbins jobs.
 
 **gubbins** contains different combinations of core/non-core multi-fasta alignments. Alignments with "gubbins.fa" in their extension will be used as an input for Gubbins. Once the gubbins jobs finished, the pipeline runs RaxML and Iqtree on gubbins generated recombination filtered consensus fasta files. Raxml and iqtree results generated using these files will be placed in raxml_results and iqtree_results folder respectively.
