@@ -295,6 +295,15 @@ The different status codes are:
 | -4 | MQ Region Masked |
 
 
+Some toy examples of how codes are arranged for different type of variants and how they would be represented in allele matrix is shown below:
+
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/reference_allele.png)
+
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/unmapped_positions.png)
+
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/core_variants.png)
+
+![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/filtered_positions.png)
 
 **Bargraph matrices**
 
