@@ -261,6 +261,26 @@ The different types of variants and the symbols that are used for each variant p
 
 - matrices/SNP_matrix_code.csv and Indel_matrix_code.csv: contain one of the seven status codes for each unique variant position (rownames) called in individual sample (columns). 
 
+- Functional_annotation_results/phage_region_positions.txt contains positions identified by Phaster as phage regions.
+
+- Functional_annotation_results/repeat_region_positions.txt contains positions identified by nucmer as tandem repeats.
+
+- Functional_annotation_results/mask_positions.txt contains positions set by the user to mask from the final core position list.
+
+- Functional_annotation_results/Functional_class_filter_positions.txt is an aggregated unique list of positions that fall under repeat, mask and phage region (REPEAT_MASK_PHAGE).
+
+- Row annotation: The rows in the matrix represent a variant position and its associated annotation divided into two parts seperated by a semi colon. An example row annotation is shown below:
+
+```
+
+Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand;ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product	Sample_name
+
+Coding SNP at 31356 > T functional=NULL_NULL_NULL locus_tag=USA300HOU_0023 strand=+;T|stop_gained|HIGH|USA300HOU_0023|c.373C>T|p.Gln125*|373/2361|125/786|null or hypothetical protein|possible 5'-nucleotidase;	0
+```
+
+The first part contains information such as type of SNP, position, variant allele found, functional annotation, locus tag for the gene and strand. Second part contains snpEff annotation for the variant found and its impact on the gene. 
+
+
 The different status codes are: 
 
 | Code | Description |
@@ -275,13 +295,6 @@ The different status codes are:
 | -4 | MQ Region Masked |
 
 
-- Functional_annotation_results/phage_region_positions.txt contains positions identified by Phaster as phage regions.
-
-- Functional_annotation_results/repeat_region_positions.txt contains positions identified by nucmer as tandem repeats.
-
-- Functional_annotation_results/mask_positions.txt contains positions set by the user to mask from the final core position list.
-
-- Functional_annotation_results/Functional_class_filter_positions.txt is an aggregated unique list of positions that fall under repeat, mask and phage region (REPEAT_MASK_PHAGE).
 
 **Bargraph matrices**
 
