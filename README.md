@@ -297,11 +297,19 @@ The different status codes are:
 
 Some toy examples of how codes are arranged for different type of variants and how they would be represented in allele matrix is shown below:
 
+- Reference Allele:
+
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/reference_allele.png)
+
+- Unmapped Positions:
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/unmapped_positions.png)
 
+- Core Variants:
+
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/core_variants.png)
+
+- Filtered Positions:
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/filtered_positions.png)
 
