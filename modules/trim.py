@@ -23,7 +23,7 @@ def trim(input1, input2, out_path, crop, logger, Config):
         minlen_string = 'MINLEN:' + ConfigSectionMap("Trimmomatic", Config)['minlength']
         headcrop_string = 'HEADCROP:' + ConfigSectionMap("Trimmomatic", Config)['headcrop_length']
         if not crop:
-            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar PE -phred33 " + input1 + " " + input2 + " " + clean_filenames + " " + illumina_string + " " + sliding_string + " " + minlen_string + " " + headcrop_string
+            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar PE -phred33 " + input1 + " " + input2 + " " + clean_filenames + " " + illumina_string + " " + sliding_string + " " + minlen_string + " " + headcrop_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
             keep_logging(cmdstring, cmdstring, logger, 'debug')
             try:
                 call(cmdstring, logger)
@@ -33,7 +33,7 @@ def trim(input1, input2, out_path, crop, logger, Config):
             keep_logging('End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
         else:
             crop_string = 'CROP:' + crop
-            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar PE " + input1 + " " + input2 + " " + clean_filenames + " " + crop_string + " " + illumina_string + " " + sliding_string + " " + minlen_string
+            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar PE " + input1 + " " + input2 + " " + clean_filenames + " " + crop_string + " " + illumina_string + " " + sliding_string + " " + minlen_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:
@@ -50,7 +50,7 @@ def trim(input1, input2, out_path, crop, logger, Config):
         minlen_string = 'MINLEN:' + ConfigSectionMap("Trimmomatic", Config)['minlength']
         headcrop_string = 'HEADCROP:' + ConfigSectionMap("Trimmomatic", Config)['headcrop_length']
         if not crop:
-            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar SE " + input1 + " " + clean_filenames + " " + illumina_string + " " + sliding_string + " " + minlen_string + " " + headcrop_string
+            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar SE " + input1 + " " + clean_filenames + " " + illumina_string + " " + sliding_string + " " + minlen_string + " " + headcrop_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
             keep_logging(cmdstring, cmdstring, logger, 'debug')
             try:
                 call(cmdstring, logger)
@@ -61,7 +61,7 @@ def trim(input1, input2, out_path, crop, logger, Config):
 
         else:
             crop_string = 'CROP:' + crop
-            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar SE " + input1 + " " + clean_filenames + " " + crop_string + " " + illumina_string + " " + sliding_string + " " + minlen_string
+            cmdstring = "java -jar " + ConfigSectionMap("bin_path", Config)['binbase'] + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "trimmomatic-0.36.jar SE " + input1 + " " + clean_filenames + " " + crop_string + " " + illumina_string + " " + sliding_string + " " + minlen_string + + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
             keep_logging(cmdstring, cmdstring, logger, 'debug')
             try:
                 call(cmdstring, logger)

@@ -613,26 +613,26 @@ def generate_indel_paste_command():
     subprocess.call(["sed -i 's/reference_unmapped_position/0/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     subprocess.call(["sed -i 's/reference_allele/1/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     subprocess.call(["sed -i 's/VARIANT/1TRUE/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_QUAL_DP_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_DP_QUAL_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_QUAL_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_DP_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_QUAL_DP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_DP_QUAL/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_QUAL/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ_DP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_QUAL_DP_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_DP_QUAL_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_QUAL_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_DP_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_proximate_SNP/7/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_QUAL_DP/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_DP_QUAL/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_QUAL/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ_DP/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/LowFQ/5/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
-    subprocess.call(["sed -i 's/HighFQ/6/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL_DP_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP_QUAL_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL_DP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP_QUAL/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL_DP_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP_QUAL_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_proximate_SNP/7/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL_DP/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP_QUAL/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF/5/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF/6/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir
     call("%s" % remove_unwanted_text, logger)
 
@@ -2104,7 +2104,7 @@ def annotated_snp_matrix():
                     'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
                     logger, 'exception')
 
-    print locus_tag_to_strand
+    #print locus_tag_to_strand
 
     """ Start of Merging Step:
     
@@ -2261,7 +2261,7 @@ def annotated_snp_matrix():
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
 
     """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
-    header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos"
+    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
     for sample in final_merge_anno_file.samples:
         # header_print_string = header_print_string + "," + sample
         header_print_string = header_print_string + "\t" + sample
@@ -2664,7 +2664,7 @@ def annotated_snp_matrix():
                                               third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
                                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
 
-                ann_string = first_allele_ann_string_split + second_allele_ann_string_split + new_third_allele_ann_string
+                ann_string = new_first_allele_ann_string + new_second_allele_ann_string + new_third_allele_ann_string
 
                 #print ann_string
 
@@ -2683,9 +2683,15 @@ def annotated_snp_matrix():
         if "-" in tag:
             tagsplit = tag.split('-')
             for i in tagsplit:
-                strandness = strandness + locus_tag_to_strand[i] + "/"
+                if i in locus_tag_to_strand.keys():
+                    strandness = strandness + locus_tag_to_strand[i] + "/"
+                else:
+                    strandness = strandness + "Null" + "/"
         else:
-            strandness = strandness + locus_tag_to_strand[tag]
+            if tag in locus_tag_to_strand.keys():
+                strandness = strandness + locus_tag_to_strand[tag]
+            else:
+                strandness = strandness + "Null"
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
         print_string_phage = print_string
 
@@ -2711,11 +2717,43 @@ def annotated_snp_matrix():
         # Replace code at Phage Positions with -2
         if str(variants.POS) in functional_filter_pos_array:
             code_string_array = code_string.split(',')
-            code_string = ""
-            for i in code_string_array:
-                code_string = code_string + "," + "-2"
 
 
+
+            for (i, item) in enumerate(code_string_array):
+                if item == "0":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "1":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "2":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "3":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "4":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-1":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-2":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-3":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-4":
+                    code_string_array[i] = "-2"
+            code_string = ','.join(code_string_array)
+            # code_string = ""
+            # for i in code_string_array:
+            #     code_string = code_string + "-2" + ","
+
+        # if str(variants.POS) == "591226":
+        #     print str(code_string)
         final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
         final_allele_string = final_allele_string.replace(',|', '|')
         # final_allele_string = final_allele_string.replace(',;,', ':::')
@@ -2742,8 +2780,12 @@ def annotated_snp_matrix():
         code_string_array = code_string.split(',')
         gt_string_array = gt_string[1:].split(',')
         # print code_string_array
-        # print gt_string_array
+        #print gt_string[0]
+        if str(variants.POS) == "591226":
+            print len(gt_string_array)
         for i in gt_string_array:
+            if str(variants.POS) == "591226":
+                print str(code_string_array[count])
             if str(code_string_array[count]) == "0" or str(code_string_array[count]) == "1" or str(code_string_array[count]) == "3":
                 ntd_string = ntd_string + "\t" + str(i)
                 ntd_string_phage = ntd_string_phage + "\t" + str(i)
@@ -2752,12 +2794,18 @@ def annotated_snp_matrix():
                 ntd_string_phage = ntd_string_phage + "\t" + "-"
             # Changing Functional class filter code to -2 from 2 and replacing variant allele with N: 2018-12-04
             if str(code_string_array[count]) == "2" or str(code_string_array[count]) == "-2" or str(code_string_array[count]) == "-3" or str(code_string_array[count]) == "-4":
+
                 ntd_string = ntd_string + "\t" + "N"
             if str(code_string_array[count]) == "2":
                 ntd_string_phage = ntd_string_phage + "\t" + "N"
             if str(code_string_array[count]) == "-2":
                 ntd_string_phage = ntd_string_phage + "\t" + str(i)
             count += 1
+
+
+        # ntd_string_array = ntd_string.split('\t')
+        # if len(ntd_string_array) != 5:
+        #     print str(variants.POS)
 
         # """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
         # mask_fq_mq_positions = []
@@ -2769,20 +2817,27 @@ def annotated_snp_matrix():
         #
         # print "Length of mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
 
-        """ Mask Phage positions and LowFQ/MQ positions in SNP_matrix_allele_new.csv. This is the default matrix. """
-        if str(variants.POS) in functional_filter_pos_array:
-            ntd_string_array = ntd_string.split('\t')
-            ntd_string = ""
-            for i in ntd_string_array:
-                ntd_string = ntd_string + "\t" + "N"
-            #print ntd_string
+        # """ Mask Phage positions and LowFQ/MQ positions in SNP_matrix_allele_new.csv. This is the default matrix. """
+        # if str(variants.POS) in functional_filter_pos_array:
+        #     ntd_string_array = ntd_string.split('\t')
+        #     ntd_string = ""
+        #     #print ntd_string_array
+        #     for i in ntd_string_array:
+        #         ntd_string = ntd_string + "\t" + "N"
+        #     ntd_string_array = ntd_string.split('\t')
+        #     #print ntd_string_array
+        #
+        #     #print ntd_string
+        #
+        # if str(variants.POS) in mask_fq_mq_positions:
+        #     ntd_string_array = ntd_string.split('\t')
+        #     ntd_string = ""
+        #     #print len(ntd_string_array)
+        #     for i in ntd_string_array[1:]:
+        #         ntd_string = ntd_string + "\t" + "N"
+        #     ntd_string_array = ntd_string.split('\t')
 
-        if str(variants.POS) in mask_fq_mq_positions:
-            ntd_string_array = ntd_string.split('\t')
-            ntd_string = ""
-            for i in ntd_string_array:
-                ntd_string = ntd_string + "\t" + "N"
-            #print ntd_string
+
 
         """ Generate a print_string for each of the matrix - SNP_matrix_allele_new.csv and SNP_matrix_allele_phage.csv """
         print_string = print_string + ntd_string + "\n"
@@ -2805,7 +2860,7 @@ def annotated_snp_matrix():
 
 ######################################3
     """ Indel matrix """
-    header_print_string = "Type of SNP at POS > ALT; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos"
+    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
     for sample in final_merge_anno_file.samples:
         # header_print_string = header_print_string + "," + sample
@@ -2817,6 +2872,20 @@ def annotated_snp_matrix():
     fp_allele = open("%s/Indel_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
+
+    """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
+    mask_fq_mq_positions = []
+    for key in position_indel_label.keys():
+        label_sep_array = position_indel_label[key].split(',')
+        for i in label_sep_array:
+            if "LowAF" in i:
+                if key not in mask_fq_mq_positions:
+                    mask_fq_mq_positions.append(key)
+            if i == "HighAF":
+                if key not in mask_fq_mq_positions:
+                    mask_fq_mq_positions.append(key)
+
+    print "Length of indel mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
 
     for variants in VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         print_string = ""
@@ -2856,8 +2925,8 @@ def annotated_snp_matrix():
         code_string = code_string.replace('HighAF_DP_QUAL', '2')
         code_string = code_string.replace('HighAF_QUAL', '2')
         code_string = code_string.replace('HighAF_DP', '2')
-        code_string = code_string.replace('LowAF', '2')
-        code_string = code_string.replace('HighAF', '2')
+        code_string = code_string.replace('LowAF', '-3')
+        code_string = code_string.replace('HighAF', '-4')
 
         if str(variants.POS) in indel_core_positions:
             code_string = code_string.replace('VARIANT', '1')
@@ -2937,213 +3006,238 @@ def annotated_snp_matrix():
             else:
                 ann_string = ";None"
 
-                # SNP Matrix Bug
-                ann_string_split = ann_string.split(';')
-                # print len(ann_string_split)
-                if len(ann_string_split) == 3:
-                    first_allele_ann_string_split = ann_string_split[1].split('|')
-                    second_allele_ann_string_split = ann_string_split[2].split('|')
-                    # if "KPNIH1_26205" in first_allele_ann_string_split:
-                    #     #print len(first_allele_ann_string_split)
-                    #     print ann_string
-                    if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10:
-                        ann_string = ann_string
-                    elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10:
-                        # if "KPNIH1_26205" in first_allele_ann_string_split:
-                        #     print len(first_allele_ann_string_split)
-                        if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
-                            prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
-                        else:
-                            prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                        new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
-                                                      first_allele_ann_string_split[1] + "|" + \
-                                                      first_allele_ann_string_split[2] + "|" + \
-                                                      first_allele_ann_string_split[4] + "|" + \
-                                                      first_allele_ann_string_split[9] + "|" + \
-                                                      first_allele_ann_string_split[10] + "|" + \
-                                                      first_allele_ann_string_split[11] + "|" + \
-                                                      first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+        # SNP Matrix Bug
+        ann_string_split = ann_string.split(';')
+        # print len(ann_string_split)
+        if len(ann_string_split) == 3:
+            first_allele_ann_string_split = ann_string_split[1].split('|')
+            second_allele_ann_string_split = ann_string_split[2].split('|')
+            # if "USA300HOU_2368" in first_allele_ann_string_split:
+            #     #print len(first_allele_ann_string_split)
+            #     print ann_string
+            if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10:
+                ann_string = ann_string
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10:
+                # if "KPNIH1_26205" in first_allele_ann_string_split:
+                #     print len(first_allele_ann_string_split)
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
 
-                        ann_string = new_first_allele_ann_string + str(ann_string_split[2])
+                ann_string = new_first_allele_ann_string + str(ann_string_split[2])
 
-                    elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10:
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10:
 
-                        if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
-                            prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
-                        else:
-                            prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                        new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
-                                                       second_allele_ann_string_split[1] + "|" + \
-                                                       second_allele_ann_string_split[2] + "|" + \
-                                                       second_allele_ann_string_split[4] + "|" + \
-                                                       second_allele_ann_string_split[9] + "|" + \
-                                                       second_allele_ann_string_split[10] + "|" + \
-                                                       second_allele_ann_string_split[11] + "|" + \
-                                                       second_allele_ann_string_split[
-                                                           13] + "|" + prod + "|" + prod + ";"
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                               second_allele_ann_string_split[1] + "|" + \
+                                               second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
+                                               second_allele_ann_string_split[9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[
+                                                   13] + "|" + prod + "|" + prod + ";"
 
-                        ann_string = str(ann_string_split[1]) + new_second_allele_ann_string
-                    elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10:
-                        # print ann_string
+                ann_string = str(ann_string_split[1]) + new_second_allele_ann_string
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10:
+                # print ann_string
 
-                        if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
-                            prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
-                        else:
-                            prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                        new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
-                                                      first_allele_ann_string_split[1] + "|" + \
-                                                      first_allele_ann_string_split[2] + "|" + \
-                                                      first_allele_ann_string_split[4] + "|" + \
-                                                      first_allele_ann_string_split[9] + "|" + \
-                                                      first_allele_ann_string_split[10] + "|" + \
-                                                      first_allele_ann_string_split[11] + "|" + \
-                                                      first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # if "USA300HOU_2368" in first_allele_ann_string_split:
+                #     # print len(first_allele_ann_string_split)
+                #     print ann_string
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
 
-                        if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
-                            prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
-                        else:
-                            prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                        new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
-                                                       second_allele_ann_string_split[1] + "|" + \
-                                                       second_allele_ann_string_split[2] + "|" + \
-                                                       second_allele_ann_string_split[4] + "|" + \
-                                                       second_allele_ann_string_split[9] + "|" + \
-                                                       second_allele_ann_string_split[10] + "|" + \
-                                                       second_allele_ann_string_split[11] + "|" + \
-                                                       second_allele_ann_string_split[
-                                                           13] + "|" + prod + "|" + prod + ";"
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                               second_allele_ann_string_split[1] + "|" + \
+                                               second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
+                                               second_allele_ann_string_split[9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[
+                                                   13] + "|" + prod + "|" + prod + ";"
 
-                        ann_string = new_first_allele_ann_string + new_second_allele_ann_string
-                        # print ann_string
-                    # print ann_string
+                ann_string = new_first_allele_ann_string + new_second_allele_ann_string
+                # if "USA300HOU_2368" in first_allele_ann_string_split:
+                #     # print len(first_allele_ann_string_split)
+                #     print ann_string
+            # print ann_string
 
-                if len(ann_string_split) > 3:
-                    # ann_string = ""
-                    # print ann_string
-                    # print len(ann_string_split)
-                    first_allele_ann_string_split = ann_string_split[1].split('|')
-                    second_allele_ann_string_split = ann_string_split[2].split('|')
-                    third_allele_ann_string_split = ann_string_split[3].split('|')
-                    # print first_allele_ann_string_split
-                    # print second_allele_ann_string_split
-                    if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(
-                            third_allele_ann_string_split) == 10:
-                        ann_string = ann_string
+        if len(ann_string_split) > 3:
+            # ann_string = ""
+            # print ann_string
+            # print len(ann_string_split)
+            first_allele_ann_string_split = ann_string_split[1].split('|')
+            second_allele_ann_string_split = ann_string_split[2].split('|')
+            third_allele_ann_string_split = ann_string_split[3].split('|')
+            # print first_allele_ann_string_split
+            # print second_allele_ann_string_split
+            if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(
+                    third_allele_ann_string_split) == 10:
+                ann_string = ann_string
 
-                    elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10 and len(
-                            third_allele_ann_string_split) == 10:
-                        if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
-                            prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
-                        else:
-                            prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                        new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
-                                                      first_allele_ann_string_split[1] + "|" + \
-                                                      first_allele_ann_string_split[2] + "|" + \
-                                                      first_allele_ann_string_split[4] + "|" + \
-                                                      first_allele_ann_string_split[9] + "|" + \
-                                                      first_allele_ann_string_split[10] + "|" + \
-                                                      first_allele_ann_string_split[11] + "|" + \
-                                                      first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10 and len(
+                    third_allele_ann_string_split) == 10:
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
 
-                        ann_string = new_first_allele_ann_string + str(ann_string_split[2]) + str(ann_string_split[3])
+                ann_string = new_first_allele_ann_string + str(ann_string_split[2]) + str(ann_string_split[3])
 
-                    elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10 and len(
-                            third_allele_ann_string_split) == 10:
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10 and len(
+                    third_allele_ann_string_split) == 10:
 
-                        if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
-                            prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
-                        else:
-                            prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                        new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
-                                                       second_allele_ann_string_split[1] + "|" + \
-                                                       second_allele_ann_string_split[2] + "|" + \
-                                                       second_allele_ann_string_split[4] + "|" + \
-                                                       second_allele_ann_string_split[9] + "|" + \
-                                                       second_allele_ann_string_split[10] + "|" + \
-                                                       second_allele_ann_string_split[11] + "|" + \
-                                                       second_allele_ann_string_split[
-                                                           13] + "|" + prod + "|" + prod + ";"
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                               second_allele_ann_string_split[1] + "|" + \
+                                               second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
+                                               second_allele_ann_string_split[9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[
+                                                   13] + "|" + prod + "|" + prod + ";"
 
-                        ann_string = str(ann_string_split[1]) + new_second_allele_ann_string + str(ann_string_split[3])
+                ann_string = str(ann_string_split[1]) + new_second_allele_ann_string + str(ann_string_split[3])
 
-                    elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(
-                            third_allele_ann_string_split) > 10:
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(
+                    third_allele_ann_string_split) > 10:
 
-                        if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
-                            prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
-                        else:
-                            prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
-                        new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
-                                                      third_allele_ann_string_split[1] + "|" + \
-                                                      third_allele_ann_string_split[2] + "|" + \
-                                                      third_allele_ann_string_split[4] + "|" + \
-                                                      third_allele_ann_string_split[9] + "|" + \
-                                                      third_allele_ann_string_split[10] + "|" + \
-                                                      third_allele_ann_string_split[11] + "|" + \
-                                                      third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
+                    prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
+                else:
+                    prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                                              third_allele_ann_string_split[1] + "|" + \
+                                              third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + \
+                                              third_allele_ann_string_split[9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + \
+                                              third_allele_ann_string_split[11] + "|" + \
+                                              third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
 
-                        ann_string = str(ann_string_split[1]) + str(ann_string_split[2]) + new_third_allele_ann_string
+                ann_string = str(ann_string_split[1]) + str(ann_string_split[2]) + new_third_allele_ann_string
 
-                    elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10 and len(
-                            third_allele_ann_string_split) > 10:
-                        # print ann_string
-                        if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
-                            prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
-                        else:
-                            prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                        new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
-                                                      first_allele_ann_string_split[1] + "|" + \
-                                                      first_allele_ann_string_split[2] + "|" + \
-                                                      first_allele_ann_string_split[4] + "|" + \
-                                                      first_allele_ann_string_split[9] + "|" + \
-                                                      first_allele_ann_string_split[10] + "|" + \
-                                                      first_allele_ann_string_split[11] + "|" + \
-                                                      first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10 and len(
+                    third_allele_ann_string_split) > 10:
+                # print ann_string
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
 
-                        if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
-                            prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
-                        else:
-                            prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                        new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
-                                                       second_allele_ann_string_split[1] + "|" + \
-                                                       second_allele_ann_string_split[2] + "|" + \
-                                                       second_allele_ann_string_split[4] + "|" + \
-                                                       second_allele_ann_string_split[9] + "|" + \
-                                                       second_allele_ann_string_split[10] + "|" + \
-                                                       second_allele_ann_string_split[11] + "|" + \
-                                                       second_allele_ann_string_split[
-                                                           13] + "|" + prod + "|" + prod + ";"
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                           second_allele_ann_string_split[1] + "|" + \
+                                           second_allele_ann_string_split[2] + "|" + \
+                                           second_allele_ann_string_split[4] + "|" + \
+                                           second_allele_ann_string_split[9] + "|" + \
+                                           second_allele_ann_string_split[10] + "|" + \
+                                           second_allele_ann_string_split[11] + "|" + \
+                                           second_allele_ann_string_split[
+                                               13] + "|" + prod + "|" + prod + ";"
 
-                        if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
-                            prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
-                        else:
-                            prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
-                        new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
-                                                      third_allele_ann_string_split[1] + "|" + \
-                                                      third_allele_ann_string_split[2] + "|" + \
-                                                      third_allele_ann_string_split[4] + "|" + \
-                                                      third_allele_ann_string_split[9] + "|" + \
-                                                      third_allele_ann_string_split[10] + "|" + \
-                                                      third_allele_ann_string_split[11] + "|" + \
-                                                      third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
+                    prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
+                else:
+                    prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                                              third_allele_ann_string_split[1] + "|" + \
+                                              third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + \
+                                              third_allele_ann_string_split[9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + \
+                                              third_allele_ann_string_split[11] + "|" + \
+                                              third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
 
-                        ann_string = first_allele_ann_string_split + second_allele_ann_string_split + new_third_allele_ann_string
+                ann_string = new_first_allele_ann_string + new_second_allele_ann_string + new_third_allele_ann_string
 
-                        # print ann_string
+                # print ann_string
+
+        ann_string_split = ann_string.split(';')
+        for i in ann_string_split:
+            if len(i.split('|')) != 10 and len(i.split('|')) != 1:
+                #ann_string = ";"
+                #i_split_array = i.split('|')
+                #print '|'.join(i_split_array[:10])
+                print ann_string
 
 
+    #print_string = print_string + ann_string
+    #print_string = print_string + " locus_tag=" + tag + ann_string
+        
 
-
-        #print_string = print_string + ann_string
-        #print_string = print_string + " locus_tag=" + tag + ann_string
         strandness = " strand="
         if "-" in tag:
             tagsplit = tag.split('-')
             for i in tagsplit:
-                strandness = strandness + locus_tag_to_strand[i] + "/"
+                if i in locus_tag_to_strand.keys():
+                    strandness = strandness + locus_tag_to_strand[i] + "/"
+                else:
+                    strandness = strandness + "Null" + "/"
         else:
-            strandness = strandness + locus_tag_to_strand[tag]
+            if tag in locus_tag_to_strand.keys():
+                strandness = strandness + locus_tag_to_strand[tag]
+            else:
+                strandness = strandness + "Null"
+
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
+
+
+
+
+
 
         gt_string = ""
         for gt in variants.gt_bases:
@@ -3154,7 +3248,12 @@ def annotated_snp_matrix():
             gt_string = gt_string + "," + gt
         gt_string = gt_string.replace('.', variants.REF)
 
-
+        """Replacing Phage/Functional filter position code"""
+        if str(variants.POS) in functional_filter_pos_array:
+            code_string_array = code_string.split(',')
+            code_string = ""
+            for i in code_string_array:
+                code_string = code_string + "," + "-2"
 
         final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
         final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
@@ -3386,13 +3485,11 @@ if __name__ == '__main__':
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
         tabix(files_for_tabix, "vcf", logger, Config)
 
-<<<<<<< HEAD
         # # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
-=======
-        # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
+
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
+
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
 
         # If Phaster Summary file doesn't exist in reference genome folder
@@ -3429,51 +3526,6 @@ if __name__ == '__main__':
         make_sure_path_exists(core_vcf_fasta_dir)
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
-
-        # 06/05 Moving this to variant_call.py
-        # #Parse Phaster results file to extract phage region.
-        # if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-        #     keep_logging('Preparing Functional class filters\n', 'Preparing Functional class filters\n', logger,
-        #                  'info')
-        #     functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
-        #     f1 = open(functional_class_filter_positions, 'w+')
-        #     if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
-        #         phage_region_positions = parse_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
-        #         with open(phage_region_positions, 'rU') as fp:
-        #             for line in fp:
-        #                 f1.write(line)
-        #         fp.close()
-        #     if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
-        #         # Find repeat regions in reference genome
-        #         repeat_region_positions = nucmer_repeat(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
-        #         with open(repeat_region_positions, 'rU') as fp:
-        #             for line in fp:
-        #                 f1.write(line)
-        #         fp.close()
-        #     if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
-        #         # Mask custom region/Positions
-        #         if ConfigSectionMap("functional_filters", Config)['mask_file']:
-        #             mask_file = ConfigSectionMap("functional_filters", Config)['mask_file']
-        #             mask_extension = os.path.splitext(mask_file)[1]
-        #             if mask_extension == ".bed":
-        #                 mask_positions_file = mask_regions(mask_file, args.filter2_only_snp_vcf_dir, logger, Config)
-        #                 keep_logging(
-        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        # logger, 'info')
-        #             else:
-        #                 #mask_positions_file = mask_file
-        #                 os.system("cp %s %s/mask_positions.txt" % (mask_file, args.filter2_only_snp_vcf_dir))
-        #                 mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
-        #                 keep_logging(
-        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        # 'Mask positions in this file %s will be filtered out' % mask_positions_file,
-        # logger, 'info')
-        #             with open(mask_positions_file   , 'rU') as fp:
-        #                 for line in fp:
-        #                     f1.write(line)
-        #             fp.close()
-        #     f1.close()
 
         # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
         core_prep_indel(core_vcf_fasta_dir)
@@ -3685,10 +3737,6 @@ if __name__ == '__main__':
         call("%s" % prepare_ref_var_consensus_input_cmd, logger)
         call("%s" % prepare_var_consensus_input_cmd, logger)
         call("%s" % prepare_allele_var_consensus_input_cmd, logger)
-<<<<<<< HEAD
-=======
-        #call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
 
 
@@ -3721,15 +3769,9 @@ if __name__ == '__main__':
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')
 
-<<<<<<< HEAD
-        # create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
-        #
-        # extract_only_ref_variant_fasta_from_reference_allele_variant()
-=======
-        #create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
+        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
 
-        #extract_only_ref_variant_fasta_from_reference_allele_variant()
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
+        extract_only_ref_variant_fasta_from_reference_allele_variant()
 
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)

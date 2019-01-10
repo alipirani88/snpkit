@@ -615,11 +615,9 @@ if __name__ == '__main__':
         call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_prep_logs_folder, log_unique_time, args.analysis_name), logger)
         make_sure_path_exists(core_temp_dir)
         keep_logging('\nCopying vcf files to %s\n' % core_temp_dir, '\nCopying vcf files to %s\n' % core_temp_dir, logger, 'info')
-<<<<<<< HEAD
-        cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s/*/*_vcf_results/*_indel_gatk.vcf %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
-=======
-        cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
+        cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s/*/*_vcf_results/*_indel_gatk.vcf %s/*/*_stats_results/*_depth_* %s/*/*_stats_results/*_markduplicates_metrics %s/*/*_stats_results/*_markduplicates_metrics %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
+
+
         # cp_command = "cp %s/*/*_filter2_indel_final.vcf %s/*/*_aln_mpileup_raw.vcf %s/*/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*filter2_final.vcf* %s/*/*vcf_no_proximate_snp.vcf* %s/*/*array %s/*/*unmapped.bed_positions %s" % (
         # args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder,
         # args.output_folder, args.output_folder, core_temp_dir)
@@ -635,18 +633,28 @@ if __name__ == '__main__':
         """ Set the number of cores variable for Parallel-local mode """
         num_cores = multiprocessing.cpu_count()
         results = Parallel(n_jobs=num_cores)(delayed(run_command_list)(i) for i in gzipped_command_list)
+        filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
 
         """ Generate a custom vcf file list to process for core prep step. If file is not provided, it will consider all the samples in output folder"""
         """ Perform Sanity check to confirm that variant calling results are present in core temp folder """
         if args.filenames:
+            # fix this bug
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
             list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
             keep_logging('\nNumber of final variant call vcf files: %s\n' % len(list_of_vcf_files), '\nNumber of final variant call vcf files: %s\n' % len(list_of_vcf_files), logger, 'info')
             #keep_logging('Make sure the number of final variant call vcf files looks correct', 'Make sure the number of final variant call vcf files looks correct', logger, 'info')
             #keep_logging('Running core_prep on these files...', 'Running core_prep on these files...', logger, 'info')
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_vcf_files:
-                    out_fp.write(os.path.basename(file)+'\n')
+                for file in list_of_files:
+                    #file = file.splitlines()
+                    print file
+                    depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'"
+                    proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
+                    (out2, err2) = proc.communicate()
+                    print file
+                    cov_depth = int(float(out2.strip()))
+                    if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                        out_fp.write(os.path.basename(file) + '\n')
             out_fp.close()
         else:
             keep_logging('\nChecking if all the variant calling results exists in %s\n' % core_temp_dir, '\nChecking if all the variant calling results exists in %s\n' % core_temp_dir, logger, 'info')
@@ -660,7 +668,13 @@ if __name__ == '__main__':
                 #keep_logging('Running core_prep on these files...', 'Running core_prep on these files...', logger, 'info')
                 with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                     for file in list_of_files.splitlines():
-                        out_fp.write(os.path.basename(file)+'\n')
+                        depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'"
+                        proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
+                        (out2, err2) = proc.communicate()
+                        print file
+                        cov_depth = int(float(out2.strip()))
+                        if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                            out_fp.write(os.path.basename(file)+'\n')
                 out_fp.close()
             except:
                 keep_logging('Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
@@ -670,13 +684,8 @@ if __name__ == '__main__':
 
 
 
-            # list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
-            # list_of_files = subprocess.check_output(list_cmd, shell=True)
-            # print list_of_files
-            # with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-            #     for file in list_of_files.splitlines():
-            #         out_fp.write(os.path.basename(file)+'\n')
-            # out_fp.close()
+
+
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         core_prep_pipeline_cmd = run_core_prep_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger, config_file)
         core_All_cmds.append(core_prep_pipeline_cmd)
@@ -695,53 +704,6 @@ if __name__ == '__main__':
         core_results_dir = args.output_folder + "/%s_core_results/" % log_unique_time
         make_sure_path_exists(core_results_dir)
 
-<<<<<<< HEAD
-=======
-        # Commented Out: 2018-10-23
-        # if args.filenames:
-        #     list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
-        #     list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
-        #     list_of_label_files = []
-        #
-        #     for i in list_of_vcf_files:
-        #         list_of_label_files.append(i + '_positions_label')
-        #     if len(list_of_label_files) == len(list_of_vcf_files):
-        #         for i in list_of_label_files:
-        #             if os.stat("%s/%s" % (core_temp_dir, i)).st_size == 0:
-        #                 keep_logging('The file {} is empty. Please rerun core_prep step again.\n'.format(i),
-        #                              'The file {} is empty. Please rerun core_prep step again.\n'.format(i), logger,
-        #                              'exception')
-        #                 exit()
-        #     else:
-        #         keep_logging('Problem in core_prep results. Rerun the core_prep step\n',
-        #                      'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
-        #         exit()
-        #
-        #     with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-        #         for file in list_of_vcf_files:
-        #             out_fp.write(os.path.basename(file) + '\n')
-        #     out_fp.close()
-        # else:
-        #     list_of_label_files = glob.glob("%s/*_no_proximate_snp.vcf_positions_label" % core_temp_dir)
-        #     list_of_vcf_files = glob.glob("%s/*_filter2_final.vcf_no_proximate_snp.vcf" % core_temp_dir)
-        #     # print sorted(list_of_vcf_files)
-        #     if len(list_of_label_files) == len(list_of_vcf_files):
-        #         for i in list_of_label_files:
-        #             if os.stat(i).st_size == 0:
-        #                 keep_logging('The file {} is empty. Please rerun core_prep step again.\n'.format(i),
-        #                              'The file {} is empty. Please rerun core_prep step again.\n'.format(i), logger,
-        #                              'exception')
-        #                 exit()
-        #     else:
-        #         keep_logging('Problem in core_prep results. Rerun the core_prep step\n',
-        #                      'Problem in core_prep results. Rerun the core_prep step\n', logger, 'exception')
-        #         exit()
-        #     with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-        #         for file in sorted(list_of_vcf_files):
-        #             out_fp.write(os.path.basename(file) + '\n')
-        #     out_fp.close()
-
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)[
             'ref_name']
 
@@ -800,12 +762,9 @@ if __name__ == '__main__':
                     fp.close()
             f1.close()
 
-<<<<<<< HEAD
         copy_phage_results = "cp %s/summary.txt %s/phage_region_positions.txt %s/detail.txt" % (os.path.dirname(reference), os.path.dirname(reference), os.path.dirname(reference))
         call(copy_phage_results, logger)
 
-=======
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
         core_pipeline_cmd = run_core_analysis(core_temp_dir, reference, args.analysis_name, log_unique_time, args.cluster, logger,
                           core_results_dir, config_file)
         core_All_cmds.append(core_pipeline_cmd)
@@ -910,15 +869,12 @@ if __name__ == '__main__':
                 out.write(cmds + '\n')
         out.close()
 
-<<<<<<< HEAD
         keep_logging('Running: %s\n' % combine_job_name,
                      'Running: %s\n' % combine_job_name,
                      logger, 'info')
 
         call("qsub %s" % combine_job_name, logger)
 
-=======
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
 
     elif "core_prep" in args.steps:
         """ Set Up Core Prep logs folder/logger object, cluster mode and copy config files to it"""

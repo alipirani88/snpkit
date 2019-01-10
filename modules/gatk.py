@@ -218,7 +218,7 @@ def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Conf
 
 def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, logger, Config):
     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
-    cmd = "java -jar %s -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 5 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --minBaseQuality 15" % (base_cmd, reference, out_path, analysis_name, out_sorted_bam)
+    cmd = "java -jar %s -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites" % (base_cmd, reference, out_path, analysis_name, out_sorted_bam)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)

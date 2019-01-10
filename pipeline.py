@@ -170,6 +170,7 @@ def pipeline(args, logger):
         keep_logging('START: Generating Statistics Reports', 'START: Generating Statistics Reports', logger, 'info')
         alignment_stats_file = alignment_stats(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         vcf_stats_file = vcf_stats(final_raw_vcf, args.output_folder, args.analysis_name, logger, Config)
+        picard_stats_file = picardstats(out_sorted_bam, args.output_folder, args.analysis_name, args.index, logger, Config)
         #qualimap_report = qualimap(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         keep_logging('END: Generating Statistics Reports', 'END: Generating Statistics Reports', logger, 'info')
 
@@ -185,9 +186,10 @@ def pipeline(args, logger):
 
     if len(steps_list) == 1:
         if steps_list[0] == "coverage_depth_stats":
-            clean()
-            out_sam = align_reads()
-            out_sorted_bam = post_align()
+            #clean()
+            #out_sam = align_reads()
+            #out_sorted_bam = post_align()
+            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             gatk_DepthOfCoverage_file = coverage_depth_stats()
 
         if steps_list[0] == "filter":
@@ -200,7 +202,22 @@ def pipeline(args, logger):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             if os.path.exists(out_sorted_bam) and os.path.exists(final_raw_vcf) and os.path.exists(gatk_depth_of_coverage_file) and os.path.exists(final_raw_vcf_mpileup):
                 filter(gatk_depth_of_coverage_file)
-                #stats()
+                stats()
+            else:
+                keep_logging('The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files\n', 'The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files', logger, 'exception')
+                exit()
+
+        if steps_list[0] == "stats":
+            #Sanity Check Post-varcall vcf and other files here
+            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
+            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
+            final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
+            if not os.path.exists(gatk_depth_of_coverage_file):
+                print gatk_depth_of_coverage_file
+                gatk_depth_of_coverage_file = coverage_depth_stats()
+            if os.path.exists(out_sorted_bam) and os.path.exists(final_raw_vcf) and os.path.exists(gatk_depth_of_coverage_file) and os.path.exists(final_raw_vcf_mpileup):
+                stats()
             else:
                 keep_logging('The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files\n', 'The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files', logger, 'exception')
                 exit()
@@ -217,6 +234,7 @@ def pipeline(args, logger):
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             stats()
+
         elif steps_list[0] == "bedtools":
                 out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
                 only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
@@ -285,7 +303,7 @@ def pipeline(args, logger):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
-            #stats()
+            stats()
         elif steps_list[0] == "stats":
             #Sanity check BAM and vcf files
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
@@ -453,12 +471,13 @@ def cleanup(args, logger):
         keep_logging('Removing Intermediate Temporary files', 'Removing Intermediate Temporary files', logger, 'info')
         os.chdir(args.output_folder)
         os.system("rm %s/*.fq.gz %s/*.sam %s/*_aln.bam %s/*_marked.bam %s/*_marked.bai %s/*_unmapped.bed %s/*_temp_paste_file.txt" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder))
-    make_sure_path_exists("%s/%s_stats_results" % (args.output_folder, args.analysis_name))
-    os.system("mv %s/*depth_of_coverage* %s/*_stats %s/*_markduplicates_metrics %s/*_values.txt %s/*_INFO.txt %s/%s_stats_results" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
-    make_sure_path_exists("%s/%s_logs" % (args.output_folder, args.analysis_name))
-    os.system("mv %s/*.log.txt %s/%s_logs" % (args.output_folder, args.output_folder, args.analysis_name))
-    make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
-    os.system("mv %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+        make_sure_path_exists("%s/%s_stats_results" % (args.output_folder, args.analysis_name))
+        os.system("mv %s/*depth_of_coverage* %s/*_stats %s/*_markduplicates_metrics %s/*_values.txt %s/*_INFO.txt %s/*_collect_alignment_metrics.txt %s/*_collect_wgs_metrics.txt  %s/*_gc_bias_metrics.txt %s/%s_stats_results" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+        make_sure_path_exists("%s/%s_logs" % (args.output_folder, args.analysis_name))
+        os.system("mv %s/*.log.txt %s/%s_logs" % (args.output_folder, args.output_folder, args.analysis_name))
+        make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
+        os.system("mv %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+
 
 # Start of Main Method/Pipeline
 if __name__ == '__main__':
@@ -481,11 +500,7 @@ if __name__ == '__main__':
     files_to_delete = []
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
-<<<<<<< HEAD
-    #pipeline(args, logger)
-=======
     pipeline(args, logger)
->>>>>>> 7b2c92a5aa76895d2a815d185b3d861945add2be
     cleanup(args, logger)
     keep_logging('End: Pipeline', 'End: Pipeline', logger, 'info')
     time_taken = datetime.now() - start_time_2
