@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c3112279-5bdf-4974-a669-714b164d9334" name="Default" comment="" />
+    <list default="true" id="c3112279-5bdf-4974-a669-714b164d9334" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <ignored path="variant_calling_pipeline.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -19,16 +21,48 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="core_pipeline.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="variant_call.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/variant_call.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="4872">
+              <caret line="249" column="48" selection-start-line="249" selection-start-column="48" selection-end-line="249" selection-end-column="48" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="core_pipeline.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="407">
-              <caret line="2736" column="43" lean-forward="true" selection-start-line="2733" selection-start-column="8" selection-end-line="2736" selection-end-column="43" />
+            <state relative-caret-position="167">
+              <caret line="8" column="73" selection-start-line="8" selection-start-column="73" selection-end-line="8" selection-end-column="73" />
+              <folding>
+                <element signature="e#0#31#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="picard.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/modules/picard.py">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="FIRST">
+              <first_editor relative-caret-position="259">
+                <caret line="289" selection-start-line="289" selection-end-line="289" />
+              </first_editor>
+              <second_editor />
             </state>
           </provider>
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
@@ -37,38 +71,59 @@
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/parse_vcf_for_reason_individual_jobs.py" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/reason_job.py" />
         <option value="$PROJECT_DIR$/README_detail.md" />
-        <option value="$PROJECT_DIR$/variant_call.py" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/extract_only_ref_variant_fasta.py" />
-        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/pipeline.py" />
         <option value="$PROJECT_DIR$/config" />
         <option value="$PROJECT_DIR$/docs/source/index_backup" />
         <option value="$PROJECT_DIR$/docs/source/index.rmd" />
         <option value="$PROJECT_DIR$/docs/source/index.rst" />
         <option value="$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+        <option value="$PROJECT_DIR$/variant_call.py" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="2" />
-    <option name="y" value="28" />
-    <option name="width" value="2558" />
-    <option name="height" value="1239" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="y" value="23" />
+    <option name="width" value="1440" />
+    <option name="height" value="827" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="ProjectPane" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="variant_calling_pipeline" type="b2602c69:ProjectViewProjectNode" />
+              <item name="variant_calling_pipeline" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="variant_calling_pipeline" type="b2602c69:ProjectViewProjectNode" />
+              <item name="variant_calling_pipeline" type="462c0819:PsiDirectoryNode" />
+              <item name="modules" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="variant_calling_pipeline" type="b2602c69:ProjectViewProjectNode" />
+              <item name="variant_calling_pipeline" type="462c0819:PsiDirectoryNode" />
+              <item name="modules" type="462c0819:PsiDirectoryNode" />
+              <item name="variant_diagnostics" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="options.lastSelected" value="configurable.group.build" />
-    <property name="options.splitter.main.proportions" value="0.3" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="options.lastSelected" value="configurable.group.build" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.splitter.main.proportions" value="0.3" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -260,27 +315,27 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="2" y="28" width="2558" height="1239" extended-state="0" />
+    <frame x="0" y="23" width="2560" height="1322" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.089030206" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.10881652" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="right" id="R Packages" />
-      <window_info anchor="right" id="R Graphics" />
+      <window_info anchor="right" id="R Packages" order="3" />
+      <window_info anchor="right" id="R Graphics" order="3" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info anchor="bottom" id="Version Control" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Application Servers" order="7" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="Changes" order="7" />
-      <window_info anchor="bottom" id="Application Servers" order="7" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Find" order="1" />
@@ -298,28 +353,168 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="57372">
-          <caret line="2736" column="43" selection-start-line="2736" selection-start-column="43" selection-end-line="2736" selection-end-column="43" />
+        <state relative-caret-position="4872">
+          <caret line="249" column="48" selection-start-line="249" selection-start-column="48" selection-end-line="249" selection-end-column="48" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="6069">
+            <caret line="289" selection-start-line="289" selection-end-line="289" />
+          </first_editor>
+          <second_editor />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
-      <provider selected="true" editor-type-id="text-editor" />
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="42">
+          <caret line="8" column="73" lean-forward="true" selection-start-line="8" selection-start-column="73" selection-end-line="8" selection-end-column="73" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
-      <provider selected="true" editor-type-id="text-editor" />
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4872">
+          <caret line="249" column="48" lean-forward="true" selection-start-line="249" selection-start-column="48" selection-end-line="249" selection-end-column="48" />
+        </state>
+      </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
-      <provider selected="true" editor-type-id="text-editor" />
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="6069">
+            <caret line="289" selection-start-line="289" selection-end-line="289" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="6069">
+            <caret line="289" selection-start-line="289" selection-end-line="289" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4872">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config_ali" />
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="6069">
+            <caret line="289" lean-forward="true" selection-start-line="289" selection-end-line="289" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor />
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor />
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5229">
+          <caret line="249" column="99" lean-forward="true" selection-start-line="249" selection-start-column="99" selection-end-line="249" selection-end-column="99" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="336">
+          <caret line="16" column="41" selection-start-line="16" selection-end-line="16" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/variant_call.py" />
+    <entry file="file://$PROJECT_DIR$/config" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/config" />
+    <entry file="file://$PROJECT_DIR$/config" />
+    <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py" />
+    <entry file="file://$PROJECT_DIR$/config_ali" />
+    <entry file="file://$PROJECT_DIR$/variant_call.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4872">
+          <caret line="249" column="48" selection-start-line="249" selection-start-column="48" selection-end-line="249" selection-end-column="48" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="259">
+            <caret line="289" selection-start-line="289" selection-end-line="289" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/modules/variant_diagnostics/core_pipeline.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="407">
-          <caret line="2736" column="43" lean-forward="true" selection-start-line="2733" selection-start-column="8" selection-end-line="2736" selection-end-column="43" />
+        <state relative-caret-position="167">
+          <caret line="8" column="73" selection-start-line="8" selection-start-column="73" selection-end-line="8" selection-end-column="73" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
         </state>
       </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/picard.py">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
   </component>
 </project>

@@ -113,9 +113,15 @@ base_cmd: FastTree
 
 [raxml]
 raxml_bin: /raxml/
+openmpi_bin: /openmpi/bin/
 # Other raxml executable available to use: raxmlHPC-PTHREADS,raxmlHPC-PTHREADS-SSE3,raxmlHPC-SSE3
-base_cmd: raxmlHPC-SSE3
+base_cmd: raxmlHPC-HYBRID-SSE3
 parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
+
+[iqtree]
+iqtree_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
+base_cmd: iqtree
+parameters: -nt AUTO -bb 1000 -m GTR+G+ASC
 
 [gubbins]
 # Change this path to wherever gubbins is located/installed. Right now, installed using conda from anaconda3 package installed in bin_group.
@@ -148,10 +154,32 @@ fq2: 0.025
 mq: 50
 # Filter variants with Variant QUAL less than the below threshold
 qual: 100
+# Filter variants with GATK QualbyDepth QD parameter; filter less than the below threshold. Currently, being used for Indel SNPS only.
+qd: 2.00
+# Filter variants with AF1 less than the below threshold
+af: 0.900
+# Filter Variants that are proximate to each other within this number of range. To turn this off, use 0(zero).
+prox: 0
+
+
+[gatk_haplotypecaller_filters]
+avg_depth: no
+# If AVG_DEPTH is yes, the below DP threshold will be ignored. Instead, LOW_DEPTH and HIGH_DEPTH filter parameter will be used.
+# Filter variants with Depth less than the below threshold
+dp: 9
+# A value of 2 means that regions with less than half of the average coverage of the entire genome will fail
+low_depth: 2
+# A value of 5 means that regions with 5x depth greater than the average coverage will fail
+high_depth: 5
+# FQ not represented in GATK Haplotype caller vcf format. Instead use AF.
+# Filter variants with MQ(Root Mean Square Quality) less than the below threshold
+mq: 50
+# Filter variants with Variant QUAL less than the below threshold
+qual: 2
 # Filter variants with AF1 less than the below threshold
 af: 0.9
-# Filter Variants that are proximate to each other
-prox: 10
+# Filter Variants that are proximate to each other within this number of range. To turn this off, use 0(zero).
+prox: 0
 
 [rna_filters]
 avg_depth: no
@@ -268,11 +296,29 @@ Ref_Name: cdiff_630.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630/
 
+[CDIFF_630_ncbi]
+# Name of reference genome fasta file.
+Ref_Name: cdiff_630.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630_ncbi/
+
 [Cdiff_VPI10463]
 # Name of reference genome fasta file.
 Ref_Name: Cdiff_VPI10463.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_VPI10463/
+
+[Cdiff_O27_R20291]
+# Name of reference genome fasta file.
+Ref_Name: Cdiff_O27_R20291.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O27_R20291/
+
+[Cdiff_O14_PH44]
+# Name of reference genome fasta file.
+Ref_Name: Cdiff_O14_PH44.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O14_PH44/
 
 [CFT073]
 # Name of reference genome fasta file.
@@ -927,3 +973,51 @@ Ref_Path: /home/apirani/bin/reference/KPC_LTACH_clusters_2/cluster_20_Rush_KPC_8
 Ref_Name: SRR3334137.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/SRR3334137/
+
+
+
+##Maddeline Helicobacter project
+[helicobacter_hepaticus_ATCC_51449]
+# Name of reference genome fasta file.
+Ref_Name: helicobacter_hepaticus_ATCC_51449.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/helicobacter_hepaticus_ATCC_51449/
+
+
+##Steph Lab Confirmation Project
+[MRSA_USA300_FPR3757]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_USA300_FPR3757.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA300_FPR3757/
+
+[MRSA_Newman]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_Newman.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_Newman/
+
+[AB030]
+# Name of reference genome fasta file.
+Ref_Name: AB030.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/AB030/
+
+
+[Steno_K279a]
+# Name of reference genome fasta file.
+Ref_Name: Steno_K279a.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Steno_K279a/
+
+[lactobacillus_crispatus_ST1]
+# Name of reference genome fasta file.
+Ref_Name: lactobacillus_crispatus_ST1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Project_Crispatus/Sequence_data/Project_mother_daughter/reference_genome/lactobacillus_crispatus_ST1/
+
+[USA500-2395]
+# Name of reference genome fasta file.
+Ref_Name: USA500-2395.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/USA500-2395/

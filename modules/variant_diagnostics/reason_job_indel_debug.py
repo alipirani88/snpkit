@@ -150,13 +150,13 @@ def get_reason():
                     st = "HighFQ"
                     if positions_mpileup_vcf[int(j)][2] < 100.00:
                         st = st + "_QUAL"
-                    if positions_mpileup_vcf[int(j)][0] < 15:
+                    if positions_mpileup_vcf[int(j)][0] < 10:
                         st = st + "_DP"
                 else:
                     st = "LowFQ"
                     if positions_mpileup_vcf[int(j)][2] < 100.00:
                         st = st + "_QUAL"
-                    if positions_mpileup_vcf[int(j)][0] < 15:
+                    if positions_mpileup_vcf[int(j)][0] < 10:
                         st = st + "_DP"
                 st = st + pst + "\n"
                 f1.write(st)

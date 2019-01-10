@@ -45,12 +45,36 @@ def make_sure_files_exists(vcf_file_array, Config, logger):
         ori_indel_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
                                        "filter2_indel_final.vcf")
 
-        if os.path.isfile(ori_unmapped_file) and os.path.isfile(ori_proximate_file) and os.path.isfile(
-                ori_variant_position_file) and os.path.isfile(ori_5bp_mpileup_file) and os.path.isfile(
-                ori_mpileup_file) and os.path.isfile(ori_filter_file) and os.path.isfile(ori_indel_file):
-            continue
+        # if os.path.isfile(ori_unmapped_file) and os.path.isfile(ori_proximate_file) and os.path.isfile(
+        #         ori_variant_position_file) and os.path.isfile(ori_5bp_mpileup_file) and os.path.isfile(
+        #         ori_mpileup_file) and os.path.isfile(ori_filter_file) and os.path.isfile(ori_indel_file):
+        #     continue
+        # else:
+        #     not_found_files.append(files)
+
+        if not os.path.isfile(ori_unmapped_file):
+            not_found_files.append(ori_unmapped_file)
+
+        elif not os.path.isfile(ori_proximate_file):
+            not_found_files.append(ori_proximate_file)
+
+        elif not os.path.isfile(ori_variant_position_file):
+            not_found_files.append(ori_variant_position_file)
+
+        elif not os.path.isfile(ori_5bp_mpileup_file):
+            not_found_files.append(ori_5bp_mpileup_file)
+
+        elif not os.path.isfile(ori_mpileup_file):
+            not_found_files.append(ori_mpileup_file)
+
+        elif not os.path.isfile(ori_filter_file):
+            not_found_files.append(ori_filter_file)
+
+        elif not os.path.isfile(ori_indel_file):
+            not_found_files.append(ori_indel_file)
         else:
-            not_found_files.append(files)
+            continue
+
     if len(not_found_files) > 0:
         for i in not_found_files:
             keep_logging('Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
@@ -93,6 +117,6 @@ def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_
     if len(found_incomplete) > 0:
         for i in found_incomplete:
             tmp_file = os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
-            keep_logging('core_prep step failed for: %s. Rerun %s.pbs' % (tmp_file, i),
-                         'core_prep step failed for: %s. Rerun %s.pbs' % (tmp_file, i), logger, 'exception')
+            keep_logging('core_prep step failed for: %s. The number of unique positions doesn\'t match. Rerun %s.pbs' % (tmp_file, i),
+                         'core_prep step failed for: %s. The number of unique positions doesn\'t match. Rerun %s.pbs' % (tmp_file, i), logger, 'exception')
         exit()
