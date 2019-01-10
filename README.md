@@ -16,7 +16,7 @@ The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads p
 - [Output files](#output-files)
 - [Customizing the config file](#customizing-the-config-file)
 - [Log](#log)
-- [Bonus Ducks](#bonus-ducks)
+- [Bonus Ducks](https://knowyourmeme.com/memes/bonus-ducks)
 
 ## Installation
 
