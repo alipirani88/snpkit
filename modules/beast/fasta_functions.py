@@ -17,13 +17,14 @@ from collections import Counter
 import re
 import os
 
-def subset_fasta(ids, fastain, fastaout):
+def subset_fasta(ids, fastain, fastaout, keep=True):
     """Creates a new fasta file with a subset of original sequences.
 
     Args:
-        idnames: List of sequence names to be extracted.
+        ids: List of sequence names to be extracted (default) or removed (change keep to False).
         fastain: Path to fasta file containing all sequences of interest.
         fastaout: Name of output fasta file containing only the sequences of interest.
+        keep: If ids is a list of sequences to keep (True) or remove (False).
 
     Output:
         Fasta file containing only the sequences of interest.
@@ -31,9 +32,14 @@ def subset_fasta(ids, fastain, fastaout):
 
     with open(fastaout, 'w') as f:
         for rec in SeqIO.parse(fastain, 'fasta'):
-            if str(rec.id) in ids:
-                f.write('>' + ids[ids.index(rec.id)] + '\n')
-                f.write(str(rec.seq) + '\n')
+            if keep:
+                if str(rec.id) in ids:
+                    f.write('>' + ids[ids.index(rec.id)] + '\n')
+                    f.write(str(rec.seq) + '\n')
+            else:
+                if str(rec.id) not in ids:
+                    f.write('>' + ids[ids.index(rec.id)] + '\n')
+                    f.write(str(rec.seq) + '\n')
 
 
 def get_fasta_subsets(csv, fasta):
@@ -267,9 +273,9 @@ def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/
     print('Writing ', invar_counts_file, ' (order: A C G T).', sep='')
     with open(invar_counts_file, 'w') as f:
         for base, count in sorted(invar_counts.items()):
-            #if base in ['A','a','C','c','G','g','T','t']:
-            print(base + ' ' + str(count))
-            f.write('%s ' % (count))
+            if base in ['A','a','C','c','G','g','T','t']:
+                print(base + ' ' + str(count))
+                f.write('%s ' % (count))
             #else:
             #    print(base + ' ' + str(count))
     return(invar_counts_file)

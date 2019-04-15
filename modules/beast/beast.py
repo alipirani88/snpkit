@@ -78,8 +78,9 @@ for xml in xmls:
     # Delete intermediate xmls
     to_remove = []
     for fname in os.listdir('.'):
-        b = re.search('.*_renamed_.*xml', fname)
-        s = fname == xml_final
+        xmlpref = re.split('/|\.', xml)[-2]
+        b = re.search(xmlpref, fname) and re.search('xml',fname)
+        s = fname == xml_final or fname == xml
         if b and not s:
             print('Removing intermediate file ' + fname + '.')
             os.remove(fname)   

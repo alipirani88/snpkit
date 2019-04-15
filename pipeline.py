@@ -288,6 +288,9 @@ def pipeline(args, logger):
         elif steps_list[0] == "varcall":
             #Sanity Check Post-aligned-BAM and Bed files here
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+            if not os.path.exists("%s.bai" % out_sorted_bam):
+                index_bam(out_sorted_bam, args.output_folder, logger, Config)
+
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()

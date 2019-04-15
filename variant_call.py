@@ -45,14 +45,28 @@ def parser():
     return parser
 
 
-""" Sanity checks and directory structure maintenance methods """
+""" Sanity checks and maintenance methods """
 def file_exists(path1):
+    """Checks if the file path exists.
+        Args:
+            path: file path
+
+        Output:
+            True, if the file path exists. False and exists if the file path is not found.
+    """
     if not os.path.isfile(path1):
         file_basename = os.path.basename(path1)
         keep_logging('The file {} does not exists. Please provide another file with full path or check the files path.\n'.format(file_basename), 'The input file {} does not exists. Please provide another file or check the files path.\n'.format(file_basename), logger, 'exception')
         exit()
 
 def make_sure_path_exists(out_path):
+    """Checks the directory path exists. If not, creates a new directory.
+        Args:
+            path: Path to Directory
+
+        Output:
+            True, if the directory exists or if not, a new directory is created.
+    """
     try:
         os.makedirs(out_path)
     except OSError as exception:
@@ -61,6 +75,17 @@ def make_sure_path_exists(out_path):
             exit()
 
 def get_filenames(dir, type, filenames, analysis, suffix):
+    """Get a list of file with specific suffix from a directory
+        Args:
+            dir: directory to the files with suffix
+            type: type of reads. PE/SE
+            filename: list of files to fetch from directory
+            analysis: unique analysis name.
+            suffix: fastq suffix.
+
+        Output:
+            True, if the file path exists. False and exists if the file path is not found.
+    """
     if not filenames:
         if not suffix:
             suffix = ".fastq.gz"
@@ -83,6 +108,16 @@ def get_filenames(dir, type, filenames, analysis, suffix):
 
 """ Methods to generate jobs for various pipeline tasks """
 def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, config_file, logger):
+    """Takes a list of files and other arguments, generate variant calling jobs.
+        Args:
+            filenames_array: list of fastq file names
+            output_folder: output directory to save the results/jobs
+            type: type of reads. PE/SE
+            reference: Reference Genome name
+
+        Output:
+            List of variant calling jobs to run/submit
+    """
     jobs_temp_dir = "%s/temp_jobs" % output_folder
     make_sure_path_exists(jobs_temp_dir)
     keep_logging('Generating cluster jobs in temporary directory %s' % jobs_temp_dir, 'Generating cluster jobs in temporary directory %s' % jobs_temp_dir, logger, 'exception')

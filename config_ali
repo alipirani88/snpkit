@@ -474,6 +474,13 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/H358/
 
 ##Ecoli Reference Genomes
 
+# ST131 reference Genome
+[EC958]
+# Name of reference genome fasta file.
+Ref_Name: EC958.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/EC958
+
 [Ecoli_CD306]
 # Name of reference genome fasta file.
 Ref_Name: Ecoli_CD306.fasta

@@ -2282,11 +2282,14 @@ def annotated_snp_matrix():
             first_part_split = filename_base.split('_R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
             first_part = re.sub("_S.*_", "", first_part)
+            # Changed on 03/15/2019
         elif "R1.fastq.gz" in filename_base:
             second_part = filename_base.replace("R1.fastq.gz", "R2.fastq.gz")
             first_part_split = filename_base.split('R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
             first_part = re.sub("_S.*_", "", first_part)
+            # Changed on 03/15/2019
+            first_part = re.sub("_S.*", "", first_part)
         elif "1_combine.fastq.gz" in filename_base:
             second_part = filename_base.replace("1_combine.fastq.gz", "2_combine.fastq.gz")
             first_part_split = filename_base.split('1_combine.fastq.gz')
@@ -2382,7 +2385,7 @@ def annotated_snp_matrix():
     for key in position_label.keys():
         label_sep_array = position_label[key].split(',')
         for i in label_sep_array:
-            if "LowFQ" in i:
+            if "LowFQ" in str(i):
                 if key not in mask_fq_mq_positions:
                     mask_fq_mq_positions.append(key)
             if i == "HighFQ":
@@ -2803,9 +2806,9 @@ def annotated_snp_matrix():
             count += 1
 
 
-        # ntd_string_array = ntd_string.split('\t')
-        # if len(ntd_string_array) != 5:
-        #     print str(variants.POS)
+        ntd_string_array = ntd_string.split('\t')
+        if len(ntd_string_array) != 5:
+            print str(variants.POS)
 
         # """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
         # mask_fq_mq_positions = []
@@ -2817,25 +2820,23 @@ def annotated_snp_matrix():
         #
         # print "Length of mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
 
-        # """ Mask Phage positions and LowFQ/MQ positions in SNP_matrix_allele_new.csv. This is the default matrix. """
-        # if str(variants.POS) in functional_filter_pos_array:
-        #     ntd_string_array = ntd_string.split('\t')
-        #     ntd_string = ""
-        #     #print ntd_string_array
-        #     for i in ntd_string_array:
-        #         ntd_string = ntd_string + "\t" + "N"
-        #     ntd_string_array = ntd_string.split('\t')
-        #     #print ntd_string_array
-        #
-        #     #print ntd_string
-        #
-        # if str(variants.POS) in mask_fq_mq_positions:
-        #     ntd_string_array = ntd_string.split('\t')
-        #     ntd_string = ""
-        #     #print len(ntd_string_array)
-        #     for i in ntd_string_array[1:]:
-        #         ntd_string = ntd_string + "\t" + "N"
-        #     ntd_string_array = ntd_string.split('\t')
+        """ Mask Phage positions and LowFQ/MQ positions in SNP_matrix_allele_new.csv. This is the default matrix. """
+        if str(variants.POS) in functional_filter_pos_array:
+            ntd_string_array = ntd_string.split('\t')
+            ntd_string = ""
+            #print ntd_string_array
+            for i in ntd_string_array:
+                ntd_string = ntd_string + "\t" + "N"
+            ntd_string_array = ntd_string.split('\t')
+
+
+        if str(variants.POS) in mask_fq_mq_positions:
+            ntd_string_array = ntd_string.split('\t')
+            ntd_string = ""
+            #print len(ntd_string_array)
+            for i in ntd_string_array[1:]:
+                ntd_string = ntd_string + "\t" + "N"
+            ntd_string_array = ntd_string.split('\t')
 
 
 
@@ -3485,7 +3486,7 @@ if __name__ == '__main__':
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
         tabix(files_for_tabix, "vcf", logger, Config)
 
-        # # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
+        # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
 
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
