@@ -331,19 +331,22 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
             fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
                 args.reference, base_vcftools_bin, vcf_filename_unmapped, sample_name_re)
 
-            filename = "%s/consensus_ref_allele_unmapped_variant.sh" % args.filter2_only_snp_vcf_dir
-            f1 = open(filename, 'a+')
+            #filename = "%s/consensus_ref_allele_unmapped_variant.sh" % args.filter2_only_snp_vcf_dir
+            filename = "%s/%s_consensus_ref_allele_unmapped_variant.sh" % (args.filter2_only_snp_vcf_dir, sample_name_re)
+            f1 = open(filename, 'w+')
             f1.write(bgzip_cmd)
             f1.write(tabix_cmd)
             f1.write(fasta_cmd)
-
-            subprocess.call([bgzip_cmd], shell=True)
-            subprocess.call([tabix_cmd], shell=True)
-            subprocess.call([fasta_cmd], shell=True)
+            print "print here: %s" % filename
+            subprocess.call(['pwd'], shell=True)
+            subprocess.call(bgzip_cmd, shell=True)
+            subprocess.call(tabix_cmd, shell=True)
+            subprocess.call(fasta_cmd, shell=True)
             sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_unmapped_variants.fa\n" % (sample_name_re, sample_name_re)
             subprocess.call([sed_command], shell=True)
             f1.write(sed_command)
             f1.close()
+
         else:
             print "Sample name %s does not match with column name %s" % (os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''), sample_name_re)
 

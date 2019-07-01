@@ -42,6 +42,11 @@ def parser():
     optional.add_argument('-snpeff_db', action='store', dest="snpeff_db", help='Name of pre-build snpEff database to use for Annotation')
     optional.add_argument('-debug_mode', action='store', dest="debug_mode", help='yes/no for debug mode')
     optional.add_argument('-gubbins', action='store', dest="gubbins", help='yes/no for running gubbins')
+    optional.add_argument('-outgroup', action='store', dest="outgroup", help='outgroup sample name')
+    # Adding Downsampling support 2019-06-20
+    optional.add_argument('-downsample', action='store', dest="downsample", help='yes/no: Downsample Reads data to default depth of 100X or user specified depth')
+    optional.add_argument('-coverage_depth', action='store', dest="coverage_depth",
+                          help='Downsample Reads to this user specified depth')
     return parser
 
 
@@ -210,6 +215,16 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                     first_part, reference, config_file, steps)
                 else:
                     command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
+
+
+            # # Adding Downsampling support 2019-06-20
+            if args.downsample == "yes":
+                if args.coverage_depth:
+                    depth = args.coverage_depth
+                else:
+                    depth = 100
+
+                command = command + " -downsample yes -coverage_depth %s" % depth
 
             with open(job_name, 'w') as out:
                 job_title = "#PBS -N %s" % first_part
@@ -531,10 +546,14 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
         if args.gubbins == "yes":
             core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+        if args.outgroup:
+            core_pipeline = core_pipeline + " -outgroup %s" % args.outgroup
     else:
         core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
         if args.gubbins == "yes":
             core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+        if args.outgroup:
+            core_pipeline = core_pipeline + " -outgroup %s" % args.outgroup
 
 
 

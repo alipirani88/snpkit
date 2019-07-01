@@ -7,6 +7,7 @@ import argparse
 from subprocess import call
 import re
 from fasta_functions import *
+from xml_functions import *
 
 # Get command line arguments
 parser = argparse.ArgumentParser(description='Run BEAST pipeline.')
@@ -56,9 +57,10 @@ for xml in xmls:
     # Add starting tree, if desired
     if tree is not None:
         print('Adding starting tree to BEAST xml.')
-        call([scripts_dir + '/insert_starting_tree_beast.sh', xml2, tree])
+        st = add_starting_tree(xml2, tree)
+        #call([scripts_dir + '/insert_starting_tree_beast.sh', xml2, tree])
         # Get newest xml name
-        xml3 = re.split('/|\.', xml2)[-2] + '_st.xml'
+        xml3 = st[0] #re.split('/|\.', xml2)[-2] + '_st.xml'
     else:
         xml3 = xml2
 
@@ -80,7 +82,7 @@ for xml in xmls:
     for fname in os.listdir('.'):
         xmlpref = re.split('/|\.', xml)[-2]
         b = re.search(xmlpref, fname) and re.search('xml',fname)
-        s = fname == xml_final or fname == xml
+        s = fname == xml_final or fname == xml or re.search('prior',fname)
         if b and not s:
             print('Removing intermediate file ' + fname + '.')
             os.remove(fname)   

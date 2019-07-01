@@ -2,8 +2,11 @@
 
 # Functions:
 #    subset_fasta
+#    get_fasta_subsets
+#    rm_invar_sites
 #    mask_positions
 #    count_invar_sites
+#    
 
 # Import modules
 from subprocess import call

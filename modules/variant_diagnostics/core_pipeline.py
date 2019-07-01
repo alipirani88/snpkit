@@ -57,6 +57,7 @@ optional.add_argument('-numcores', action='store', dest="numcores",
                     help='Number of cores to use on local system for parallel-local parameter')
 optional.add_argument('-remove_temp', action='store', dest="remove_temp",
                     help='Remove Temporary files generated during the run')
+optional.add_argument('-outgroup', action='store', dest="outgroup", help='outgroup sample name')
 optional.add_argument('-gubbins', action='store', dest="gubbins", help='yes/no for running gubbins')
 required.add_argument('-reference', action='store', dest="reference",
                     help='Path to Reference Fasta file for consensus generation')
@@ -2806,9 +2807,9 @@ def annotated_snp_matrix():
             count += 1
 
 
-        ntd_string_array = ntd_string.split('\t')
-        if len(ntd_string_array) != 5:
-            print str(variants.POS)
+        # ntd_string_array = ntd_string.split('\t')
+        # if len(ntd_string_array) != 5:
+        #     print str(variants.POS)
 
         # """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
         # mask_fq_mq_positions = []
@@ -2825,7 +2826,7 @@ def annotated_snp_matrix():
             ntd_string_array = ntd_string.split('\t')
             ntd_string = ""
             #print ntd_string_array
-            for i in ntd_string_array:
+            for i in ntd_string_array[1:]:
                 ntd_string = ntd_string + "\t" + "N"
             ntd_string_array = ntd_string.split('\t')
 
@@ -3489,7 +3490,7 @@ if __name__ == '__main__':
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
 
-        create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
+        #create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
 
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
 
@@ -3710,6 +3711,7 @@ if __name__ == '__main__':
         Gubbins/Raxml step
         """
 
+
         keep_logging('Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.', 'Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.', logger, 'info')
 
         #parse_phaster(args.reference)
@@ -3721,13 +3723,13 @@ if __name__ == '__main__':
         #make_sure_path_exists(tree_dir)
 
 
-        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_ref_allele_gubbins.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_ref_allele.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
         prepare_var_consensus_input = "%s/gubbins/%s_%s_core_var_aln.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
         prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_noncore_plus_core_variants_aln.fa" % (
         args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
         reference_base)
         #prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),reference_base)
-        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_alt_allele_unmapped_gubbins.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_alt_allele_unmapped.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
 
         prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
         prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
@@ -3743,13 +3745,55 @@ if __name__ == '__main__':
 
         if args.gubbins and args.gubbins == "yes":
             os.chdir(gubbins_dir)
-            call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input), logger)
-            call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
-            #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
+            if args.outgroup:
+                # Get outgroup_Sample name
+                outgroup = get_outgroup()
+                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup),
+                             '%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup), logger, 'info')
+                call("%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup), logger)
+                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (
+                os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
+                             '%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (
+                             os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
+                             logger, 'info')
+                call("%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup), logger)
+                # call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
+            else:
+                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux' % (
+                os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input),
+                             '%s/scripts/gubbins_iqtree_raxml.sh %s 1' % (
+                             os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input),
+                             logger, 'info')
+                call("%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input), logger)
+                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux' % (
+                    os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input),
+                             '%s/scripts/gubbins_iqtree_raxml.sh %s 1' % (
+                                 os.path.dirname(os.path.abspath(__file__)),
+                                 prepare_ref_allele_unmapped_consensus_input),
+                             logger, 'info')
+                call("%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
+                #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
         else:
-            keep_logging('The gubbins argument is set to No.', 'The gubbins argument is set to No.', logger, 'info')
-            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input)
-            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
+            if args.outgroup:
+                # Get outgroup_Sample name
+                outgroup = get_outgroup()
+                keep_logging('The gubbins argument is set to No.', 'The gubbins argument is set to No.', logger, 'info')
+                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
+                os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup),
+                             '%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
+                             os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup),
+                             logger, 'info')
+                print "%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup)
+                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
+                    os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
+                             '%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
+                                 os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
+                             logger, 'info')
+                print "%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup)
+            else:
+                keep_logging('The gubbins argument is set to No.', 'The gubbins argument is set to No.', logger, 'info')
+                print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input)
+                print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
 
         call("cp %s %s/Logs/tree/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
@@ -3763,6 +3807,36 @@ if __name__ == '__main__':
         keep_logging('Step 5: Running SNP matrix annotation step.', 'Step 5: Running SNP matrix annotation step.', logger, 'info')
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
+
+        global outgroup_specific_positions
+        global outgroup_indel_specific_positions
+
+        # Get outgroup specific variant positions
+        if args.outgroup:
+            f_outgroup = open("%s/outgroup_indel_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'r+')
+
+            outgroup_indel_specific_positions = []
+            for i in f_outgroup:
+                i = i.strip()
+                outgroup_indel_specific_positions.append(int(i))
+            f_outgroup.close()
+
+            f_outgroup = open("%s/outgroup_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'r+')
+
+            outgroup_specific_positions = []
+            for i in f_outgroup:
+                i = i.strip()
+                outgroup_specific_positions.append(int(i))
+            f_outgroup.close()
+
+            print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
+            print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
+        else:
+
+            outgroup_indel_specific_positions = []
+            outgroup_specific_positions = []
+            print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
+            print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
 
         # Annotate core variants. Generate SNP and Indel matrix.
         annotated_snp_matrix()

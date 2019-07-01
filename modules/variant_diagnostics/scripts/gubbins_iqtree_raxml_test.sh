@@ -14,7 +14,7 @@
 # gubbins_iqtree_raxml.sh /path/to/whole/genome/alignment/fasta/file 1 esnitkin_flux 'outgroup_name'
 
 # get prefix for output files
-pref=$(echo $1 | cut -d. -f1 | rev | cut -d/ -f1 | rev)
+pref=$(echo $1 | rev | cut -d/ -f1 | rev | cut -d. -f1)
 
 # get working directory
 wd=$(dirname $1)

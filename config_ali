@@ -16,7 +16,7 @@ large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
 queue: flux
 flux_account: esnitkin_flux
-notification: ae
+notification: a
 
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
 # Set parameter for Trimmomatic
@@ -1028,3 +1028,10 @@ Ref_Path: /nfs/esnitkin/Project_Crispatus/Sequence_data/Project_mother_daughter/
 Ref_Name: USA500-2395.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/USA500-2395/
+
+
+[DA01014]
+# Name of reference genome fasta file.
+Ref_Name: DA01014.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/DA01014/
