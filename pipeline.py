@@ -554,7 +554,7 @@ def downsample(args, logger):
                 total_bases = int(line_split[1]) * 2
     file_open.close()
 
-    
+
     keep_logging('Average Read Length: %s' % avg_len,
                  'Average Read Length: %s' % avg_len, logger, 'info')
 

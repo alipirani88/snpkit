@@ -4256,8 +4256,8 @@ def core_prep_snp(core_vcf_fasta_dir):
     """ Generate consensus fasta file with only reference and variant position bases """
     extract_only_ref_variant_fasta(core_vcf_fasta_dir)
 
-    """ Analyze the positions that were filtered out only due to insufficient depth"""
-    DP_analysis()
+    # """ Analyze the positions that were filtered out only due to insufficient depth"""
+    # DP_analysis()
 
 def core_prep_indel(core_vcf_fasta_dir):
     """ Generate SNP Filter Label Matrix """
@@ -4745,6 +4745,7 @@ if __name__ == '__main__':
         #extract_only_ref_variant_fasta_from_reference_allele_variant()
 
         mask_fq_mq_positions_specific_to_outgroup()
+
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
@@ -4795,6 +4796,8 @@ if __name__ == '__main__':
         move_data_matrix_results = "cp -r %s/unique_positions_file %s/unique_indel_positions_file %s/*.csv %s/*.txt %s/temp_* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz* %s/*_ANN* %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+
+
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
         move_core_vcf = "mv %s/*_core.vcf.gz %s/*vcf_core.vcf.gz.tbi %s/" % (core_vcf_fasta_dir, core_vcf_fasta_dir, core_vcf_dir)
