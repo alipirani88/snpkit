@@ -187,6 +187,9 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
         else:
             unique_position_array.append(int(replace_string[2]))
 
+
+
+
     counts = 1
     end = ncol
     # Loop over each column, check if the column name matches the sample name provided with argument args.filter2_only_snp_vcf_filename

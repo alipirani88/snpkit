@@ -2,38 +2,34 @@
 
 # $1 = path to fasta file
 # $2 = gubbins (1) or no gubbins (0)
-# $3 = flux account to submit to (default: esnitkin_flux)
-# $4 = outgroup name (default: no outgroup)
+# $3 = flux account to submit to (default: esnitkin_fluxod)
 #
 # Usage:
 # Gubbins:
 # gubbins_iqtree_raxml.sh /path/to/whole/genome/alignment/fasta/file 1
 # No gubbins:
 # gubbins_iqtree_raxml.sh /path/to/snps/only/fasta/file 0
-# Outgroup:
-# gubbins_iqtree_raxml.sh /path/to/whole/genome/alignment/fasta/file 1 esnitkin_flux 'outgroup_name'
 
 # get prefix for output files
-pref=$(echo $1 | cut -d. -f1 | rev | cut -d/ -f1 | rev)
+#pref=$(echo $1 | cut -d. -f1 | rev | cut -d/ -f1 | rev)
+pref1="${1%.*}"
+pref="${pref1##*/}"
+echo prefix: $pref
 
 # get working directory
 wd=$(dirname $1)
-if [ $wd == . ]; then
-  wd=$(pwd)
-fi
 cd $wd
-echo Working directory: $wd
 
 # modules to load (some of these might not be necessary)
 modules=$(echo python-anaconda2/201607 biopython fasttree dendropy reportlab RAxML raxml bioperl fastml/gub gubbins openmpi/1.10.2/gcc/4.8.5 gcc/4.8.5)
 
 # get account
-if [ ! -z "$3" ]; then
-  echo Will submit jobs to $3.
-  acct=$3
-else
+if [ -z "$3" ]; then
   echo Will submit jobs to esnitkin_flux.
   acct=esnitkin_flux
+else
+  echo Will submit jobs to $3.
+  acct=$3
 fi
 
 mkdir iqtree_results
@@ -42,14 +38,8 @@ mkdir raxml_results
 # if gubbins
 if [ $2 = 1 ]; then
   echo Will run gubbins.
-  if [ ! -z "$4" ]; then
-    echo Outgroup for gubbins: $4
-    # gubbins command
-    gub=$(echo run_gubbins.py --outgroup \'$4\' --prefix $pref --threads 12 $1)
-  else
-    # gubbins command
-    gub=$(echo run_gubbins.py --prefix $pref --threads 12 $1)
-  fi
+  # gubbins command
+  gub=$(echo run_gubbins.py --prefix $pref --threads 12 $1)
   echo $gub > ${pref}_gubbins_command.sh
 
   # raxml command

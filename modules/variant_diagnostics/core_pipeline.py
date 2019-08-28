@@ -3208,7 +3208,7 @@ def annotated_snp_matrix():
                     snp_type = "Non-Coding SNP"
                 else:
                     print set((snp_var_ann_dict[variants.POS].split('|')))
-                    snp_type = "No protein_coding/intergenic_region field in ANN"
+                    snp_type = "No_protein_coding/intergenic_region_field_in_ANN SNP"
             #print snp_type
         else:
             keep_logging('Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, 'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, logger, 'info')
@@ -3820,7 +3820,7 @@ def annotated_snp_matrix():
                     snp_type = "Non-Coding Indel"
                 else:
                     print set((indel_var_ann_dict[variants.POS].split('|')))
-                    snp_type = "No protein_coding/intergenic_region field in ANN"
+                    snp_type = "No_protein_coding/intergenic_region_field_in_ANN SNP"
             #print snp_type
         else:
             keep_logging('Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, 'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, logger, 'info')
@@ -4197,11 +4197,6 @@ def annotated_snp_matrix():
             tag = "NULL"
 
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
-
-
-
-
-
 
         gt_string = ""
         for gt in variants.gt_bases:
@@ -4650,7 +4645,7 @@ if __name__ == '__main__':
         unique_position_file = create_positions_filestep(vcf_filenames)
         unique_indel_position_file = create_indel_positions_filestep(vcf_filenames)
 
-        # # # bgzip and tabix all the vcf files in core_temp_dir.
+        # # bgzip and tabix all the vcf files in core_temp_dir.
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
         tabix(files_for_tabix, "vcf", logger, Config)
 

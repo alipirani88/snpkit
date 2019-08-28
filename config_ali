@@ -18,6 +18,22 @@ queue: flux
 flux_account: esnitkin_flux
 notification: a
 
+[flux]
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
+large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+email: apirani@med.umich.edu
+queue: flux
+flux_account: esnitkin_flux
+notification: a
+
+[slurm]
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
+large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+email: apirani@med.umich.edu
+queue: flux
+flux_account: esnitkin_flux
+notification: a
+
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
 # Set parameter for Trimmomatic
 [Trimmomatic]
@@ -1035,3 +1051,16 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/USA500-2395/
 Ref_Name: DA01014.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/DA01014/
+
+[Cdiff_O14_W0022a]
+# Name of reference genome fasta file.
+Ref_Name: Cdiff_O14_W0022a.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O14_W0022a/
+
+
+[Pt0_Chromosome_OXA232]
+# Name of reference genome fasta file.
+Ref_Name: Pt0_Chromosome_OXA232.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Pt0_Chromosome_OXA232/
