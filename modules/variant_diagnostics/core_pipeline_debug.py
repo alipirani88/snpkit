@@ -1,9 +1,12 @@
 from __future__ import division
+import sys
 import argparse
 import re
 import os
 import csv
 import subprocess
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+""" Hacky way to append. Instead Add this path to PYTHONPATH Variable """
 from collections import OrderedDict
 from collections import defaultdict
 from joblib import Parallel, delayed
@@ -11,17 +14,31 @@ import multiprocessing
 import thread
 import glob
 import readline
-import pandas as pd
+#import pandas as pd
 import errno
 from pyfasta import Fasta
 from datetime import datetime
 import threading
 import json
+from cyvcf2 import VCF
 import ConfigParser
 from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
+from tabix import *
+from Bio import SeqIO
+from phage_detection import *
+from find_repeats import *
+from mask_regions import *
+from fasttree import fasttree
+from gubbins import *
+from raxml import raxml
+from pyfasta import Fasta
+from core_prep_sanity_checks import *
+from iqtree import iqtree
 
+
+# Parse Command line Arguments
 parser = argparse.ArgumentParser(description='Parsing filtered VCF files and investigating Variants to determine the reason why it was filtered out from the final list')
 required = parser.add_argument_group('Required arguments')
 optional = parser.add_argument_group('Optional arguments')
@@ -39,6 +56,8 @@ optional.add_argument('-numcores', action='store', dest="numcores",
                     help='Number of cores to use on local system for parallel-local parameter')
 optional.add_argument('-remove_temp', action='store', dest="remove_temp",
                     help='Remove Temporary files generated during the run')
+optional.add_argument('-gubbins', action='store', dest="gubbins", help='yes/no for running gubbins')
+optional.add_argument('-outgroup', action='store', dest="outgroup", help='outgroup sample name')
 required.add_argument('-reference', action='store', dest="reference",
                     help='Path to Reference Fasta file for consensus generation')
 required.add_argument('-steps', action='store', dest="steps",
@@ -50,17 +69,64 @@ required.add_argument('-results_dir', action='store', dest="results_dir",
                     help='Path to Core results directory')
 required.add_argument('-config', action='store', dest="config",
                     help='Path to config file')
+# optional.add_argument('-db', action='store', dest="snpeff_db",
+#                     help='snpEff prebuilt reference database to use for variant annotations. The database will be downloaded in /data/ folder under snpEff install directory. Make sure if you are providing the name of pre-built snpEff reference database then the build option of snpeff section in config section is set to \"no\"')
 optional.add_argument('-debug_mode', action='store', dest="debug_mode",
                     help='yes/no for debug mode')
 args = parser.parse_args()
 
+""" Generic Methods """
+def make_sure_path_exists(out_path):
+    """This function checks if the args out_path exists and generates an empty directory if it doesn't.
+
+    :param:
+        out_path: Directory path to check or create a new directory.
+
+    :return: null/exception
+
+    """
+
+    try:
+        os.makedirs(out_path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
+                         '\nErrors in output folder path! please change the output path or analysis name\n', logger,
+                         'info')
+            exit()
+
+def run_command(i):
+    """Function to run each command and is run as a part of python Parallel mutiprocessing method.
+
+    :param:
+        i: command variable to run
+
+    :return:
+        done: string variable with completion status of command.
+    """
+
+    call("%s" % i, logger)
+    # A subprocess exception is raised if the command finish abnormally.
+    # An exception is raised in call method.
+    # If none of the exceptions are raised, return done status.
+    done = "Completed: %s" % i
+    return done
+
+"""core_prep methods 
+    
+    This block contains methods that are respnsible for running the first part of core_All step of the pipeline.
+    This methods generates all the necessary intermediate files required for the second part of core_All step.
+    Example of intermediate files: various diagnostics files/matrices where it decides why a variant was filtered out.
+
+"""
 
 def create_positions_filestep(vcf_filenames):
 
     """
-    Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters
-    from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
-
+    This method gathers SNP positions from each final *_no_proximate_snp.vcf file (these are the positions that passed variant filter parameters
+    from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files. Use these *_no_proximate_snp.vcf_position files to generate a list of unique_position_file
+    :param: list of final vcf filenames i.e *.vcf_no_proximate_snp.vcf . These files are the final output of variant calling step for each sample.
+    :return: unique_position_file
     """
 
     filter2_only_snp_position_files_array = []
@@ -79,51 +145,154 @@ def create_positions_filestep(vcf_filenames):
             f1.close()
         csv_file.close()
 
+    """ Get Positions Specific to Outgroup Sample name """
+    if args.outgroup:
+        outgroup_position_file_name = temp_dir + "/" + outgroup_vcf_filename + "_positions"
+        outgroup_position_array = []
+        f = open(outgroup_position_file_name, 'r+')
+        for line in f:
+            line = line.strip()
+            outgroup_position_array.append(int(line))
+        f.close()
+        print len(outgroup_position_array)
+
+        position_array_excluding_outgroup = []
+        for filess in filter2_only_snp_position_files_array:
+            if outgroup not in filess:
+                f = open(filess, 'r+')
+                for line in f:
+                    line = line.strip()
+                    position_array_excluding_outgroup.append(int(line))
+                f.close()
+        position_array_unique_excluding_outgroup = set(position_array_excluding_outgroup)
+        position_array_sort_excluding_outgroup = sorted(position_array_unique_excluding_outgroup)
+        print len(position_array_sort_excluding_outgroup)
+        outgroup_specific_positions = []
+        f_outgroup = open("%s/outgroup_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        for i in outgroup_position_array:
+            if i not in position_array_sort_excluding_outgroup:
+                f_outgroup.write(str(i) + '\n')
+                # outgroup_indel_specific_positions.append(int(i))
+        f_outgroup.close()
+
+        print len(outgroup_specific_positions)
+
     """ Create position array containing unique positiones from positions file """
+
     position_array = []
     for filess in filter2_only_snp_position_files_array:
         f = open(filess, 'r+')
         for line in f:
             line = line.strip()
-            position_array.append(line)
+            # Changed variable to suit sorting: 25-07-2018
+            position_array.append(int(line))
         f.close()
+    # Check why python sorting is not working
+    keep_logging('Sorting unique variant positions.\n', 'Sorting unique variant positions.\n', logger, 'info')
     position_array_unique = set(position_array)
     position_array_sort = sorted(position_array_unique)
-    print "\nThe number of unique variant positions: " + str(len(position_array_sort)) + "\n"
+    keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort), '\nThe number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
     unique_position_file = "%s/unique_positions_file" % args.filter2_only_snp_vcf_dir
     f=open(unique_position_file, 'w+')
     for i in position_array_sort:
-        f.write(i + "\n")
+        # Changed variable to suit sorting: 25-07-2018
+        f.write(str(i) + "\n")
     f.close()
     if len(position_array_sort) == 0:
-        print "ERROR: No unique positions found. Check if vcf files are empty?"
+        keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
         exit()
     return unique_position_file
 
-def make_sure_path_exists(out_path):
-    """
-    Make sure the output folder exists or create at given path
-    :param out_path:
-    :return:
-    """
-    try:
-        os.makedirs(out_path)
-    except OSError as exception:
-        if exception.errno != errno.EEXIST:
-            print "Errors in output folder path! please change the output path or analysis name\n"
-            exit()
+def create_indel_positions_filestep(vcf_filenames):
 
-def run_command(i):
-    print "Running: %s" % i
-    os.system(i)
-    done = "done: %s" % i
-    return done
+    """
+    This function gathers Indel positions from each final *_indel_final.vcf (these are the positions that passed variant filter parameters
+    from variant calling pipeline) and write to *_indel_final.vcf files. Use these *_indel_final.vcf_position files to generate a list of unique_position_file
+    :param: list of final vcf filenames i.e *_indel_final.vcf . These files are the final output of variant calling step for each sample.
+    :return: unique_indel_position_file
+    """
 
+    filter2_only_indel_position_files_array = []
+    for file in vcf_filenames:
+        indel_file = file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf')
+        with open(indel_file, 'rU') as csv_file:
+            file_name = temp_dir + "/" + os.path.basename(indel_file) + "_positions"
+            addpositionfilenametoarray = file_name
+            filter2_only_indel_position_files_array.append(addpositionfilenametoarray)
+            f1 = open(file_name, 'w+')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                position = row[0]
+                if not position.startswith('#'):
+                    p_string = row[1] + "\n"
+                    f1.write(p_string)
+            f1.close()
+        csv_file.close()
+
+    """ Get Positions Specific to Outgroup Sample name """
+    if args.outgroup:
+        outgroup_position_indel_file_name = temp_dir + "/" + outgroup_indel_vcf_filename + "_positions"
+        print outgroup_position_indel_file_name
+        outgroup_position_indel_array = []
+        f = open(outgroup_position_indel_file_name, 'r+')
+        for line in f:
+            line = line.strip()
+            outgroup_position_indel_array.append(int(line))
+        f.close()
+        print len(outgroup_position_indel_array)
+
+        position_array_indel_excluding_outgroup = []
+        for filess in filter2_only_indel_position_files_array:
+            if outgroup not in filess:
+                f = open(filess, 'r+')
+                for line in f:
+                    line = line.strip()
+                    position_array_indel_excluding_outgroup.append(int(line))
+                f.close()
+        position_array_indel_unique_excluding_outgroup = set(position_array_indel_excluding_outgroup)
+        position_array_sort_indel_excluding_outgroup = sorted(position_array_indel_unique_excluding_outgroup)
+        print len(position_array_sort_indel_excluding_outgroup)
+        outgroup_indel_specific_positions = []
+        f_outgroup = open("%s/outgroup_indel_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        for i in outgroup_position_indel_array:
+            if i not in position_array_sort_indel_excluding_outgroup:
+                f_outgroup.write(str(i) + '\n')
+                #outgroup_indel_specific_positions.append(int(i))
+        f_outgroup.close()
+        #print len(outgroup_indel_specific_positions)
+
+
+
+
+    """ Create position array containing unique positiones from positions file """
+    position_array = []
+    for filess in filter2_only_indel_position_files_array:
+        f = open(filess, 'r+')
+        for line in f:
+            line = line.strip()
+            # Changed variable to suit sorting: 25-07-2018
+            position_array.append(int(line))
+        f.close()
+    position_array_unique = set(position_array)
+    position_array_sort = sorted(position_array_unique)
+    keep_logging('\nThe number of unique indel positions:%s' % len(position_array_sort), '\nThe number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
+    unique_indel_position_file = "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
+    f=open(unique_indel_position_file, 'w+')
+    for i in position_array_sort:
+        # Changed variable to suit sorting: 25-07-2018
+        f.write(str(i) + "\n")
+    f.close()
+    if len(position_array_sort) == 0:
+        keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
+        exit()
+    return unique_indel_position_file
 
 def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
 
     """
-    Based on type of jobrun; generate jobs and run accordingly.
+    This method takes the unique_position_file and list of final *_no_proximate_snp.vcf files and generates individual jobs/script.
+    Each of these jobs/scripts will generate a *label file. These label file for each sample contains a field description for each position in unique_position_file.
+    This field description denotes if the variant position made to the final variant list in a sample and if not then a reason/filter that caused it to filtered out from final list.
     :param jobrun:
     :param vcf_filenames:
     :return:
@@ -143,8 +312,8 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
-            print "Running: qsub %s" % i
-            os.system("qsub %s" % i)
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
+            call("qsub %s" % i, logger)
 
     elif jobrun == "parallel-local":
         """
@@ -180,8 +349,37 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "cluster":
+        #command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
+        #os.system("bash %s" % command_file)
+        command_array = []
         command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        os.system("bash %s" % command_file)
+        f3 = open(command_file, 'w+')
+
+
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
+            job_file_name = "%s.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        if args.numcores:
+            num_cores = int(num_cores)
+        else:
+            num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
+
     elif jobrun == "local":
         """
         Generate a Command list of each job and run it on local system one at a time
@@ -212,50 +410,56 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-        #print "Running local mode: bash %s" % command_file
-        os.system("bash %s" % command_file)
+        call("bash %s" % command_file, logger)
 
-def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
+def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir):
 
     """
-    Based on type of jobrun; generate jobs and run accordingly.
+    This method takes the unique_indel_position_file and list of final *_indel_final.vcf files and generates individual jobs/script.
+    Each of these jobs/scripts will generate a *label file. These label file for each sample contains a field description of each position in unique_indel_position_file.
+    This field description denotes if the variant position made to the final variant list in a sample and if not then a reason/filter that caused it to filtered out from final list.
     :param jobrun:
     :param vcf_filenames:
     :return:
     """
+
     if jobrun == "parallel-cluster":
         """
         Supports only PBS clusters for now.
         """
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-            job_file_name = "%s_fasta.pbs" % (i)
+            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job_indel_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
+            job_file_name = "%s_indel.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
             f1.close()
         #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
-            print "Running: qsub %s" % i
-            os.system("qsub %s" % i)
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
+            # os.system("qsub %s" % i)
+            call("qsub %s" % i, logger)
 
-    elif jobrun == "parallel-local":
+    elif jobrun == "parallel-local" or jobrun == "cluster":
         """
         Generate a Command list of each job and run it in parallel on different cores available on local system
         """
         command_array = []
-        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        command_file = "%s/commands_indel_list.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
+
+
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-            job_file_name = "%s_fasta.pbs" % (i)
+            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job_indel_debug_gatk.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
+            job_file_name = "%s_indel.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
             f1.close()
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
@@ -271,46 +475,28 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
             num_cores = multiprocessing.cpu_count()
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
-    elif jobrun == "cluster":
-        command_array = []
-        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-            job_file_name = "%s_fasta.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        os.system("bash %s/command_file" % args.filter2_only_snp_vcf_dir)
-    else:
+    # elif jobrun == "cluster":
+    #     command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
+    #     os.system("bash %s" % command_file)
+    elif jobrun == "local":
         """
         Generate a Command list of each job and run it on local system one at a time
         """
+
         command_array = []
-        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
 
 
         for i in vcf_filenames:
             job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
-            job_file_name = "%s_fasta.pbs" % (i)
+            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/reason_job_indel_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (job_name, args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
+            job_file_name = "%s_indel.pbs" % (i)
             f1=open(job_file_name, 'w+')
             f1.write(job_print_string)
             f1.close()
         #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
         pbs_scripts = glob.glob(pbs_dir)
 
 
@@ -322,112 +508,27 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir):
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-        os.system("bash command_file")
-
-def create_job_DP(jobrun, vcf_filenames):
-    """
-    Based on type of jobrun; generate jobs and run accordingly.
-    :param jobrun:
-    :param vcf_filenames:
-    :return:
-    """
-
-    if jobrun == "parallel-cluster":
-        """
-        Supports only PBS clusters for now.
-        """
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-            job_file_name = "%s_DP.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            print "Running: qsub %s" % i
-            os.system("qsub %s" % i)
+        call("bash %s" % command_file, logger)
 
 
-    elif jobrun == "parallel-local":
-        """
-        Generate a Command list of each job and run it in parallel on different cores available on local system
-        """
-        command_array = []
-        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
+"""core methods 
 
+    This block contains methods that are respnsible for running the second part of core_All step of the pipeline.
+    It uses intermediate files generated during the first step, finds core SNPs and annotates variants using snpEff.
+    It will generate all types of SNP matrices that is required for downstream pathways / Association analysis.
+    Output:
+        - 
 
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-            job_file_name = "%s_DP.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-
-
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        print len(command_array)
-        if args.numcores:
-            num_cores = int(num_cores)
-        else:
-            num_cores = multiprocessing.cpu_count()
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
-    elif jobrun == "cluster":
-        """ Test pending """
-        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-            job_file_name = "%s_DP.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
-
-    else:
-        """
-        Generate a Command list of each job and run it on local system one at a time
-        """
-        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-            job_file_name = "%s_DP.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
+"""
 
 def generate_paste_command():
+    """
+    This Function will take all the *label file and generate/paste it column wise to generate a matrix. These matrix will be used in downstream analysis.
+    :param: null
+    :return: null
+    """
 
-    """ Generate SNP Filter Label Matrix """
+    """ Paste/Generate and sort SNP Filter Label Matrix """
     paste_file = args.filter2_only_snp_vcf_dir + "/paste_label_files.sh"
     f4=open(paste_file, 'w+')
     paste_command = "paste %s/unique_positions_file" % args.filter2_only_snp_vcf_dir
@@ -438,9 +539,9 @@ def generate_paste_command():
     sed_header = "sed -i \'s/^/\t/\' %s/header.txt" % args.filter2_only_snp_vcf_dir
     sed_header_2 = "sed -i -e \'$a\\' %s/header.txt" % args.filter2_only_snp_vcf_dir
 
-    os.system(header_awk_cmd)
-    os.system(sed_header)
-    os.system(sed_header_2)
+    call("%s" % header_awk_cmd, logger)
+    call("%s" % sed_header, logger)
+    call("%s" % sed_header_2, logger)
 
     temp_paste_command = paste_command + " > %s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
     paste_command = paste_command + " > %s/All_label_final_raw" % args.filter2_only_snp_vcf_dir
@@ -448,7 +549,6 @@ def generate_paste_command():
     f4.close()
     sort_All_label_cmd = "sort -n -k1,1 %s/All_label_final_raw > %s/All_label_final_sorted.txt" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
     paste_command_header = "cat %s/header.txt %s/All_label_final_sorted.txt > %s/All_label_final_sorted_header.txt" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-    #print temp_paste_command
 
     ls = []
     for i in vcf_filenames:
@@ -463,9 +563,9 @@ def generate_paste_command():
     with open('%s/temp_label_final_raw.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
         outfile.write(temp_paste_command)
     outfile.close()
-    os.system("bash %s/All_label_final_raw.sh" % args.filter2_only_snp_vcf_dir)
-    os.system("bash %s/temp_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir)
-    print "Finished pasting...DONE"
+    call("bash %s/All_label_final_raw.sh" % args.filter2_only_snp_vcf_dir, logger)
+    call("bash %s/temp_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
+
 
     """
     remove this lines
@@ -476,8 +576,11 @@ def generate_paste_command():
     #os.system(paste_command) change
     #os.system(temp_paste_command) change
     """
-    os.system(sort_All_label_cmd)
-    os.system(paste_command_header)
+
+    call("%s" % sort_All_label_cmd, logger)
+    call("%s" % paste_command_header, logger)
+
+    """ Assign numeric code to each variant filter reason"""
     subprocess.call(["sed -i 's/reference_unmapped_position/0/g' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     subprocess.call(["sed -i 's/reference_allele/1/g' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     subprocess.call(["sed -i 's/VARIANT/1TRUE/g' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
@@ -502,22 +605,120 @@ def generate_paste_command():
     subprocess.call(["sed -i 's/LowFQ/5/g' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     subprocess.call(["sed -i 's/HighFQ/6/g' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
     remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir
-    os.system(remove_unwanted_text)
+    call("%s" % remove_unwanted_text, logger)
+
+def generate_indel_paste_command():
+    """
+    This Function will take all the *label file and generate/paste it column wise to generate a matrix. These matrix will be used in downstream analysis.
+    :param: null
+    :return: null
+    """
+
+    """ Paste/Generate and sort SNP Filter Label Matrix """
+    paste_file = args.filter2_only_snp_vcf_dir + "/paste_indel_label_files.sh"
+    f4=open(paste_file, 'w+')
+    paste_command = "paste %s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
+    for i in vcf_filenames:
+        label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_indel_positions_label')
+        paste_command = paste_command + " " + label_file
+    header_awk_cmd = "awk \'{ORS=\"\t\";}{print $1}\' %s > %s/header.txt" % (args.filter2_only_snp_vcf_filenames, args.filter2_only_snp_vcf_dir)
+    sed_header = "sed -i \'s/^/\t/\' %s/header.txt" % args.filter2_only_snp_vcf_dir
+    sed_header_2 = "sed -i -e \'$a\\' %s/header.txt" % args.filter2_only_snp_vcf_dir
+
+    #os.system(header_awk_cmd)
+    #os.system(sed_header)
+    #os.system(sed_header_2)
+
+    call("%s" % header_awk_cmd, logger)
+    call("%s" % sed_header, logger)
+    call("%s" % sed_header_2, logger)
+
+
+
+    temp_paste_command = paste_command + " > %s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
+    paste_command = paste_command + " > %s/All_indel_label_final_raw" % args.filter2_only_snp_vcf_dir
+    f4.write(paste_command)
+    f4.close()
+
+    call("bash %s" % paste_file, logger)
+
+    sort_All_label_cmd = "sort -n -k1,1 %s/All_indel_label_final_raw > %s/All_indel_label_final_sorted.txt" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
+    paste_command_header = "cat %s/header.txt %s/All_indel_label_final_sorted.txt > %s/All_indel_label_final_sorted_header.txt" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
+
+    ls = []
+    for i in vcf_filenames:
+        label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_indel_positions_label')
+        ls.append(label_file)
+    ls.insert(0, "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir)
+
+    with open('%s/All_indel_label_final_raw.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
+        outfile2.write(paste_command)
+    outfile2.close()
+
+    with open('%s/temp_indel_label_final_raw.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
+        outfile2.write(temp_paste_command)
+    outfile2.close()
+
+    # Why is this not working?
+    call("bash %s/All_indel_label_final_raw.sh" % args.filter2_only_snp_vcf_dir, logger)
+    call("bash %s/temp_indel_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
+    keep_logging('Finished pasting...DONE', 'Finished pasting...DONE', logger, 'info')
+
+    """
+    remove this lines
+    #subprocess.call(["%s" % paste_command], shell=True)
+    #subprocess.call(["%s" % temp_paste_command], shell=True)
+    #subprocess.check_call('%s' % paste_command)
+    #subprocess.check_call('%s' % temp_paste_command)
+    #os.system(paste_command) change
+    #os.system(temp_paste_command) change
+    """
+
+    call("%s" % sort_All_label_cmd, logger)
+    call("%s" % paste_command_header, logger)
+
+    """ Assign numeric code to each variant filter reason"""
+    subprocess.call(["sed -i 's/reference_unmapped_position/0/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/reference_allele/1/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/VARIANT/1TRUE/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL_DP_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP_QUAL_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_proximate_SNP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL_DP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP_QUAL/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_QUAL/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF_DP/2/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL_DP_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP_QUAL_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP_proximate_SNP/4/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_proximate_SNP/7/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL_DP/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP_QUAL/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_QUAL/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF_DP/3/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/LowAF/5/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    subprocess.call(["sed -i 's/HighAF/6/g' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+    remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir
+    call("%s" % remove_unwanted_text, logger)
 
 def generate_position_label_data_matrix():
 
     """
-    Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix.
+    Generate different list of Positions using the matrix All_label_final_sorted_header.txt.
+
+    (Defining Core Variant Position: Variant Position which was not filtered out in any of the other samples due to variant filter parameter and also this position was present in all the samples(not unmapped)).
 
     Filtered Position label matrix:
-        Too bad! This positions where atleast one variant was observed in atleast one sample
-        This position didn't made it to the final Only_ref_variant_positions_for_closely_matrix list,
-        because it was either unmapped(non-core) in one or more of the samples or was filtered out one or more of the sample due to Variant Filtered Parameter
+        List of non-core positions. These positions didn't make it to the final core list because it was filtered out in one of the samples.
 
     Only_ref_variant_positions_for_closely_matrix.txt :
         Those Positions where the variant was either reference allele or a variant that passed all the variant filter parameters.
-        Yeah! This ones made it to final vcf file and are core variants
-        (Core variant Position: Variant Position which was not filtered out in any of the other samples due to variant filter parameter and also this position was present in all the samples(not unmapped)).
+
+    :param: null
+    :return: null
 
     """
     def generate_position_label_data_matrix_All_label():
@@ -527,16 +728,15 @@ def generate_position_label_data_matrix():
         f3=open("%s/Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f4=open("%s/Only_filtered_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading All label positions file: %s/All_label_final_sorted_header.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
             for row in csv_reader:
                 position_label[row[0]] = row[1:]
-            print "Generating different list of Positions and heatmap data matrix... \n"
+            keep_logging('Generating different list of Positions and heatmap data matrix... \n', 'Generating different list of Positions and heatmap data matrix... \n', logger, 'info')
             print_string_header = "\t"
             for i in vcf_filenames:
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
-            #f.write('\t' + print_string_header.strip() + '\n')
             f2.write('\t' + print_string_header.strip() + '\n')
             f3.write('\t' + print_string_header.strip() + '\n')
             f4.write('\t' + print_string_header.strip() + '\n')
@@ -545,20 +745,24 @@ def generate_position_label_data_matrix():
                 ref_var = ['1', '1TRUE']
                 if set(ref_var) & set(position_label[value]):
                     if set(lll) & set(position_label[value]):
-                        print_string = ""
-                        for i in position_label[value]:
-                            print_string = print_string + "\t" + i
-                        STRR2 = value + print_string + "\n"
-                        f3.write(STRR2)
-                        if position_label[value].count('1TRUE') >= 2:
-                            f4.write('1\n')
-                        else:
-                            f4.write('0\n')
+                        # Adding condition. Use the position only if its not outgroup specific
+                        if int(value) not in outgroup_specific_positions:
+                            print_string = ""
+                            for i in position_label[value]:
+                                print_string = print_string + "\t" + i
+                            STRR2 = value + print_string + "\n"
+                            f3.write(STRR2)
+                            if position_label[value].count('1TRUE') >= 2:
+                                f4.write('1\n')
+                            else:
+                                f4.write('0\n')
                     else:
-                        strr = value + "\n"
-                        f1.write(strr)
-                        STRR3 =	value +	"\t" + str(position_label[value]) + "\n"
-                        f2.write(STRR3)
+                        # Adding condition. Use the position only if its not outgroup specific
+                        if int(value) not in outgroup_specific_positions:
+                            strr = value + "\n"
+                            f1.write(strr)
+                            STRR3 =	value +	"\t" + str(position_label[value]) + "\n"
+                            f2.write(STRR3)
         csv_file.close()
         f1.close()
         f2.close()
@@ -573,7 +777,7 @@ def generate_position_label_data_matrix():
     def temp_generate_position_label_data_matrix_All_label():
 
         """
-        Read **temp_label_final_raw.txt** SNP position label data matrix for generating barplot statistics.
+        Read temp_label_final_raw.txt SNP position label data matrix for generating barplot statistics.
         """
         temp_position_label = OrderedDict()
         f33=open("%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -581,7 +785,7 @@ def generate_position_label_data_matrix():
         for i in vcf_filenames:
             print_string_header = print_string_header + os.path.basename(i) + "\t"
         f33.write('\t' + print_string_header.strip() + '\n')
-        print "Reading temporary label positions file: %s/temp_label_final_raw.txt \n" % args.filter2_only_snp_vcf_dir
+        keep_logging('Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
         lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP', 'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP', 'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP', 'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP', 'HighFQ_DP_QUAL_proximate_SNP', 'HighFQ_QUAL_DP_proximate_SNP', 'HighFQ_proximate_SNP', '_proximate_SNP']
         ref_var = ['reference_allele', 'VARIANT']
         with open("%s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
@@ -590,11 +794,13 @@ def generate_position_label_data_matrix():
             for row in csv_reader:
                 if set(ref_var) & set(row[1:]):
                     if set(lll) & set(row[1:]):
-                        print_string = ""
-                        for i in row[1:]:
-                            print_string = print_string + "\t" + i
-                        STRR2 = row[0] + print_string + "\n"
-                        f33.write(STRR2)
+                        # Adding condition. Use the position only if its not outgroup specific
+                        if int(row[0]) not in outgroup_specific_positions:
+                            print_string = ""
+                            for i in row[1:]:
+                                print_string = print_string + "\t" + i
+                            STRR2 = row[0] + print_string + "\n"
+                            f33.write(STRR2)
         csv_file.close()
         f33.close()
         """
@@ -603,7 +809,7 @@ def generate_position_label_data_matrix():
         temp_position_label_FQ = OrderedDict()
         f44=open("%s/temp_Only_filtered_positions_for_closely_matrix_FQ.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
 
@@ -616,11 +822,13 @@ def generate_position_label_data_matrix():
             for value in temp_position_label_FQ:
               lll = ['LowFQ']
               if set(lll) & set(temp_position_label_FQ[value]):
-                  print_string = ""
-                  for i in temp_position_label_FQ[value]:
-                      print_string = print_string + "\t" + i
-                  STRR2 = value + print_string + "\n"
-                  f44.write(STRR2)
+                  # Adding condition. Use the position only if its not outgroup specific
+                  if int(value) not in outgroup_specific_positions:
+                      print_string = ""
+                      for i in temp_position_label_FQ[value]:
+                          print_string = print_string + "\t" + i
+                      STRR2 = value + print_string + "\n"
+                      f44.write(STRR2)
             f44.close()
             csv_file.close()
             f44.close()
@@ -660,7 +868,7 @@ def generate_position_label_data_matrix():
         temp_position_label_DP = OrderedDict()
         f44=open("%s/temp_Only_filtered_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         with open("%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            print "Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n" % args.filter2_only_snp_vcf_dir
+            keep_logging('Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_positions_for_closely_matrix.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             next(csv_reader, None)
             for row in csv_reader:
@@ -673,11 +881,13 @@ def generate_position_label_data_matrix():
                 lll = ['HighFQ_DP']
                 ref_var = ['reference_allele', 'VARIANT']
                 if set(lll) & set(temp_position_label_FQ[value]):
-                    print_string = ""
-                    for i in temp_position_label_FQ[value]:
-                        print_string = print_string + "\t" + i
-                    STRR2 = value + print_string + "\n"
-                    f44.write(STRR2)
+                    # Adding condition. Use the position only if its not outgroup specific
+                    if int(value) not in outgroup_specific_positions:
+                        print_string = ""
+                        for i in temp_position_label_FQ[value]:
+                            print_string = print_string + "\t" + i
+                        STRR2 = value + print_string + "\n"
+                        f44.write(STRR2)
         f44.close()
         csv_file.close()
 
@@ -711,7 +921,7 @@ def generate_position_label_data_matrix():
 
 
     def barplot_stats():
-        print "\nRead each Sample columns and calculate the percentage of each label to generate barplot statistics.\n"
+        keep_logging('\nRead each Sample columns and calculate the percentage of each label to generate barplot statistics.\n', '\nRead each Sample columns and calculate the percentage of each label to generate barplot statistics.\n', logger, 'info')
         """
         Read each Sample columns and calculate the percentage of each label to generate barplot statistics.
         This will give a visual explanation of how many positions in each samples were filtered out because of different reason
@@ -719,7 +929,7 @@ def generate_position_label_data_matrix():
 
         c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
         columns = list(zip(*c_reader))
-        print "Finished reading columns..."
+        keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
         counts = 1
         end = len(vcf_filenames) + 1
         f_bar_count = open("%s/bargraph_counts.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -781,30 +991,750 @@ def generate_position_label_data_matrix():
             f_bar_perc.write(bar_perc_string)
         f_bar_count.close()
         f_bar_perc.close()
-        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"
+        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()" % (args.filter2_only_snp_vcf_dir, os.path.basename(os.path.normpath(args.results_dir)))
         barplot_R_file = open("%s/bargraph.R" % args.filter2_only_snp_vcf_dir, 'w+')
         barplot_R_file.write(bargraph_R_script)
-        print "Run this R script to generate bargraph plot: %s" % barplot_R_file
+        keep_logging('Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
     """ Methods Steps"""
-    print "Running: Generating data matrices..."
+    keep_logging('Running: Generating data matrices...', 'Running: Generating data matrices...', logger, 'info')
     generate_position_label_data_matrix_All_label()
-    print "Running: Changing variables in data matrices to codes for faster processing..."
+    keep_logging('Running: Changing variables in data matrices to codes for faster processing...', 'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
     temp_generate_position_label_data_matrix_All_label()
-    print "Running: Generating Barplot statistics data matrices..."
+    keep_logging('Running: Generating Barplot statistics data matrices...', 'Running: Generating Barplot statistics data matrices...', logger, 'info')
     barplot_stats()
 
+def generate_indel_position_label_data_matrix():
+
+    """
+    Generate different list of Positions using the matrix All_label_final_sorted_header.txt.
+
+    (Defining Core Variant Position: Variant Position which was not filtered out in any of the other samples due to variant filter parameter and also this position was present in all the samples(not unmapped)).
+
+    Filtered Position label matrix:
+        List of non-core positions. These positions didn't make it to the final core list because it was filtered out in one of the samples.
+
+    Only_ref_variant_positions_for_closely_matrix.txt :
+        Those Positions where the variant was either reference allele or a variant that passed all the variant filter parameters.
+
+    :param: null
+    :return: null
+
+    """
+    def generate_indel_position_label_data_matrix_All_label():
+        position_label = OrderedDict()
+        print "Generating Only_ref_indel_positions_for_closely"
+        f1=open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'w+')
+        f2=open("%s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        f3=open("%s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        f4=open("%s/Only_filtered_indel_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        with open("%s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+            keep_logging('Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir, 'Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir, logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            next(csv_reader, None)
+            for row in csv_reader:
+                position_label[row[0]] = row[1:]
+            keep_logging('Generating different list of Positions and heatmap data matrix...', 'Generating different list of Positions and heatmap data matrix...', logger, 'info')
+            print_string_header = "\t"
+            for i in vcf_filenames:
+                print_string_header = print_string_header + os.path.basename(i) + "\t"
+            #f.write('\t' + print_string_header.strip() + '\n')
+            f2.write('\t' + print_string_header.strip() + '\n')
+            f3.write('\t' + print_string_header.strip() + '\n')
+            f4.write('\t' + print_string_header.strip() + '\n')
+            for value in position_label:
+                lll = ['0', '2', '3', '4', '5', '6', '7']
+                ref_var = ['1', '1TRUE']
+                if set(ref_var) & set(position_label[value]):
+                    if set(lll) & set(position_label[value]):
+                        # Adding condition. Use the position only if its not outgroup specific
+                        if int(value) not in outgroup_indel_specific_positions:
+                            print_string = ""
+                            for i in position_label[value]:
+                                print_string = print_string + "\t" + i
+                            STRR2 = value + print_string + "\n"
+                            f3.write(STRR2)
+                            if position_label[value].count('1TRUE') >= 2:
+                                f4.write('1\n')
+                            else:
+                                f4.write('0\n')
+                    else:
+                        # Adding condition. Use the position only if its not outgroup specific
+                        if int(value) not in outgroup_indel_specific_positions:
+                            strr = value + "\n"
+                            f1.write(strr)
+                            STRR3 =	value +	"\t" + str(position_label[value]) + "\n"
+                            f2.write(STRR3)
+        csv_file.close()
+        f1.close()
+        f2.close()
+        f3.close()
+        f4.close()
+        subprocess.call(["sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_filtered_indel_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/1TRUE/-1/g' %s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+
+    def temp_generate_indel_position_label_data_matrix_All_label():
+
+        """
+        Read **temp_label_final_raw.txt** SNP position label data matrix for generating barplot statistics.
+        """
+        temp_position_label = OrderedDict()
+        f33=open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        print_string_header = "\t"
+        for i in vcf_filenames:
+            print_string_header = print_string_header + os.path.basename(i) + "\t"
+        f33.write('\t' + print_string_header.strip() + '\n')
+        keep_logging('Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir, 'Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir, logger, 'info')
+        # lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP', 'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP', 'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP', 'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP', 'HighFQ_DP_QUAL_proximate_SNP', 'HighFQ_QUAL_DP_proximate_SNP', 'HighFQ_proximate_SNP', '_proximate_SNP']
+        lll = ['reference_unmapped_position', 'LowAF', 'LowAF_DP', 'LowAF_QUAL', 'LowAF_DP_QUAL', 'LowAF_QUAL_DP',
+               'HighAF_DP', 'HighAF_QUAL', 'HighAF_DP_QUAL', 'HighAF_QUAL_DP', 'HighAF', 'LowAF_proximate_SNP',
+               'LowAF_DP_proximate_SNP', 'LowAF_QUAL_proximate_SNP', 'LowAF_DP_QUAL_proximate_SNP',
+               'LowAF_QUAL_DP_proximate_SNP', 'HighAF_DP_proximate_SNP', 'HighAF_QUAL_proximate_SNP',
+               'HighAF_DP_QUAL_proximate_SNP', 'HighAF_QUAL_DP_proximate_SNP', 'HighAF_proximate_SNP', '_proximate_SNP']
+        ref_var = ['reference_allele', 'VARIANT']
+        with open("%s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            next(csv_reader, None)
+            for row in csv_reader:
+                if set(ref_var) & set(row[1:]):
+                    if set(lll) & set(row[1:]):
+                        # Adding condition. Use the position only if its not outgroup specific
+                        if int(row[0]) not in outgroup_indel_specific_positions:
+                            print_string = ""
+                            for i in row[1:]:
+                                print_string = print_string + "\t" + i
+                            STRR2 = row[0] + print_string + "\n"
+                            f33.write(STRR2)
+        csv_file.close()
+        f33.close()
+        """
+        Read temp_Only_filtered_positions_for_closely_matrix file and generate a matrix of positions that are being filtered just because of AF
+        """
+        temp_position_label_AF = OrderedDict()
+        f44=open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+            keep_logging('Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            next(csv_reader, None)
+
+            for row in csv_reader:
+              temp_position_label_AF[row[0]] = row[1:]
+            print_string_header = "\t"
+            for i in vcf_filenames:
+              print_string_header = print_string_header + os.path.basename(i) + "\t"
+            f44.write('\t' + print_string_header.strip() + '\n')
+            for value in temp_position_label_AF:
+              lll = ['LowAF']
+              if set(lll) & set(temp_position_label_AF[value]):
+                  # Adding condition. Use the position only if its not outgroup specific
+                  if int(value) not in outgroup_indel_specific_positions:
+                      print_string = ""
+                      for i in temp_position_label_AF[value]:
+                          print_string = print_string + "\t" + i
+                      STRR2 = value + print_string + "\n"
+                      f44.write(STRR2)
+            f44.close()
+            csv_file.close()
+            f44.close()
+
+        """
+        Perform Sed on temp files. Find a faster way to do this.
+        """
+        subprocess.call(["sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/reference_unmapped_position/0/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/reference_allele/1/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/VARIANT/2/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL_DP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL_DP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF/3/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+
+
+        """
+        Read temp_Only_filtered_positions_for_closely_matrix file and generate a matrix of positions that are being filtered just because of Dp
+        """
+        temp_position_label_DP = OrderedDict()
+        f44=open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+            keep_logging('Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, 'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir, logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            next(csv_reader, None)
+            for row in csv_reader:
+                temp_position_label_DP[row[0]] = row[1:]
+            print_string_header = "\t"
+            for i in vcf_filenames:
+                print_string_header = print_string_header + os.path.basename(i) + "\t"
+            f44.write('\t' + print_string_header.strip() + '\n')
+            for value in temp_position_label_DP:
+                lll = ['HighAF_DP']
+                ref_var = ['reference_allele', 'VARIANT']
+                if set(lll) & set(temp_position_label_AF[value]):
+                    # Adding condition. Use the position only if its not outgroup specific
+                    if int(value) not in outgroup_indel_specific_positions:
+                        print_string = ""
+                        for i in temp_position_label_AF[value]:
+                            print_string = print_string + "\t" + i
+                        STRR2 = value + print_string + "\n"
+                        f44.write(STRR2)
+        f44.close()
+        csv_file.close()
+
+        """
+        Perform Sed on temp files. Find a faster way to do this.
+        """
+        subprocess.call(["sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/reference_unmapped_position/0/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/reference_allele/1/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/VARIANT/2/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL_DP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF_DP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_proximate_SNP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL_DP/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_QUAL/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF_DP/3/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/LowAF/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+        subprocess.call(["sed -i 's/HighAF/4/g' %s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir], shell=True)
+
+
+    def barplot_indel_stats():
+        keep_logging('Read each Sample columns and calculate the percentage of each label to generate barplot statistics.', 'Read each Sample columns and calculate the percentage of each label to generate barplot statistics.', logger, 'info')
+        """
+        Read each Sample columns and calculate the percentage of each label to generate barplot statistics.
+        This will give a visual explanation of how many positions in each samples were filtered out because of different reason
+        """
+
+        c_reader = csv.reader(open('%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+        columns = list(zip(*c_reader))
+        keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
+        counts = 1
+        end = len(vcf_filenames) + 1
+        f_bar_count = open("%s/bargraph_indel_counts.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        f_bar_perc = open("%s/bargraph_indel_percentage.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        f_bar_count.write("Sample\tunmapped_positions\treference_allele\ttrue_variant\tOnly_low_AF\tOnly_DP\tOnly_low_MQ\tother\n")
+        f_bar_perc.write("Sample\tunmapped_positions_perc\ttrue_variant_perc\tOnly_low_AF_perc\tOnly_DP_perc\tOnly_low_MQ_perc\tother_perc\n")
+        for i in xrange(1, end, 1):
+            """ Bar Count Statistics: Variant Position Count Statistics """
+            true_variant = columns[i].count('VARIANT')
+            unmapped_positions = columns[i].count('reference_unmapped_position')
+            reference_allele = columns[i].count('reference_allele')
+            Only_low_AF = columns[i].count('LowAF')
+            Only_DP = columns[i].count('HighAF_DP')
+            Only_low_MQ = columns[i].count('HighAF')
+            low_AF_other_parameters = columns[i].count('LowAF_QUAL_DP_proximate_SNP') + columns[i].count('LowAF_DP_QUAL_proximate_SNP') + columns[i].count('LowAF_QUAL_proximate_SNP') + columns[i].count('LowAF_DP_proximate_SNP') + columns[i].count('LowAF_proximate_SNP') + columns[i].count('LowAF_QUAL_DP') + columns[i].count('LowAF_DP_QUAL') + columns[i].count('LowAF_QUAL') + columns[i].count('LowAF_DP')
+            high_AF_other_parameters = columns[i].count('HighAF_QUAL_DP_proximate_SNP') + columns[i].count('HighAF_DP_QUAL_proximate_SNP') + columns[i].count('HighAF_QUAL_proximate_SNP') + columns[i].count('HighAF_DP_proximate_SNP') + columns[i].count('HighAF_proximate_SNP') + columns[i].count('HighAF_QUAL_DP') + columns[i].count('HighAF_DP_QUAL') + columns[i].count('HighAF_QUAL')
+            other = low_AF_other_parameters + high_AF_other_parameters
+            total = true_variant + unmapped_positions + reference_allele + Only_low_AF + Only_DP + low_AF_other_parameters + high_AF_other_parameters + Only_low_MQ
+            filename_count = i - 1
+            bar_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), unmapped_positions, reference_allele, true_variant, Only_low_AF, Only_DP, Only_low_MQ, other)
+            f_bar_count.write(bar_string)
+
+            """ Bar Count Percentage Statistics: Variant Position Percentage Statistics """
+            try:
+                true_variant_perc = float((columns[i].count('VARIANT') * 100) / total)
+            except ZeroDivisionError:
+                true_variant_perc = 0
+            try:
+                unmapped_positions_perc = float((columns[i].count('reference_unmapped_position') * 100) / total)
+            except ZeroDivisionError:
+                unmapped_positions_perc = 0
+            try:
+                reference_allele_perc = float((columns[i].count('reference_allele') * 100) / total)
+            except ZeroDivisionError:
+                reference_allele_perc = 0
+            try:
+                Only_low_AF_perc = float((columns[i].count('LowAF') * 100) / total)
+            except ZeroDivisionError:
+                Only_low_AF_perc = 0
+            try:
+                Only_DP_perc = float((columns[i].count('HighAF_DP') * 100) / total)
+            except ZeroDivisionError:
+                Only_DP_perc = 0
+            try:
+                Only_low_MQ_perc = float((columns[i].count('HighAF') * 100) / total)
+            except ZeroDivisionError:
+                Only_low_MQ_perc = 0
+            try:
+                low_AF_other_parameters_perc = float(((columns[i].count('LowAF_QUAL_DP_proximate_SNP') + columns[i].count('LowAF_DP_QUAL_proximate_SNP') + columns[i].count('LowAF_QUAL_proximate_SNP') + columns[i].count('LowAF_DP_proximate_SNP') + columns[i].count('LowAF_proximate_SNP') + columns[i].count('LowAF_QUAL_DP') + columns[i].count('LowAF_DP_QUAL') + columns[i].count('LowAF_QUAL') + columns[i].count('LowAF_DP'))  * 100) / total)
+            except ZeroDivisionError:
+                low_AF_other_parameters_perc = 0
+            try:
+                high_AF_other_parameters_perc = float(((columns[i].count('HighAF_QUAL_DP_proximate_SNP') + columns[i].count('HighAF_DP_QUAL_proximate_SNP') + columns[i].count('HighAF_QUAL_proximate_SNP') + columns[i].count('HighAF_DP_proximate_SNP') + columns[i].count('HighAF_proximate_SNP') + columns[i].count('HighAF_QUAL_DP') + columns[i].count('HighAF_DP_QUAL') + columns[i].count('HighAF_QUAL')) * 100) / total)
+            except ZeroDivisionError:
+                high_AF_other_parameters_perc = 0
+
+            other_perc = float(low_AF_other_parameters_perc + high_AF_other_parameters_perc)
+            bar_perc_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), unmapped_positions_perc, true_variant_perc, Only_low_AF_perc, Only_DP_perc, Only_low_MQ_perc, other_perc)
+            f_bar_perc.write(bar_perc_string)
+        f_bar_count.close()
+        f_bar_perc.close()
+        bargraph_R_script = "library(ggplot2)\nlibrary(reshape)\nx1 <- read.table(\"bargraph_indel_percentage.txt\", header=TRUE)\nx1$Sample <- reorder(x1$Sample, rowSums(x1[-1]))\nmdf1=melt(x1,id.vars=\"Sample\")\npdf(\"%s/%s_barplot_indel.pdf\", width = 30, height = 30)\nggplot(mdf1, aes(Sample, value, fill=variable)) + geom_bar(stat=\"identity\") + ylab(\"Percentage of Filtered Positions\") + xlab(\"Samples\") + theme(text = element_text(size=9)) + scale_fill_manual(name=\"Reason for filtered out positions\", values=c(\"#08306b\", \"black\", \"orange\", \"darkgrey\", \"#fdd0a2\", \"#7f2704\")) + ggtitle(\"Title Here\") + ylim(0, 100) + theme(text = element_text(size=10), panel.background = element_rect(fill = 'white', colour = 'white'), plot.title = element_text(size=20, face=\"bold\", margin = margin(10, 0, 10, 0)), axis.ticks.y = element_blank(), axis.ticks.x = element_blank(),  axis.text.x = element_text(colour = \"black\", face= \"bold.italic\", angle = 90)) + theme(legend.position = c(0.6, 0.7), legend.direction = \"horizontal\")\ndev.off()"  % (args.filter2_only_snp_vcf_dir, os.path.basename(os.path.normpath(args.results_dir)))
+        barplot_R_file = open("%s/bargraph_indel.R" % args.filter2_only_snp_vcf_dir, 'w+')
+        barplot_R_file.write(bargraph_R_script)
+        keep_logging('Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, 'Run this R script to generate bargraph plot: %s/bargraph_indel.R' % args.filter2_only_snp_vcf_dir, logger, 'info')
+
+
+    """ Methods Steps"""
+    keep_logging('Running: Generating data matrices...', 'Running: Generating data matrices...', logger, 'info')
+
+    f_outgroup = open("%s/outgroup_indel_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'r+')
+    global outgroup_indel_specific_positions
+    outgroup_indel_specific_positions = []
+    for i in f_outgroup:
+        outgroup_indel_specific_positions.append(i)
+    f_outgroup.close()
+
+    f_outgroup = open("%s/outgroup_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'r+')
+    global outgroup_specific_positions
+    outgroup_specific_positions = []
+    for i in f_outgroup:
+        outgroup_specific_positions.append(i)
+    f_outgroup.close()
+
+    generate_indel_position_label_data_matrix_All_label()
+    keep_logging('Running: Changing variables in data matrices to codes for faster processing...', 'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
+    temp_generate_indel_position_label_data_matrix_All_label()
+    keep_logging('Running: Generating Barplot statistics data matrices...', 'Running: Generating Barplot statistics data matrices...', logger, 'info')
+    barplot_indel_stats()
+
+def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter):
+
+    """ Generate jobs/scripts that creates core consensus fasta file.
+
+    This function will generate and run scripts/jobs to create core consensus fasta file of only core variant positions.
+    Input for Fasttree, Beast and pairwise variant analysis.
+
+    :param jobrun: Based on this value all the job/scripts will run on "cluster": either on single cluster, "parallel-local": run in parallel on local system, "local": run on local system, "parallel-cluster": submit parallel jobs on cluster.
+    :param vcf_filenames: list of final vcf filenames i.e *_no_proximate_snp.vcf. These files are the final output of variant calling step for each sample.
+    :return:
+    :raises:
+    """
+    if jobrun == "parallel-cluster":
+        """
+        Supports only PBS clusters for now.
+        """
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -functional_filter %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, functional_filter)
+            job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
+            #os.system("qsub %s" % i)
+            call("qsub %s" % i, logger)
+
+
+    elif jobrun == "parallel-local" or jobrun == "cluster":
+        """
+        Generate a Command list of each job and run it in parallel on different cores available on local system
+        """
+        command_array = []
+        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -functional_filter %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, functional_filter)
+            job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        if args.numcores:
+            num_cores = int(num_cores)
+        else:
+            num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
+
+    # elif jobrun == "cluster":
+    #     command_array = []
+    #     command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+    #     f3 = open(command_file, 'w+')
+    #     for i in vcf_filenames:
+    #         job_name = os.path.basename(i)
+    #         job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+    #         job_file_name = "%s_fasta.pbs" % (i)
+    #         f1=open(job_file_name, 'w+')
+    #         f1.write(job_print_string)
+    #         f1.close()
+    #     pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+    #     pbs_scripts = glob.glob(pbs_dir)
+    #     for i in pbs_scripts:
+    #         f3.write("bash %s\n" % i)
+    #     f3.close()
+    #     with open(command_file, 'r') as fpp:
+    #         for lines in fpp:
+    #             lines = lines.strip()
+    #             command_array.append(lines)
+    #     fpp.close()
+    #     os.system("bash %s/command_file" % args.filter2_only_snp_vcf_dir)
+    else:
+        """
+        Generate a Command list of each job and run it on local system one at a time
+        """
+        command_array = []
+        command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+
+
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -functional_filter %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, functional_filter)
+            job_file_name = "%s_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+
+
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        #os.system("bash command_file")
+        call("bash %s" % command_file, logger)
+
+def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, config_file):
+
+    """ Generate jobs/scripts that creates core consensus fasta file.
+
+    This function will generate and run scripts/jobs to create core consensus fasta file of only core variant positions.
+    Input for Fasttree, Beast and pairwise variant analysis.
+
+    :param jobrun: Based on this value all the job/scripts will run on "cluster": either on single cluster, "parallel-local": run in parallel on local system, "local": run on local system, "parallel-cluster": submit parallel jobs on cluster.
+    :param vcf_filenames: list of final vcf filenames i.e *_no_proximate_snp.vcf. These files are the final output of variant calling step for each sample.
+    :return:
+    :raises:
+    """
+    if jobrun == "parallel-cluster":
+        """
+        Supports only PBS clusters for now.
+        """
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -config %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, config_file)
+            job_file_name = "%s_ref_allele_variants_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
+            #os.system("qsub %s" % i)
+            call("qsub %s" % i, logger)
+
+
+    elif jobrun == "parallel-local" or jobrun == "cluster":
+        """
+        Generate a Command list of each job and run it in parallel on different cores available on local system
+        """
+        command_array = []
+        command_file = "%s/commands_list_ref_allele_variants_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -config %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, config_file)
+            job_file_name = "%s_ref_allele_variants_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_ref_allele_variants_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        if args.numcores:
+            num_cores = int(num_cores)
+        else:
+            num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
+
+    # elif jobrun == "cluster":
+    #     command_array = []
+    #     command_file = "%s/commands_list_fasta.sh" % args.filter2_only_snp_vcf_dir
+    #     f3 = open(command_file, 'w+')
+    #     for i in vcf_filenames:
+    #         job_name = os.path.basename(i)
+    #         job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir)
+    #         job_file_name = "%s_fasta.pbs" % (i)
+    #         f1=open(job_file_name, 'w+')
+    #         f1.write(job_print_string)
+    #         f1.close()
+    #     pbs_dir = args.filter2_only_snp_vcf_dir + "/*_fasta.pbs"
+    #     pbs_scripts = glob.glob(pbs_dir)
+    #     for i in pbs_scripts:
+    #         f3.write("bash %s\n" % i)
+    #     f3.close()
+    #     with open(command_file, 'r') as fpp:
+    #         for lines in fpp:
+    #             lines = lines.strip()
+    #             command_array.append(lines)
+    #     fpp.close()
+    #     os.system("bash %s/command_file" % args.filter2_only_snp_vcf_dir)
+    else:
+        """
+        Generate a Command list of each job and run it on local system one at a time
+        """
+        command_array = []
+        command_file = "%s/commands_list_ref_allele_variants_fasta.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+
+
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s_fasta\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/extract_only_ref_variant_fasta_unique_positions.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -config %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], args.filter2_only_snp_vcf_dir, i, args.reference, core_vcf_fasta_dir, config_file)
+            job_file_name = "%s_ref_allele_variants_fasta.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_ref_allele_variants_fasta.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+
+
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        #os.system("bash command_file")
+        call("bash %s" % command_file, logger)
+
+def create_job_DP(jobrun, vcf_filenames):
+    """
+    Based on type of jobrun; generate jobs and run accordingly.
+    :param jobrun: Based on this value all the job/scripts will run on "cluster": either on single cluster, "parallel-local": run in parallel on local system, "local": run on local system, "parallel-cluster": submit parallel jobs on cluster.
+    :param vcf_filenames:
+    :return:
+    """
+
+    if jobrun == "parallel-cluster":
+        """
+        Supports only PBS clusters for now.
+        """
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
+            #os.system("qsub %s" % i)
+            call("qsub %s" % i, logger)
+
+
+    elif jobrun == "parallel-local" or jobrun == "cluster" :
+        """
+        Generate a Command list of each job and run it in parallel on different cores available on local system
+        """
+        command_array = []
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+
+
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+
+
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        with open(command_file, 'r') as fpp:
+            for lines in fpp:
+                lines = lines.strip()
+                command_array.append(lines)
+        fpp.close()
+        print len(command_array)
+        if args.numcores:
+            num_cores = int(num_cores)
+        else:
+            num_cores = multiprocessing.cpu_count()
+        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
+
+    # elif jobrun == "cluster":
+    #     """ Test pending """
+    #     command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+    #     f3 = open(command_file, 'w+')
+    #     for i in vcf_filenames:
+    #         job_name = os.path.basename(i)
+    #         job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+    #         job_file_name = "%s_DP.pbs" % (i)
+    #         f1=open(job_file_name, 'w+')
+    #         f1.write(job_print_string)
+    #         f1.close()
+    #     pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+    #     pbs_scripts = glob.glob(pbs_dir)
+    #     for i in pbs_scripts:
+    #         f3.write("bash %s\n" % i)
+    #     f3.close()
+    #     os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
+
+    else:
+        """
+        Generate a Command list of each job and run it on local system one at a time
+        """
+        command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
+        f3 = open(command_file, 'w+')
+        for i in vcf_filenames:
+            job_name = os.path.basename(i)
+            job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
+            job_file_name = "%s_DP.pbs" % (i)
+            f1=open(job_file_name, 'w+')
+            f1.write(job_print_string)
+            f1.close()
+        pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
+        pbs_scripts = glob.glob(pbs_dir)
+        for i in pbs_scripts:
+            f3.write("bash %s\n" % i)
+        f3.close()
+        #os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
+        call("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir, logger)
+
 def generate_vcf_files():
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+        keep_logging('Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions, 'Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions, logger,
+                     'info')
+        # phage_positions = []
+        # phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
+        # with open(phage_region_positions, 'rU') as fp:
+        #     for line in fp:
+        #         phage_positions.append(line.strip())
+        # fp.close()
+
+
+        functional_filter_pos_array = []
+        with open(functional_class_filter_positions, 'rU') as f_functional:
+            for line_func in f_functional:
+                functional_filter_pos_array.append(line_func.strip())
+
+        ref_variant_position_array = []
+        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            if line not in functional_filter_pos_array:
+                ref_variant_position_array.append(line)
+        ffp.close()
+
+        # Adding core indel support: 2018-07-24
+        ref_indel_variant_position_array = []
+        ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            if line not in functional_filter_pos_array:
+                ref_indel_variant_position_array.append(line)
+        ffp.close()
+
+    else:
+        functional_filter_pos_array = []
+        ref_variant_position_array = []
+        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            ref_variant_position_array.append(line)
+        ffp.close()
+
+        # Adding core indel support: 2018-07-24
+        ref_indel_variant_position_array = []
+        ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+        for line in ffp:
+            line = line.strip()
+            if line not in functional_filter_pos_array:
+                ref_indel_variant_position_array.append(line)
+        ffp.close()
+
+    print "No. of core SNPs: %s" % len(ref_variant_position_array)
+    print "No. of core INDELs: %s" % len(ref_indel_variant_position_array)
+
+    f_file = open("%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir, 'w+')
+    for pos in ref_variant_position_array:
+        f_file.write(pos + '\n')
+    f_file.close()
+
+    # Adding core indel support: 2018-07-24
+    f_file = open(
+        "%s/Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir,
+        'w+')
+    for pos in ref_indel_variant_position_array:
+        f_file.write(pos + '\n')
+    f_file.close()
+
     base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
     filter2_files_array = []
     for i in vcf_filenames:
         filter2_file = i.replace('_no_proximate_snp.vcf', '')
         filter2_files_array.append(filter2_file)
-    ref_variant_position_array = []
-    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    for line in ffp:
-        line = line.strip()
-        ref_variant_position_array.append(line)
-    ffp.close()
+
 
     filtered_out_vcf_files = []
     for i in filter2_files_array:
@@ -820,7 +1750,7 @@ def generate_vcf_files():
                         print_array.append(line)
         file_open.close()
         file_name = i + "_core.vcf"
-        print "Generating %s" % file_name
+        keep_logging('Generating %s' % file_name, 'Generating %s' % file_name, logger, 'info')
         filtered_out_vcf_files.append(file_name)
         f1 = open(file_name, 'w+')
         for ios in print_array:
@@ -829,7 +1759,7 @@ def generate_vcf_files():
         f1.close()
 
     filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
-    print "\nGenerating Consensus...\n"
+    keep_logging('Generating Consensus...', 'Generating Consensus...', logger, 'info')
     for file in filtered_out_vcf_files:
         f1 = open(filename, 'a+')
         bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
@@ -846,17 +1776,19 @@ def generate_vcf_files():
         sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
         subprocess.call([sed_command], shell=True)
         f1.write(sed_command)
-    print "The consensus commands are in : %s" % filename
+    keep_logging('The consensus commands are in : %s' % filename, 'The consensus commands are in : %s' % filename, logger, 'info')
     sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
-    os.system(sequence_lgth_cmd)
+    #os.system(sequence_lgth_cmd)
+    call("%s" % sequence_lgth_cmd, logger)
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
     gatk_filter2_command = "java -jar %s/%s/GenomeAnalysisTK.jar -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("gatk", Config)['gatk_bin'], reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
-    print "\n\nRunning Command: [%s]\n\n" % gatk_filter2_command
-    os.system(gatk_filter2_command)
+    keep_logging('Running Command: [%s]' % gatk_filter2_command, 'Running Command: [%s]' % gatk_filter2_command, logger, 'info')
+    #os.system(gatk_filter2_command)
+    call("%s" % gatk_filter2_command, logger)
     filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (out_path, analysis, out_path, analysis)
-    os.system(filter_flag_command)
+    call("%s" % filter_flag_command, logger)
     gatk_filter2_final_vcf = "%s/%s_filter2_final.vcf" % (out_path, analysis)
     return gatk_filter2_final_vcf
 
@@ -898,7 +1830,6 @@ def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, refer
         f2.write(position_print_string)
     return gatk_filter2_final_vcf_file_no_proximate_snp
 
-
 def FQ_analysis():
     for i in vcf_filenames:
         filename_base = os.path.basename(i)
@@ -910,13 +1841,14 @@ def FQ_analysis():
         (out, err) = proc.communicate()
         out = out.strip()
         reference_file = out.split(':')
+        # Change it to multiprocessing
         gatk_filter2_final_vcf_file = gatk_filter2(aln_mpileup_vcf_file, temp_dir, analysis, reference_file[1])
         #print gatk_filter2_final_vcf_file
         gatk_filter2_final_vcf_file_no_proximate_snp = remove_proximate_snps(gatk_filter2_final_vcf_file, temp_dir, analysis, reference_file[1])
         grep_fq_field = "awk -F\'\\t\' \'{print $8}\' %s | grep -o \'FQ=.*\' | sed \'s/FQ=//g\' | awk -F\';\' \'{print $1}\' > %s/%s_FQ_values" % (gatk_filter2_final_vcf_file_no_proximate_snp, os.path.dirname(i), analysis)
-        os.system(grep_fq_field)
+        #os.system(grep_fq_field)
+        call("%s" % grep_fq_field, logger)
         #print grep_fq_field
-
 
 def DP_analysis():
     create_job_DP(args.jobrun, vcf_filenames)
@@ -940,8 +1872,9 @@ def DP_analysis():
     # os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
 
 def DP_analysis_barplot():
-    os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
-    print "Generating DP barplots data..."
+    #os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
+    call("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir, logger)
+    keep_logging('Generating DP barplots data...', 'Generating DP barplots data...', logger, 'info')
     c_reader = csv.reader(open('%s/filtered_DP_values.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     counts = 1
@@ -1006,12 +1939,17 @@ def DP_analysis_barplot():
         bar_perc_string = "%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), reference_position_perc, oneto5_perc, sixto10_perc, elevento14_perc, fifteenorabove_perc)
         f_bar_perc.write(bar_perc_string)
 
-
 def extract_only_ref_variant_fasta(core_vcf_fasta_dir):
-    create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir)
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        functional_filter = "yes"
+    create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter)
 
 def extract_only_ref_variant_fasta_from_reference():
-    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir).readlines()
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and \
+            ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        ffp = open("%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir).readlines()
+    else:
+        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir).readlines()
     fasta_string = ""
     #firstLine = ffp.pop(0)
     for lines in ffp:
@@ -1022,57 +1960,1593 @@ def extract_only_ref_variant_fasta_from_reference():
         out = out.strip()
         fasta_string = fasta_string + out
         if not out:
-            print "Error extracting reference allele"
+            print lines
+            keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
+            exit()
 
     pattern = re.compile(r'\s+')
     fasta_string = re.sub(pattern, '', fasta_string)
-    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '')) + fasta_string + "\n"
-    fp = open("%s/%s_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', ''))), 'w+')
+    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '').replace('.fa', '')) + fasta_string + "\n"
+    fp = open("%s/%s_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', '').replace('.fa', ''))), 'w+')
+    fp.write(final_fasta_string)
+    fp.close()
+
+def extract_only_ref_variant_fasta_from_reference_allele_variant():
+    ffp = open("%s/unique_positions_file" % args.filter2_only_snp_vcf_dir).readlines()
+    #unique_positions_array = []
+
+    fasta_string = ""
+    #firstLine = ffp.pop(0)
+    for lines in ffp:
+        lines = lines.strip()
+        #unique_positions_array.append(lines)
+        extract_base = "grep -v \'>\' %s | tr -d \'\\n\'| cut -b%s" % (args.reference, lines)
+        proc = subprocess.Popen([extract_base], stdout=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate()
+        out = out.strip()
+        fasta_string = fasta_string + out
+        if not out:
+            print lines
+            keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
+            exit()
+
+    pattern = re.compile(r'\s+')
+    fasta_string = re.sub(pattern, '', fasta_string)
+    final_fasta_string = ">%s\n" % os.path.basename(args.reference.replace('.fasta', '').replace('.fa', '')) + fasta_string + "\n"
+    fp = open("%s/%s_allele_variants.fa" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', '').replace('.fa', ''))), 'w+')
     fp.write(final_fasta_string)
     fp.close()
 
 def prepare_snpEff_db(reference_basename):
     keep_logging('Preparing snpEff database requirements.', 'Preparing snpEff database requirements.', logger, 'info')
-    os.system("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir))
+    reference_basename = (os.path.basename(args.reference)).split(".")
+    if os.path.isfile("%s/%s/snpEff.config" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'])):
+        #os.system("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir))
+        keep_logging("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), "cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger, 'debug')
+        call("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger)
+    else:
+        keep_logging("Error: %s/%s/snpEff.config doesn't exists.\nExiting..." % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']),"Error: %s/%s/snpEff.config doesn't exists.\nExiting..." % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'exception')
+        exit()
     make_sure_path_exists("%s/%s/data/%s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]))
     make_sure_path_exists("%s/%s/data/genomes/" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
-    os.system("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
+    #os.system("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
+    keep_logging("cp %s %s/%s/data/genomes/%s.fa" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), "cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
+    call("cp %s %s/%s/data/genomes/%s.fa" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
     with open("%s/snpEff.config" % args.filter2_only_snp_vcf_dir, "a") as conf_file:
         conf_file.write("\n\n##Building Custom Database###\n%s.genome\t: %s\n\n" % (reference_basename[0], reference_basename[0]))
     conf_file.close()
     #get the gff name from config file
-    os.system("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]))
-    os.system("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
+    if os.path.isfile("%s/%s.gff" % (os.path.dirname(args.reference), reference_basename[0])):
+        keep_logging("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]),
+                     "cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
+                                                               ConfigSectionMap("bin_path", Config)['binbase'],
+                                                               ConfigSectionMap("snpeff", Config)['snpeff_bin'],
+                                                               reference_basename[0]), logger, 'debug')
+        keep_logging("cp %s/%s.gb* %s/%s/data/%s/genes.gbk" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]),
+                     "cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
+                                                               ConfigSectionMap("bin_path", Config)['binbase'],
+                                                               ConfigSectionMap("snpeff", Config)['snpeff_bin'],
+                                                               reference_basename[0]), logger, 'debug')
+        call("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
+        call("cp %s/%s.gb* %s/%s/data/%s/genes.gbk" % (
+        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
+        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
+    else:
+        keep_logging("Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]),
+                         "Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]), logger, 'exception')
+        exit()
+    #keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
+    keep_logging("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
 
+    #call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
+    call("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
     keep_logging('Finished Preparing snpEff database requirements.', 'Finished Preparing snpEff database requirements.', logger, 'info')
 
 def variant_annotation():
     keep_logging('Annotating Variants using snpEff.', 'Annotating Variants using snpEff.', logger, 'info')
-    reference_basename = (os.path.basename(args.reference)).split(".")
-    print reference_basename[0]
-    prepare_snpEff_db(reference_basename)
+
+    if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
+        if ConfigSectionMap("snpeff", Config)['db']:
+            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            proc = subprocess.Popen(["java -jar %s/%s/%s databases | grep %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
+                                    stdout=subprocess.PIPE, shell=True)
+            (out2, err2) = proc.communicate()
+            if out2:
+                snpeffdb = ConfigSectionMap("snpeff", Config)['db']
+            else:
+                print "The database name %s provided was not found. Check the name and try again" % ConfigSectionMap("snpeff", Config)['db']
+                exit()
+        else:
+            print "snpEff db section is not set in config file"
+            exit()
+    else:
+        reference_basename = (os.path.basename(args.reference)).split(".")
+        snpeffdb = reference_basename[0]
+        prepare_snpEff_db(reference_basename)
+
     annotate_vcf_cmd_array = []
+    annotate_final_vcf_cmd_array = []
     for i in vcf_filenames:
         raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
         annotate_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], raw_vcf, raw_vcf)
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
+        print annotate_vcf_cmd
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
-        final_vcf = i + ".gz"
+        final_vcf = i
         annotate_final_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, reference_basename[0], final_vcf, final_vcf)
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
         annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
     if args.numcores:
         num_cores = int(num_cores)
     else:
         num_cores = multiprocessing.cpu_count()
-    print "here"
+    #print annotate_vcf_cmd_array
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
 
+def indel_annotation():
+    keep_logging('Annotating indels using snpEff.', 'Annotating indels using snpEff.', logger, 'info')
 
+    if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
+        if ConfigSectionMap("snpeff", Config)['db']:
+            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            proc = subprocess.Popen(["java -jar %s/%s/%s databases | grep %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
+                                    stdout=subprocess.PIPE, shell=True)
+            (out2, err2) = proc.communicate()
+            if out2:
+                snpeffdb = ConfigSectionMap("snpeff", Config)['db']
+            else:
+                print "The database name %s provided was not found. Check the name and try again" % ConfigSectionMap("snpeff", Config)['db']
+                exit()
+        else:
+            print "snpEff db section is not set in config file"
+            exit()
+    else:
+        reference_basename = (os.path.basename(args.reference)).split(".")
+        snpeffdb = reference_basename[0]
+        prepare_snpEff_db(reference_basename)
+
+
+    annotate_vcf_cmd_array = []
+    annotate_final_vcf_cmd_array = []
+    for i in vcf_filenames:
+        raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
+        annotate_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
+        annotate_vcf_cmd_array.append(annotate_vcf_cmd)
+        final_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf')
+        annotate_final_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
+                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
+        annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
+    if args.numcores:
+        num_cores = int(num_cores)
+    else:
+        num_cores = multiprocessing.cpu_count()
+    results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
+    results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
+
+def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, logger, Config):
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)[
+        'gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    #files_gatk = "--variant " + ' --variant '.join(vcf_files_array)
+    keep_logging("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), "java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix), logger, 'debug')
+    merge_gatk_commands_file = "%s/gatk_merge.sh" % args.filter2_only_snp_vcf_dir
+    with open(merge_gatk_commands_file, 'w+') as fopen:
+        fopen.write("java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (base_cmd, reference, files_gatk, out_path, merged_file_suffix) + '\n')
+    fopen.close()
+    # Commenting out calling gatk combine variants with a custom logging call method, problem with python subprocess, OSError: [Errno 7] Argument list too long
+    os.system("bash %s" % merge_gatk_commands_file)
+    return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
+
+def annotated_snp_matrix():
+
+    """
+    :return: Annotate core vcf files generated at core_prep steps.
+    Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
+    This dictionary will then be used to generate row annotations for SNP/Indel matrix.
+    """
+
+
+    """Annotate all VCF file formats with SNPeff"""
+
+    variant_annotation()
+
+    indel_annotation()
+
+
+    """
+    
+    Extract Annotation information from Genbank file 
+    
+    - Check if Reference genome Genbank file exists.
+    - Initiate dictionaries that maps locus tag to gene name and product. This information will be used for annotating SNP/Indel Matrix
+    - Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
+    
+    """
+
+    reference_basename = (os.path.basename(args.reference)).split(".")
+    if os.path.isfile("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0])):
+        handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'rU')
+    else:
+        raise IOError('%s/%s.gbf does not exist.' % (os.path.dirname(args.reference), reference_basename[0]))
+        exit()
+
+    locus_tag_to_gene_name = {}
+    locus_tag_to_product = {}
+    locus_tag_to_strand = {}
+
+    keep_logging(
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
+        logger, 'info')
+    for record in SeqIO.parse(handle, 'genbank') :
+        for feature in record.features:
+            location = str(feature.location)
+            strand = location.split('(')[1].replace(')', '')
+            if 'locus_tag' in feature.qualifiers:
+                locus_tag_to_strand[str(feature.qualifiers['locus_tag'][0])] = strand
+                if 'gene' in feature.qualifiers:
+                    locus_tag_to_gene_name[str(feature.qualifiers['locus_tag'][0])] = str(feature.qualifiers['gene'][0])
+                else:
+                    locus_tag_to_gene_name[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
+                if 'product' in feature.qualifiers:
+                    locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = str(feature.qualifiers['product'][0])
+                else:
+                    locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
+            else:
+                keep_logging(
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
+                    logger, 'exception')
+
+
+    """ Start of Merging Step:
+    
+    - Merge Individual Annotated raw and filtered vcf files to generate a Final merged vcf file using Gatk combine variants method.
+    - Parse this merged Final_vcf* file and generate a SNP/Indel matrix 
+    
+    """
+
+    keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, logger, 'info')
+
+    # Debug commenting
+    files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    tabix(files_for_tabix, "vcf", logger, Config)
+    files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    tabix(files_for_tabix, "vcf", logger, Config)
+
+    files = ' '.join(vcf_filenames)
+
+
+    """ bcftools merging is deprecated. Replaced with GATK combinevariants """
+    merge_commands_file = "%s/bcftools_merge.sh" % args.filter2_only_snp_vcf_dir
+
+    with open(merge_commands_file, 'w+') as fopen:
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir,files.replace("_filter2_final.vcf_no_proximate_snp.vcf","_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
+
+    fopen.close()
+
+    os.system("bash %s" % merge_commands_file)
+
+
+    """ Merge with Gatk combine variants method """
+    merged_file_suffix = "_no_proximate_snp.vcf"
+
+    annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
+    annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
+
+    with open(annotated_no_proximate_snp_file, 'w+') as fopen:
+        for i in vcf_filenames:
+            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
+    fopen.close()
+
+    with open(annotated_no_proximate_snp_indel_file, 'w+') as fopen:
+        for i in vcf_filenames:
+            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
+    fopen.close()
+
+    files_gatk = ""
+    for i in vcf_filenames:
+        files_gatk = files_gatk + " --variant " + i
+    final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
+
+
+    merged_file_suffix = "_indel.vcf"
+    final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                                                         '_filter2_indel_final.vcf_ANN.vcf.gz'),
+                                                      args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
+                                                      logger, Config)
+
+    """ Tabix index the combined GATK Final vcf file """
+    files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
+    # Debug commenting
+    tabix(files_for_tabix, "vcf", logger, Config)
+
+    """ End of Merging Step. """
+
+
+    """ Extract ANN information from bcftools Final vcf file. (There is a reason why i am using bcftools merged file to extract ANN information) """
+    snp_var_ann_dict = {}
+    indel_var_ann_dict = {}
+
+    for variants in VCF("%s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
+        snp_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
+
+    for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
+        indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
+
+
+    """ print_string_header will be the column names of SNP matrix. Column names = Sample names"""
+    print_string_header = "\t"
+    for i in vcf_filenames:
+        print_string_header = print_string_header + os.path.basename(i) + "\t"
+
+    """ Read Only_ref_variant_positions_for_closely* to get final core variant positions into core_positions array"""
+    core_positions = []
+    if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        core_positions_file = "%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir
+    else:
+        core_positions_file = "%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir
+    with open(core_positions_file) as fp:
+        for line in fp:
+            line = line.strip()
+            core_positions.append(line)
+        fp.close()
+
+    indel_core_positions = []
+    if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        core_positions_file = "%s/Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir
+    else:
+        core_positions_file = "%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir
+    with open(core_positions_file) as fp:
+        for line in fp:
+            line = line.strip()
+            indel_core_positions.append(line)
+        fp.close()
+
+    """ Read in functional class filter positions. """
+    functional_filter_pos_array = []
+    with open(functional_class_filter_positions, 'rU') as f_functional:
+        for line_func in f_functional:
+            functional_filter_pos_array.append(line_func.strip())
+
+    """ GET individual PHAGE/Repetitive/masked region positions to assign functional class group string """
+    phage_positions = []
+    repetitive_positions = []
+    mask_positions = []
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+        if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+            phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
+            if os.path.isfile(phage_region_positions):
+                with open(phage_region_positions, 'rU') as fphage:
+                    for line in fphage:
+                        phage_positions.append(line.strip())
+                fphage.close()
+            else:
+                raise IOError('%s/phage_region_positions.txt does not exist.' % args.filter2_only_snp_vcf_dir)
+                exit()
+        # GET REPETITIVE REGIONS
+        if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
+            repetitive_positions_file = "%s/repeat_region_positions.txt" % args.filter2_only_snp_vcf_dir
+            if os.path.isfile(repetitive_positions_file):
+                with open(repetitive_positions_file, 'rU') as frep:
+                    for line in frep:
+                        repetitive_positions.append(line.strip())
+                frep.close()
+            else:
+                raise IOError('%s/repeat_region_positions.txt does not exist.' % args.filter2_only_snp_vcf_dir)
+                exit()
+        # GET MASK REGIONS
+        if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
+            mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
+            if os.path.isfile(mask_positions_file):
+                with open(mask_positions_file, 'rU') as fmask:
+                    for line in fmask:
+                        mask_positions.append(line.strip())
+                fmask.close()
+            else:
+                raise IOError('%s/mask_positions.txt does not exist.' % args.filter2_only_snp_vcf_dir)
+                exit()
+
+
+    """ Read and parse final GATK merged vcf file cyvcf library """
+    final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
+
+    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
+    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
+    for sample in final_merge_anno_file.samples:
+        # header_print_string = header_print_string + "," + sample
+        header_print_string = header_print_string + "\t" + sample
+    header_print_string = header_print_string + "\n"
+
+
+
+
+    """ Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
+    paste_label_command = "paste %s/unique_positions_file " % args.filter2_only_snp_vcf_dir
+    paste_indel_label_command = "paste %s/unique_indel_positions_file " % args.filter2_only_snp_vcf_dir
+    paste_label_command_exclude_outgroup = "paste %s/unique_positions_file " % args.filter2_only_snp_vcf_dir
+    paste_indel_label_command_exclude_outgroup = "paste %s/unique_indel_positions_file " % args.filter2_only_snp_vcf_dir
+
+    for filename_base in final_merge_anno_file.samples:
+        if "R1_001_final.fastq.gz" in filename_base:
+            second_part = filename_base.replace("R1_001_final.fastq.gz", "R2_001_final.fastq.gz")
+            first_part_split = filename_base.split('R1_001_final.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+        elif "_R1.fastq.gz" in filename_base:
+            second_part = filename_base.replace("_R1.fastq.gz", "_R2.fastq.gz")
+            first_part_split = filename_base.split('_R1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+            # Changed on 03/15/2019
+        elif "R1.fastq.gz" in filename_base:
+            second_part = filename_base.replace("R1.fastq.gz", "R2.fastq.gz")
+            first_part_split = filename_base.split('R1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+            # Changed on 03/15/2019
+            first_part = re.sub("_S.*", "", first_part)
+        elif "1_combine.fastq.gz" in filename_base:
+            second_part = filename_base.replace("1_combine.fastq.gz", "2_combine.fastq.gz")
+            first_part_split = filename_base.split('1_combine.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+        elif "1_sequence.fastq.gz" in filename_base:
+            second_part = filename_base.replace("1_sequence.fastq.gz", "2_sequence.fastq.gz")
+            first_part_split = filename_base.split('1_sequence.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+        elif "_forward.fastq.gz" in filename_base:
+            second_part = filename_base.replace("_forward.fastq.gz", "_reverse.fastq.gz")
+            first_part_split = filename_base.split('_forward.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+        elif "R1_001.fastq.gz" in filename_base:
+            second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
+            first_part_split = filename_base.split('R1_001.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+        elif "_1.fastq.gz" in filename_base:
+            second_part = filename_base.replace("_1.fastq.gz", "_2.fastq.gz")
+            first_part_split = filename_base.split('_1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+        elif ".1.fastq.gz" in filename_base:
+            second_part = filename_base.replace(".1.fastq.gz", ".2.fastq.gz")
+            first_part_split = filename_base.split('.1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+        sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (args.filter2_only_snp_vcf_dir, first_part)
+        sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (args.filter2_only_snp_vcf_dir, first_part)
+        paste_label_command = paste_label_command + sample_label_file + " "
+        paste_indel_label_command = paste_indel_label_command + sample_indel_label_file + " "
+        if args.outgroup:
+            if outgroup not in sample_label_file:
+                paste_label_command_exclude_outgroup = paste_label_command_exclude_outgroup + sample_label_file + " "
+                paste_indel_label_command_exclude_outgroup = paste_indel_label_command_exclude_outgroup + sample_indel_label_file + " "
+
+
+    paste_label_command = paste_label_command + " > %s/All_label_final_ordered.txt" % args.filter2_only_snp_vcf_dir
+    paste_indel_label_command = paste_indel_label_command + " > %s/All_indel_label_final_ordered.txt" % args.filter2_only_snp_vcf_dir
+    sort_ordered_label_cmd = "sort -n -k1,1 %s/All_label_final_ordered.txt > %s/All_label_final_ordered_sorted.txt" % (
+    args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
+    sort_ordered_indel_label_cmd = "sort -n -k1,1 %s/All_indel_label_final_ordered.txt > %s/All_indel_label_final_ordered_sorted.txt" % (
+    args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
+
+    if args.outgroup:
+        paste_label_command_exclude_outgroup = paste_label_command_exclude_outgroup + " > %s/All_label_final_ordered_exclude_outgroup.txt" % args.filter2_only_snp_vcf_dir
+        paste_indel_label_command_exclude_outgroup = paste_indel_label_command_exclude_outgroup + " > %s/All_indel_label_final_ordered_exclude_outgroup.txt" % args.filter2_only_snp_vcf_dir
+        sort_ordered_label_cmd_exclude_outgroup = "sort -n -k1,1 %s/All_label_final_ordered_exclude_outgroup.txt > %s/All_label_final_ordered_exclude_outgroup_sorted.txt" % (
+            args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
+        sort_ordered_indel_label_cmd_exclude_outgroup = "sort -n -k1,1 %s/All_indel_label_final_ordered_exclude_outgroup.txt > %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % (
+            args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
+
+
+
+    # """
+    # Prepare Outgroup Sample name from the argument.
+    # """
+    #
+    # if "R1_001_final.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('R1_001_final.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # elif "_R1.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('_R1.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # elif "R1.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('R1.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     first_part = re.sub("_S.*_", "", first_part)
+    #     outgroup = re.sub("_S.*", "", first_part)
+    #
+    # elif "1_combine.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('1_combine.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # elif "1_sequence.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('1_sequence.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # elif "_forward.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('_forward.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # elif "R1_001.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('R1_001.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # elif "_1.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('_1.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # elif ".1.fastq.gz" in args.outgroup:
+    #     first_part_split = filename_base.split('.1.fastq.gz')
+    #     first_part = first_part_split[0].replace('_L001', '')
+    #     outgroup = re.sub("_S.*_", "", first_part)
+    #
+    # keep_logging(
+    #     'Using %s as Outgroup Sample Name' % outgroup,
+    #     'Using %s as Outgroup Sample Name' % outgroup,
+    #     logger, 'info')
+
+    # # Uncomment this later if you dont run All_label_final_ordered.sh
+    # call("%s" % paste_label_command, logger)
+    # call("%s" % sort_ordered_label_cmd, logger)
+    # call("%s" % paste_indel_label_command, logger)
+    # call("%s" % sort_ordered_indel_label_cmd, logger)
+
+    # # Changed: Uncomment this later if you dont run All_label_final_ordered.sh
+    # os.system(paste_label_command)
+    # os.system(sort_ordered_label_cmd)
+    # os.system(paste_indel_label_command)
+    # os.system(sort_ordered_indel_label_cmd)
+
+    # Just in case if os.system past commands doesn't work
+    with open('%s/All_label_final_ordered.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
+        outfile.write(paste_label_command + '\n')
+        outfile.write(sort_ordered_label_cmd + '\n')
+        outfile.write(paste_indel_label_command + '\n')
+        outfile.write(sort_ordered_indel_label_cmd + '\n')
+    outfile.close()
+
+    # Changed: Uncomment this
+    os.system("bash %s/All_label_final_ordered.sh" % args.filter2_only_snp_vcf_dir)
+
+    if args.outgroup:
+        # Just in case if os.system past commands doesn't work
+        with open('%s/All_label_final_ordered_exclude_outgroup.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
+            outfile.write(paste_label_command_exclude_outgroup + '\n')
+            outfile.write(sort_ordered_label_cmd_exclude_outgroup + '\n')
+            outfile.write(paste_indel_label_command_exclude_outgroup + '\n')
+            outfile.write(sort_ordered_indel_label_cmd_exclude_outgroup + '\n')
+        outfile.close()
+
+        # Changed: Uncomment this
+        os.system("bash %s/All_label_final_ordered_exclude_outgroup.sh" % args.filter2_only_snp_vcf_dir)
+
+    """ position_label and  position_indel_label will contain information about each unique variant position that passed variant filters in any sample and reasons for being filtered out in any sample """
+    position_label = OrderedDict()
+    with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+        keep_logging('Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                     'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                     logger, 'info')
+        csv_reader = csv.reader(csv_file, delimiter='\t')
+        for row in csv_reader:
+            position_label[row[0]] = ','.join(row[1:])
+    csv_file.close()
+
+    position_indel_label = OrderedDict()
+    with open("%s/All_indel_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+        keep_logging(
+            'Reading All label positions file: %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            'Reading All label positions file: %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            logger, 'info')
+        csv_reader = csv.reader(csv_file, delimiter='\t')
+        for row in csv_reader:
+            if row[0] not in position_label.keys():
+                position_indel_label[row[0]] = ','.join(row[1:])
+            else:
+                position_indel_label[row[0]] = ','.join(row[1:])
+                keep_logging('Warning: position %s already present as a SNP' % row[0],
+                             'Warning: position %s already present as a SNP' % row[0], logger, 'info')
+    csv_file.close()
+
+    """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
+    mask_fq_mq_positions = []
+    if args.outgroup:
+        position_label_exclude_outgroup = OrderedDict()
+        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+        csv_file.close()
+
+        position_indel_label_exclude_outgroup = OrderedDict()
+        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                if row[0] not in position_label_exclude_outgroup.keys():
+                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+                else:
+                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+                    keep_logging('Warning: position %s already present as a SNP' % row[0],
+                                 'Warning: position %s already present as a SNP' % row[0], logger, 'info')
+        csv_file.close()
+        for key in position_label_exclude_outgroup.keys():
+            label_sep_array = position_label_exclude_outgroup[key].split(',')
+            for i in label_sep_array:
+                if "LowFQ" in str(i):
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+                if i == "HighFQ":
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+    else:
+        for key in position_label.keys():
+            label_sep_array = position_label[key].split(',')
+            for i in label_sep_array:
+                if "LowFQ" in str(i):
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+                if i == "HighFQ":
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+
+    print "Length of mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
+
+
+    """ Open Matrix files to write strings """
+    fp_code = open("%s/SNP_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code_phage = open("%s/SNP_matrix_code_phage_unmasked.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele = open("%s/SNP_matrix_allele_outdated.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_new = open("%s/SNP_matrix_allele_new.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_new_phage = open("%s/SNP_matrix_allele_phage_unmasked.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code.write(header_print_string)
+    fp_allele.write(header_print_string)
+    fp_allele_new.write(header_print_string)
+    fp_allele_new_phage.write(header_print_string)
+
+    """ Parse variant positions from the loaded cyvcf VCF object and generate the matrix row information """
+    for variants in VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
+        # Initiate print_string variable to add matrix row information.
+        # print_string generator no. 1
+        print_string = ""
+
+        # Initiate and assign Functional Field filter string => PHAGE/REPEAT/MASK/NULL
+        functional_field = ""
+        if str(variants.POS) in phage_positions:
+            functional_field = functional_field + "PHAGE_"
+        else:
+            functional_field = functional_field + "NULL_"
+        if str(variants.POS) in repetitive_positions:
+            functional_field = functional_field + "REPEATS_"
+        else:
+            functional_field = functional_field + "NULL_"
+        if str(variants.POS) in mask_positions:
+            functional_field = functional_field + "MASK"
+        else:
+            functional_field = functional_field + "NULL"
+
+        # Initiate variant code string where the code means:
+        # REF allele = 0, core = 1, Filtered = 2, unmapped = -1, True but non-core = 3
+        # This will be used as row information for SNP_matrix_code file
+
+        code_string = position_label[str(variants.POS)]
+        code_string = code_string.replace('reference_allele', '0')
+        code_string = code_string.replace('reference_unmapped_position', '-1')
+        # Changing LowFQ code from 2 to -3
+        # Changing HighFQ but LowMQ code from 2 to -4
+        code_string = code_string.replace('LowFQ_QUAL_DP_proximate_SNP', '-3')
+        code_string = code_string.replace('LowFQ_DP_QUAL_proximate_SNP', '-3')
+        code_string = code_string.replace('LowFQ_QUAL_proximate_SNP', '-3')
+        code_string = code_string.replace('LowFQ_DP_proximate_SNP', '-3')
+        code_string = code_string.replace('LowFQ_proximate_SNP', '-3')
+        code_string = code_string.replace('LowFQ_QUAL_DP', '-3')
+        code_string = code_string.replace('LowFQ_DP_QUAL', '-3')
+        code_string = code_string.replace('LowFQ_QUAL', '-3')
+        code_string = code_string.replace('LowFQ_DP', '-3')
+        code_string = code_string.replace('HighFQ_QUAL_DP_proximate_SNP', '-5')
+        code_string = code_string.replace('HighFQ_DP_QUAL_proximate_SNP', '-5')
+        code_string = code_string.replace('HighFQ_QUAL_proximate_SNP', '-5')
+        code_string = code_string.replace('HighFQ_DP_proximate_SNP', '-5')
+        code_string = code_string.replace('HighFQ_proximate_SNP', '-5')
+        code_string = code_string.replace('HighFQ_QUAL_DP', '-5')
+        code_string = code_string.replace('HighFQ_DP_QUAL', '-5')
+        code_string = code_string.replace('HighFQ_QUAL', '-5')
+        code_string = code_string.replace('HighFQ_DP', '-5')
+        code_string = code_string.replace('LowFQ', '-3')
+        code_string = code_string.replace('HighFQ', '-4')
+
+
+        if str(variants.POS) in core_positions:
+            code_string = code_string.replace('VARIANT', '1')
+        # Adding functional class status code to SNP matrix: 2018-07-24
+        elif str(variants.POS) in functional_filter_pos_array:
+            # Changing Functional class filter code to -2 from 2: 2018-12-04
+            code_string = code_string.replace('VARIANT', '-2')
+        else:
+            code_string = code_string.replace('VARIANT', '2')
+
+        # Assign type of snp: coding / non-coding
+        if variants.INFO.get('ANN'):
+            if "protein_coding" in variants.INFO.get('ANN'):
+                snp_type = "Coding SNP"
+            else:
+                snp_type = "Non-coding SNP"
+        else:
+            if len(variants.ALT) > 1 and snp_var_ann_dict[variants.POS]:
+                #print variants.ALT
+                #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
+                #print variants.POS
+                #print set(snp_var_ann_dict[variants.POS])
+                if "protein_coding" in set(snp_var_ann_dict[variants.POS].split(',')):
+                    snp_type = "Coding SNP"
+                else:
+                    snp_type = "Non-coding SNP"
+            else:
+                snp_type = "Non-coding SNP"
+
+        # print_string generator no. 2
+        print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
+
+        # Get ANN field from variant INFO column and save it as an array. Split and Go through each elements, add bells and whistles
+        if variants.INFO.get('ANN'):
+            ann_array = (variants.INFO.get('ANN')).split(',')
+            ann_string = ";"
+            for i in list(set(ann_array)):
+                i_split = i.split('|')
+                #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
+                tag = str(i_split[4]).replace('CHR_START-', '')
+                tag = str(tag).replace('-CHR_END', '')
+
+                if "-" in tag:
+                    #print tag
+                    extra_tags = ""
+                    tag_split = tag.split('-')
+                    for i in tag_split:
+                        if i in locus_tag_to_gene_name.keys():
+                            extra_tags = extra_tags + locus_tag_to_gene_name[i] + ","
+                        else:
+                            extra_tags = extra_tags + "None" + ","
+                    extra_tags_prot = ""
+                    for i in tag_split:
+                        if i in locus_tag_to_product.keys():
+                            extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
+                        else:
+                            extra_tags_prot = extra_tags_prot + "None" + ","
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                elif tag == "":
+                    print "ERROR: Issues with this locus tag. Check this tag in genbank file"
+                    print list(set(ann_array))
+                else:
+                    if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
+                        extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
+                    else:
+                        print "tag key not found: %s" % tag
+                        extra_tags = "NULL" + "|" + "NULL"
+                    # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+        else:
+            if len(variants.ALT) > 1 and snp_var_ann_dict[variants.POS]:
+                #print variants.ALT
+                #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
+
+                ann_string = ";%s" % ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
+                #print snp_var_ann_dict[variants.POS].split(',')
+                #print ann_string
+            else:
+                ann_string = ";None"
+
+
+
+        # SNP Matrix Bug
+        ann_string_split = ann_string.split(';')
+        #print len(ann_string_split)
+        if len(ann_string_split) == 3:
+            first_allele_ann_string_split = ann_string_split[1].split('|')
+            second_allele_ann_string_split = ann_string_split[2].split('|')
+            if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10:
+                ann_string = ann_string
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10:
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + str(ann_string_split[2])
+
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10:
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = str(ann_string_split[1]) + new_second_allele_ann_string
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10:
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + new_second_allele_ann_string
+
+
+        if len(ann_string_split) > 3:
+            first_allele_ann_string_split = ann_string_split[1].split('|')
+            second_allele_ann_string_split = ann_string_split[2].split('|')
+            third_allele_ann_string_split = ann_string_split[3].split('|')
+            if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(third_allele_ann_string_split) == 10:
+                ann_string = ann_string
+
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10 and len(third_allele_ann_string_split) == 10:
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + str(ann_string_split[2]) + str(ann_string_split[3])
+
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10 and len(third_allele_ann_string_split) == 10:
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = str(ann_string_split[1]) + new_second_allele_ann_string + str(ann_string_split[3])
+
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(third_allele_ann_string_split) > 10:
+
+                if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
+                    prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
+                else:
+                    prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                                              third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = str(ann_string_split[1]) + str(ann_string_split[2]) + new_third_allele_ann_string
+
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10 and len(third_allele_ann_string_split) > 10:
+                #print ann_string
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
+                    prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
+                else:
+                    prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                                              third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + new_second_allele_ann_string + new_third_allele_ann_string
+
+                #print ann_string
+
+
+        # if len(ann_string_split) > 4:
+        #     print ann_string
+
+        # ann_string_split = ann_string.split(';')
+        # for i in ann_string_split:
+        #     if len(i.split('|')) != 10 and len(i.split('|')) != 1:
+        #         print i
+
+        # print_string generator no. 3
+
+        strandness = " strand="
+        if "-" in tag:
+            tagsplit = tag.split('-')
+            for i in tagsplit:
+                if i in locus_tag_to_strand.keys():
+                    strandness = strandness + locus_tag_to_strand[i] + "/"
+                else:
+                    strandness = strandness + "Null" + "/"
+        else:
+            if tag in locus_tag_to_strand.keys():
+                strandness = strandness + locus_tag_to_strand[tag]
+            else:
+                strandness = strandness + "Null"
+        print_string = print_string + " locus_tag=" + tag + strandness + ann_string
+        print_string_phage = print_string
+
+        """ Go over each genotype for a variant and generate a gt_string variable """
+        gt_string = ""
+        for gt in variants.gt_bases:
+            gt = gt.replace('./.', '.')
+            gt_string = gt_string + "," + gt
+        gt_string = gt_string.replace('A/A', 'A')
+        gt_string = gt_string.replace('G/G', 'G')
+        gt_string = gt_string.replace('C/C', 'C')
+        gt_string = gt_string.replace('T/T', 'T')
+        gt_string = gt_string.replace('.', variants.REF)
+
+        # #print print_string + gt_string + '\n'
+        # fp_allele.write(print_string + gt_string + '\n')
+        # #print print_string + "," + code_string + '\n'
+        # fp_code.write(print_string + "," + code_string + '\n')
+
+        # print_string generator no. 4
+        # Replace various seperators that were used in old matrix. Clean up this block of code
+        final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
+        final_code_string_phage = print_string + "\t" + code_string.replace(',', '\t') + '\n'
+
+        # Replace code at Phage Positions with -2
+        if str(variants.POS) in functional_filter_pos_array:
+            code_string_array = code_string.split(',')
+
+
+
+            for (i, item) in enumerate(code_string_array):
+                if item == "0":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "1":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "2":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "3":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "4":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-1":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-2":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-3":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-4":
+                    code_string_array[i] = "-2"
+            for (i, item) in enumerate(code_string_array):
+                if item == "-5":
+                    code_string_array[i] = "-2"
+            code_string = ','.join(code_string_array)
+            # code_string = ""
+            # for i in code_string_array:
+            #     code_string = code_string + "-2" + ","
+
+        # if str(variants.POS) == "591226":
+        #     print str(code_string)
+        final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
+        final_allele_string = final_allele_string.replace(',|', '|')
+        # final_allele_string = final_allele_string.replace(',;,', ':::')
+        # final_allele_string = final_allele_string.replace(';,', ':::')
+        final_allele_string = final_allele_string.replace(',;,', ':::')
+        final_allele_string = final_allele_string.replace(';,', ':::')
+        final_code_string = final_code_string.replace(',|', '|')
+        final_code_string_phage = final_code_string_phage.replace(',|', '|')
+        # final_code_string = final_code_string.replace(',;,', ':::')
+        # final_code_string = final_code_string.replace(';,', ':::')
+        final_code_string_phage = final_code_string_phage.replace(',;,', ':::')
+        final_code_string_phage = final_code_string_phage.replace(';,', ':::')
+        final_code_string_phage = final_code_string_phage.replace(';\t\t', ';\t')
+        final_code_string_phage = final_code_string_phage.replace('\t\t', '\t')
+
+        final_code_string = final_code_string.replace(',;,', ':::')
+        final_code_string = final_code_string.replace(';,', ':::')
+        final_code_string = final_code_string.replace(';\t\t', ';\t')
+        final_code_string = final_code_string.replace('\t\t', '\t')
+
+        final_allele_string = final_allele_string.replace('\t\t', '\t')
+        fp_allele.write(final_allele_string)
+        fp_code.write(final_code_string)
+        fp_code_phage.write(final_code_string_phage)
+
+        # print code_string
+        # print gt_string[1:]
+
+        ntd_string = ""
+        ntd_string_phage = ""
+        count = 0
+        code_string_array = code_string.split(',')
+        gt_string_array = gt_string[1:].split(',')
+        # print code_string_array
+        #print gt_string[0]
+
+        for i in gt_string_array:
+            if str(code_string_array[count]) == "0" or str(code_string_array[count]) == "1" or str(code_string_array[count]) == "2":
+                ntd_string = ntd_string + "\t" + str(i)
+                ntd_string_phage = ntd_string_phage + "\t" + str(i)
+            if code_string_array[count] == "-1":
+                ntd_string = ntd_string + "\t" + "-"
+                ntd_string_phage = ntd_string_phage + "\t" + "-"
+            # Changing Functional class filter code to -2 from 2 and replacing variant allele with N: 2018-12-04
+            if str(code_string_array[count]) == "-5" or str(code_string_array[count]) == "-2" or str(code_string_array[count]) == "-3" or str(code_string_array[count]) == "-4":
+
+                ntd_string = ntd_string + "\t" + "N"
+            if str(code_string_array[count]) == "-5":
+                ntd_string_phage = ntd_string_phage + "\t" + "N"
+            if str(code_string_array[count]) == "-2":
+                ntd_string_phage = ntd_string_phage + "\t" + str(i)
+            if str(code_string_array[count]) == "-3":
+                ntd_string_phage = ntd_string_phage + "\t" + "N"
+            if str(code_string_array[count]) == "-4":
+                ntd_string_phage = ntd_string_phage + "\t" + "N"
+            count += 1
+
+
+        # ntd_string_array = ntd_string.split('\t')
+        # if len(ntd_string_array) != 5:
+        #     print str(variants.POS)
+
+        # """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
+        # mask_fq_mq_positions = []
+        # for i in position_label[str(variants.POS)]:
+        #     if "LowFQ" in i:
+        #         mask_fq_mq_positions.append(str(variants.POS))
+        #     if i == "HighFQ":
+        #         mask_fq_mq_positions.append(str(variants.POS))
+        #
+        # print "Length of mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
+
+        """ Mask Phage positions and LowFQ/MQ positions in SNP_matrix_allele_new.csv. This is the default matrix. """
+        if str(variants.POS) in functional_filter_pos_array:
+            ntd_string_array = ntd_string.split('\t')
+            ntd_string = ""
+            #print ntd_string_array
+            for i in ntd_string_array:
+                ntd_string = ntd_string + "\t" + "N"
+            ntd_string_array = ntd_string.split('\t')
+
+
+        if str(variants.POS) in mask_fq_mq_positions:
+            ntd_string_array = ntd_string.split('\t')
+            ntd_string = ""
+            #print len(ntd_string_array)
+            for i in ntd_string_array[1:]:
+                ntd_string = ntd_string + "\t" + "N"
+            ntd_string_array = ntd_string.split('\t')
+
+
+
+        """ Generate a print_string for each of the matrix - SNP_matrix_allele_new.csv and SNP_matrix_allele_phage.csv """
+        print_string = print_string + ntd_string + "\n"
+
+        print_string_phage = print_string_phage + ntd_string_phage + "\n"
+
+        """ This is a hardcoded solution. Find the root cause of these strings getting into the print_strint variable """
+        print_string.replace(',;,', '\t')
+        print_string.replace(';,', '\t')
+        print_string_phage.replace(',;,', '\t')
+        print_string_phage.replace(';,', '\t')
+
+        fp_allele_new.write(print_string)
+        fp_allele_new_phage.write(print_string_phage)
+
+    fp_code.close()
+    fp_code_phage.close()
+    fp_allele.close()
+    fp_allele_new.close()
+    fp_allele_new_phage.close()
+
+######################################3
+    """ Indel matrix """
+    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
+    final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
+    for sample in final_merge_anno_file.samples:
+        # header_print_string = header_print_string + "," + sample
+        header_print_string = header_print_string + "\t" + sample
+    header_print_string = header_print_string + "\n"
+    #header_print_string = header_print_string.replace(':::,', ':::')
+    #header_print_string = header_print_string.replace(':::,', '\t')
+    fp_code = open("%s/Indel_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code_phage = open("%s/Indel_matrix_code_phage_unmasked.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele = open("%s/Indel_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code.write(header_print_string)
+    fp_code_phage.write(header_print_string)
+    fp_allele.write(header_print_string)
+
+    """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
+    mask_fq_mq_positions = []
+    for key in position_indel_label.keys():
+        label_sep_array = position_indel_label[key].split(',')
+        for i in label_sep_array:
+            if "LowAF" in i:
+                if key not in mask_fq_mq_positions:
+                    mask_fq_mq_positions.append(key)
+            if i == "HighAF":
+                if key not in mask_fq_mq_positions:
+                    mask_fq_mq_positions.append(key)
+
+    print "Length of indel mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
+
+    for variants in VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
+        print_string = ""
+
+        functional_field = ""
+        if str(variants.POS) in phage_positions:
+            functional_field = functional_field + "PHAGE_"
+        else:
+            functional_field = functional_field + "NULL_"
+        if str(variants.POS) in repetitive_positions:
+            functional_field = functional_field + "REPEATS_"
+        else:
+            functional_field = functional_field + "NULL_"
+        if str(variants.POS) in mask_positions:
+            functional_field = functional_field + "MASK"
+        else:
+            functional_field = functional_field + "NULL"
+
+        code_string = position_indel_label[str(variants.POS)]
+        code_string = code_string.replace('reference_allele', '0')
+        code_string = code_string.replace('reference_unmapped_position', '-1')
+        code_string = code_string.replace('LowAF_QUAL_DP_proximate_SNP', '-5')
+        code_string = code_string.replace('LowAF_DP_QUAL_proximate_SNP', '-5')
+        code_string = code_string.replace('LowAF_QUAL_proximate_SNP', '-5')
+        code_string = code_string.replace('LowAF_DP_proximate_SNP', '-5')
+        code_string = code_string.replace('LowAF_proximate_SNP', '-5')
+        code_string = code_string.replace('LowAF_QUAL_DP', '-5')
+        code_string = code_string.replace('LowAF_DP_QUAL', '-5')
+        code_string = code_string.replace('LowAF_QUAL', '-5')
+        code_string = code_string.replace('LowAF_DP', '-5')
+        code_string = code_string.replace('HighAF_QUAL_DP_proximate_SNP', '-5')
+        code_string = code_string.replace('HighAF_DP_QUAL_proximate_SNP', '-5')
+        code_string = code_string.replace('HighAF_QUAL_proximate_SNP', '-5')
+        code_string = code_string.replace('HighAF_DP_proximate_SNP', '-5')
+        code_string = code_string.replace('HighAF_proximate_SNP', '-5')
+        code_string = code_string.replace('HighAF_QUAL_DP', '-5')
+        code_string = code_string.replace('HighAF_DP_QUAL', '-5')
+        code_string = code_string.replace('HighAF_QUAL', '-5')
+        code_string = code_string.replace('HighAF_DP', '-5')
+        code_string = code_string.replace('LowAF', '-3')
+        code_string = code_string.replace('HighAF', '-4')
+
+        if str(variants.POS) in indel_core_positions:
+            code_string = code_string.replace('VARIANT', '1')
+        # Adding functional class status code to SNP matrix: 2018-07-24
+        elif str(variants.POS) in functional_filter_pos_array:
+            # Changing Functional class filter code to -2 from 2: 2018-12-04
+            code_string = code_string.replace('VARIANT', '-2')
+        else:
+            code_string = code_string.replace('VARIANT', '2')
+
+
+
+
+
+        if variants.INFO.get('ANN'):
+            if "protein_coding" in variants.INFO.get('ANN'):
+                snp_type = "Coding INDEL"
+            else:
+                snp_type = "Non-coding INDEL"
+        else:
+            if len(variants.ALT) > 1:
+                #print variants.ALT
+                #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
+                if "protein_coding" in set(indel_var_ann_dict[variants.POS].split(',')):
+                    snp_type = "Coding INDEL"
+                else:
+                    snp_type = "Non-coding INDEL"
+            else:
+                snp_type = "Non-coding INDEL"
+        print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
+
+        if variants.INFO.get('ANN'):
+            ann_array = (variants.INFO.get('ANN')).split(',')
+            ann_string = ";"
+            # for i in list(set(ann_array)):
+            #     i_split = i.split('|')
+            #     ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
+            # print_string = print_string + ann_string
+            for i in list(set(ann_array)):
+                i_split = i.split('|')
+                #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
+                tag = str(i_split[4]).replace('CHR_START-', '')
+                tag = str(tag).replace('-CHR_END', '')
+                tag = str(tag).replace('&', '-')
+                #print tag
+                if "-" in tag:
+                    #print tag
+                    extra_tags = ""
+                    tag_split = tag.split('-')
+                    for i in tag_split:
+                        if i in locus_tag_to_gene_name.keys():
+                            extra_tags = extra_tags + locus_tag_to_gene_name[i] + ","
+                        else:
+                            extra_tags = extra_tags + "None" + ","
+                    extra_tags_prot = ""
+                    for i in tag_split:
+                        if i in locus_tag_to_product.keys():
+                            extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
+                        else:
+                            extra_tags_prot = extra_tags_prot + "None" + ","
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                else:
+                    if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
+                        extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
+                    else:
+                        print "tag key not found: %s" % tag
+                        extra_tags = "NULL" + "|" + "NULL"
+                    #extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
+                    # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+        else:
+
+            if len(variants.ALT) > 1:
+                #print variants.ALT
+                #print ';'.join(set(indel_var_ann_dict[variants.POS].split(',')))
+                ann_string = ";%s" % ';'.join(set(indel_var_ann_dict[variants.POS].split(',')))
+            else:
+                ann_string = ";None"
+
+        # SNP Matrix Bug
+        ann_string_split = ann_string.split(';')
+        # print len(ann_string_split)
+        if len(ann_string_split) == 3:
+            first_allele_ann_string_split = ann_string_split[1].split('|')
+            second_allele_ann_string_split = ann_string_split[2].split('|')
+            # if "USA300HOU_2368" in first_allele_ann_string_split:
+            #     #print len(first_allele_ann_string_split)
+            #     print ann_string
+            if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10:
+                ann_string = ann_string
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10:
+                # if "KPNIH1_26205" in first_allele_ann_string_split:
+                #     print len(first_allele_ann_string_split)
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + str(ann_string_split[2])
+
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10:
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                               second_allele_ann_string_split[1] + "|" + \
+                                               second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
+                                               second_allele_ann_string_split[9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[
+                                                   13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = str(ann_string_split[1]) + new_second_allele_ann_string
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10:
+                # print ann_string
+
+                # if "USA300HOU_2368" in first_allele_ann_string_split:
+                #     # print len(first_allele_ann_string_split)
+                #     print ann_string
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                               second_allele_ann_string_split[1] + "|" + \
+                                               second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
+                                               second_allele_ann_string_split[9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[
+                                                   13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + new_second_allele_ann_string
+                # if "USA300HOU_2368" in first_allele_ann_string_split:
+                #     # print len(first_allele_ann_string_split)
+                #     print ann_string
+            # print ann_string
+
+        if len(ann_string_split) > 3:
+            # ann_string = ""
+            # print ann_string
+            # print len(ann_string_split)
+            first_allele_ann_string_split = ann_string_split[1].split('|')
+            second_allele_ann_string_split = ann_string_split[2].split('|')
+            third_allele_ann_string_split = ann_string_split[3].split('|')
+            # print first_allele_ann_string_split
+            # print second_allele_ann_string_split
+            if len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(
+                    third_allele_ann_string_split) == 10:
+                ann_string = ann_string
+
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) == 10 and len(
+                    third_allele_ann_string_split) == 10:
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + str(ann_string_split[2]) + str(ann_string_split[3])
+
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10 and len(
+                    third_allele_ann_string_split) == 10:
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                               second_allele_ann_string_split[1] + "|" + \
+                                               second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
+                                               second_allele_ann_string_split[9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[
+                                                   13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = str(ann_string_split[1]) + new_second_allele_ann_string + str(ann_string_split[3])
+
+            elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(
+                    third_allele_ann_string_split) > 10:
+
+                if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
+                    prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
+                else:
+                    prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                                              third_allele_ann_string_split[1] + "|" + \
+                                              third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + \
+                                              third_allele_ann_string_split[9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + \
+                                              third_allele_ann_string_split[11] + "|" + \
+                                              third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = str(ann_string_split[1]) + str(ann_string_split[2]) + new_third_allele_ann_string
+
+            elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10 and len(
+                    third_allele_ann_string_split) > 10:
+                # print ann_string
+                if first_allele_ann_string_split[14] == "" and first_allele_ann_string_split[15] == "":
+                    prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
+                else:
+                    prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + \
+                                              first_allele_ann_string_split[2] + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + \
+                                              first_allele_ann_string_split[10] + "|" + \
+                                              first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
+                    prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
+                else:
+                    prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                                           second_allele_ann_string_split[1] + "|" + \
+                                           second_allele_ann_string_split[2] + "|" + \
+                                           second_allele_ann_string_split[4] + "|" + \
+                                           second_allele_ann_string_split[9] + "|" + \
+                                           second_allele_ann_string_split[10] + "|" + \
+                                           second_allele_ann_string_split[11] + "|" + \
+                                           second_allele_ann_string_split[
+                                               13] + "|" + prod + "|" + prod + ";"
+
+                if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
+                    prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
+                else:
+                    prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                                              third_allele_ann_string_split[1] + "|" + \
+                                              third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + \
+                                              third_allele_ann_string_split[9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + \
+                                              third_allele_ann_string_split[11] + "|" + \
+                                              third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+
+                ann_string = new_first_allele_ann_string + new_second_allele_ann_string + new_third_allele_ann_string
+
+                # print ann_string
+
+        ann_string_split = ann_string.split(';')
+        for i in ann_string_split:
+            if len(i.split('|')) != 10 and len(i.split('|')) != 1:
+                #ann_string = ";"
+                #i_split_array = i.split('|')
+                #print '|'.join(i_split_array[:10])
+                print ann_string
+
+
+    #print_string = print_string + ann_string
+    #print_string = print_string + " locus_tag=" + tag + ann_string
+        
+
+        strandness = " strand="
+        if "-" in tag:
+            tagsplit = tag.split('-')
+            for i in tagsplit:
+                if i in locus_tag_to_strand.keys():
+                    strandness = strandness + locus_tag_to_strand[i] + "/"
+                else:
+                    strandness = strandness + "Null" + "/"
+        else:
+            if tag in locus_tag_to_strand.keys():
+                strandness = strandness + locus_tag_to_strand[tag]
+            else:
+                strandness = strandness + "Null"
+
+        print_string = print_string + " locus_tag=" + tag + strandness + ann_string
+
+
+
+
+
+
+        gt_string = ""
+        for gt in variants.gt_bases:
+            gt = gt.replace('./.', '.')
+            if "/" in gt:
+                gt_split = gt.split('/')
+                gt = gt_split[1]
+            gt_string = gt_string + "," + gt
+        gt_string = gt_string.replace('.', variants.REF)
+
+        final_code_string_phage = print_string + "\t" + code_string.replace(',', '\t') + '\n'
+
+        """Replacing Phage/Functional filter position code"""
+        if str(variants.POS) in functional_filter_pos_array:
+            code_string_array = code_string.split(',')
+            code_string = ""
+            for i in code_string_array:
+                code_string = code_string + "," + "-2"
+
+        final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
+        final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
+        final_allele_string = final_allele_string.replace(',|', '|')
+        # final_allele_string = final_allele_string.replace(',;,', ':::')
+        # final_allele_string = final_allele_string.replace(';,', ':::')
+        final_allele_string = final_allele_string.replace(',;,', ':::')
+        final_allele_string = final_allele_string.replace(';,', ':::')
+        final_code_string = final_code_string.replace(',|', '|')
+        final_code_string_phage = final_code_string.replace(',|', '|')
+        # final_code_string = final_code_string.replace(',;,', ':::')
+        # final_code_string = final_code_string.replace(';,', ':::')
+        final_code_string_phage = final_code_string_phage.replace(',;,', ':::')
+        final_code_string_phage = final_code_string_phage.replace(';,', ':::')
+        final_code_string_phage = final_code_string_phage.replace('\t\t', '\t')
+
+        final_code_string = final_code_string.replace(',;,', ':::')
+        final_code_string = final_code_string.replace(';,', ':::')
+        final_code_string = final_code_string.replace('\t\t', '\t')
+
+        final_allele_string = final_allele_string.replace('\t\t', '\t')
+        fp_allele.write(final_allele_string)
+        fp_code.write(final_code_string)
+        fp_code_phage.write(final_code_string_phage)
+    fp_code.close()
+    fp_code_phage.close()
+    fp_allele.close()
+
+def core_prep_snp(core_vcf_fasta_dir):
+    """ Generate SNP Filter Label Matrix """
+    generate_paste_command()
+
+    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
+    generate_position_label_data_matrix()
+
+    """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
+    generate_vcf_files()
+
+    """ Generate consensus fasta file from core vcf files """
+    extract_only_ref_variant_fasta_from_reference()
+
+    """ Generate consensus fasta file with only reference and variant position bases """
+    extract_only_ref_variant_fasta(core_vcf_fasta_dir)
+
+    """ Analyze the positions that were filtered out only due to insufficient depth"""
+    DP_analysis()
+
+def core_prep_indel(core_vcf_fasta_dir):
+
+    """ Generate SNP Filter Label Matrix """
+    generate_indel_paste_command()
+
+    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
+    generate_indel_position_label_data_matrix()
+
+""" report methods """
 def alignment_report(data_matrix_dir):
-    print "\nGenerating Alignment report...\n"
-    varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
+    keep_logging('Generating Alignment report...', 'Generating Alignment report...', logger, 'info')
+    varcall_dir = os.path.dirname(args.results_dir)
+    print varcall_dir
     report_string = ""
     header = "Sample,QC-passed reads,Mapped reads,% mapped reads,mean depth,%_bases_above_5,%_bases_above_10,%_bases_above_15,unmapped_positions,READ_PAIR_DUPLICATES,READ_PAIR_OPTICAL_DUPLICATES,unmapped reads,% unmapped reads"
     fp = open("%s/Report_alignment.txt" % (data_matrix_dir), 'w+')
@@ -1093,12 +3567,10 @@ def alignment_report(data_matrix_dir):
         #print myList
         fp.write(myList + '\n')
     fp.close()
-    print "Alignment report can be found in %s/Report_alignment.txt" % data_matrix_dir
-
-
+    keep_logging('Alignment report can be found in %s/Report_alignment.txt' % data_matrix_dir, 'Alignment report can be found in %s/Report_alignment.txt' % data_matrix_dir, logger, 'info')
 
 def variant_report(data_matrix_dir):
-    print "\nGenerating Variants report...\n"
+    keep_logging('Generating Variants report...', 'Generating Variants report...', logger, 'info')
     varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
     report_string = ""
     header = "Sample,Total Unique Variants,core SNPs,unmapped_positions,reference_allele,true_variant,Only_low_FQ,Only_DP,Only_low_MQ,other,unmapped_positions_perc,true_variant_perc,Only_low_FQ_perc,Only_DP_perc,Only_low_MQ_perc,other_perc"
@@ -1115,52 +3587,108 @@ def variant_report(data_matrix_dir):
         myList = ','.join(map(str, (sample, unmapped_positions, core_snps, filtered_snp_count, filtered_snp_perc)))
         fp.write(myList + '\n')
     fp.close()
-    print "Variant call report can be found in %s/Report_variants.txt" % data_matrix_dir
+    keep_logging('Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, 'Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, logger, 'info')
+
+def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
+    keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta,
+                 logger,
+                 'info')
 
 
-def fasttree(tree_dir, input_fasta, cluster):
-    keep_logging('Running Fasttree on input: %s' % input_fasta, 'Running Fasttree on input: %s' % input_fasta, logger, 'info')
-    fasttree_cmd = "%s/%s/%s -nt %s > %s/%s_FastTree.tree" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("fasttree", Config)['fasttree_bin'], ConfigSectionMap("fasttree", Config)['base_cmd'], input_fasta, tree_dir, (os.path.basename(input_fasta)).replace('.fa', ''))
-    keep_logging('%s' % fasttree_cmd, '%s' % fasttree_cmd, logger, 'info')
-    if cluster == "parallel-local" or cluster == "local":
-        os.system("cd %s" % tree_dir)
-        os.system(fasttree_cmd)
-    elif cluster == "parallel-cluster":
-        job_name = os.path.basename(tree_dir)
-        job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, fasttree_cmd)
-        job_file_name = "%s/fasttree_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
+    call("module load bioperl python-anaconda2/201607 biopython dendropy reportlab fasttree RAxML fastml/gub gubbins", logger)
+    #os.system("module load bioperl python-anaconda2/201607 biopython dendropy reportlab fasttree RAxML fastml/gub gubbins")
+    #gubbins_cmd = "%s/%s --prefix %s/%s %s" % (
+    # ConfigSectionMap("gubbins", Config)['gubbins_bin'], ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir,
+    # (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
+
+    load_module = "module load bioperl python-anaconda2/201607 biopython dendropy reportlab fasttree RAxML fastml/gub gubbins"
+    gubbins_cmd = "%s --threads 6 --prefix %s/%s %s" % (
+    ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir,
+    (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
+    keep_logging('\nRunning Gubbins on: %s' % input_fasta, '\nRunning Gubbins: %s\n' % input_fasta,
+                 logger,
+                 'info')
+
+    keep_logging('Running: %s' % gubbins_cmd, '%s' % gubbins_cmd, logger, 'info')
+    if jobrun == "parallel-local" or jobrun == "local":
+        call("cd %s" % gubbins_dir, logger)
+        call(gubbins_cmd, logger)
+    elif jobrun == "cluster":
+        call("cd %s" % gubbins_dir, logger)
+        call(gubbins_cmd, logger)
+    elif jobrun == "parallel-cluster":
+        job_file_name = "%s/gubbins_%s.pbs" % (gubbins_dir, os.path.basename(input_fasta))
+        job_name = os.path.basename(job_file_name)
+        job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=12,mem=47000mb,walltime=250:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], gubbins_dir, load_module, gubbins_cmd)
         f1=open(job_file_name, 'w+')
         f1.write(job_print_string)
         f1.close()
-        os.system("qsub %s" % job_file_name)
+        #os.system("qsub %s" % job_file_name)
+        call("qsub %s" % job_file_name, logger)
 
-def raxml(tree_dir, input_fasta):
-    keep_logging('Running RAXML on input: %s' % input_fasta, 'Running RAXML on input: %s' % input_fasta, logger, 'info')
-    raxml_cmd = "%s/%s/%s %s -s %s -n %s_raxML" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'], ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta, (os.path.basename(input_fasta)).replace('.fa', ''))
-    keep_logging('%s' % raxml_cmd, '%s' % raxml_cmd, logger, 'info')
-    if cluster == "parallel-local" or cluster == "local":
-        os.system("cd %s" % tree_dir)
-        os.system(raxml_cmd)
-    elif cluster == "parallel-cluster":
-        job_name = os.path.basename(tree_dir)
-        job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,mem=47000mb,walltime=76:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], tree_dir, raxml_cmd)
-        job_file_name = "%s/raxml_%s.pbs" % (tree_dir, os.path.basename(input_fasta))
-        f1=open(job_file_name, 'w+')
-        f1.write(job_print_string)
-        f1.close()
-        os.system("qsub %s" % job_file_name)
+def get_outgroup():
+    """
+    Prepare Outgroup Sample name from the argument.
+    """
+    if args.outgroup:
+        if "R1_001_final.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('R1_001_final.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
 
+        elif "_R1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('_R1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
 
-def gubbins(gubbins_dir, input_fasta):
-    print "\nRunning Gubbins on input: %s\n" % input_fasta
-    os.system("cd %s" % ConfigSectionMap("gubbins", Config)['gubbins_bin'])
-    gubbins_cmd = "%s/%s --prefix %s/%s %s" % (ConfigSectionMap("gubbins", Config)['gubbins_bin'], ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir, (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
-    print gubbins_cmd
-    os.system(gubbins_cmd)
+        elif "R1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('R1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+            outgroup = re.sub("_S.*", "", first_part)
+
+        elif "1_combine.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('1_combine.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "1_sequence.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('1_sequence.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "_forward.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('_forward.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "R1_001.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('R1_001.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "_1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('_1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif ".1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('.1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        keep_logging(
+            'Using %s as Outgroup Sample Name' % outgroup,
+            'Using %s as Outgroup Sample Name' % outgroup,
+            logger, 'info')
+
+        return outgroup
+    else:
+        keep_logging('Outgroup Sample Name not provided\n', 'Outgroup Sample Name not provided\n', logger, 'info')
+        outgroup = ""
 
 """
 Pending inclusion
-"""
 
 class FuncThread(threading.Thread):
     def __init__(self, target, *args):
@@ -1173,50 +3701,35 @@ class FuncThread(threading.Thread):
 def someOtherFunc(data, key):
     print "someOtherFunc was called : data=%s; key=%s" % (str(data), str(key))
 
-def run_phaster(reference_genome):
-    print "\nRunning Phaster on input reference genome: %s\n" % reference_genome
-    out_name = (os.path.basename(reference_genome)).split('.')
-    phaster_post_cmd = "wget --post-file=\"%s\" \"http://phaster.ca/phaster_api\" -O %s/%s" % (reference_genome, args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_post.json")
-
-    print "Running: %s\n" % phaster_post_cmd
-    #os.system(phaster_post_cmd)
-    with open('%s/%s' % (args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_post.json")) as json_data:
-        data = json.load(json_data)
-        print "Status: %s\njob_id: %s\n" % (data["status"], data["job_id"])
-
-def parse_phaster(reference_genome):
-    out_name = (os.path.basename(reference_genome)).split('.')
-    with open('%s/%s' % (args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_post.json")) as json_data:
-        data = json.load(json_data)
-        phaster_get_cmd = "wget \"http://phaster.ca/phaster_api?acc=%s\" -O %s/%s" % (data["job_id"], args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_get.json")
-        print phaster_get_cmd
-
-    with open('%s/%s' % (args.filter2_only_snp_vcf_dir, str(out_name[0]) + "_phaster_get.json")) as json_get_data:
-        get_data = json.load(json_get_data)
-        print get_data["zip"]
-        phaster_zip_cmd = "wget \"http://%s\" -O %s/%s_phaster_get.zip" % (str(get_data["zip"]), args.filter2_only_snp_vcf_dir, str(out_name[0]))
-        phaster_unzip_cmd = "unzip %s/%s_phaster_get.zip" % (args.filter2_only_snp_vcf_dir, str(out_name[0]))
-        print phaster_zip_cmd
-        print phaster_unzip_cmd
-        # for key, value in get_data.items():
-        #     print get_data["zip"][0]
-"""
 Pending inclusion
 """
 
 
-
-#Main Steps
 if __name__ == '__main__':
 
-    """Start Timer"""
+    """
+    Main Function for Variant Calling Core Pipeline 
+    :param:
+    :return:
+    
+    This function runs "core_prep" step to generate intermediate files required for extracting core variants at "core" step. 
+    Using these core variants, a "report" step will generate the final reports and output results of the pipeline as well as runs "tree" step to generate fasttree and raxml results 
+    using the core variants consensus in Date_Time_core_results folder.
+    Steps:
+    1. core_prep
+    2. core
+    3. report
+    4. tree
+    """
+
+    # Start Timer to use it for generating folder names and Log prefixes.
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()
     log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
     global logger
     analysis_name_log = "step_" + str(args.steps)
     logger = generate_logger(args.filter2_only_snp_vcf_dir, analysis_name_log, log_unique_time)
-    keep_logging('The Script started at: %s' % start_time, 'The Script started at: %s' % start_time, logger, 'info')
+    keep_logging('\nThe Script started at: %s' % start_time, '\nThe Script started at: %s' % start_time, logger, 'info')
     print_details = "This step will parse final vcf files(*_no_proximate_snp.vcf) generated at the end of Variant Calling Pipeline. At the end of this step, the following results will be generated and placed in output directory:\n\n" \
           "1. Final Core SNP Positions list(Variant positions that were not filtered out in any of the samples and passed all the filters)\n" \
           "2. SNP Positions that were filtered out with labels indicating the reason (Depth, FQ, MQ, Unmapped in one or other samples, Proximate SNPS, Quality of Variant) why they were filtered out.\n" \
@@ -1224,18 +3737,11 @@ if __name__ == '__main__':
           "4. Final Consensus fasta file using only Core SNP Positions\n"
     keep_logging('%s' % print_details, '%s' % print_details, logger, 'info')
 
-    """ Create Temp Directory for storing unwanted temp files generated while running script """
+    # Create temporary Directory core_temp_dir/temp for storing temporary intermediate files. Check if core_temp_dir contains all the required files to run these pipeline.
+    global temp_dir
     temp_dir = args.filter2_only_snp_vcf_dir + "/temp"
-    make_sure_path_exists(temp_dir)
 
-    filter2_only_snp_vcf_filenames = args.filter2_only_snp_vcf_filenames
-    vcf_filenames = []
-    with open(filter2_only_snp_vcf_filenames) as fp:
-        for line in fp:
-            line = line.strip()
-            line = args.filter2_only_snp_vcf_dir + line
-            vcf_filenames.append(line)
-        fp.close()
+    # Read Config file into Config object that will be used to extract configuration settings set up in config file.
     global config_file
     if args.config:
         config_file = args.config
@@ -1246,102 +3752,193 @@ if __name__ == '__main__':
     Config.read(config_file)
     keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
 
+    make_sure_path_exists(temp_dir)
+
+    # Get outgroup_Sample name
+    outgroup = get_outgroup()
+    outgroup_vcf_filename = str(outgroup) + "_filter2_final.vcf_no_proximate_snp.vcf"
+    outgroup_indel_vcf_filename = str(outgroup) + "_filter2_indel_final.vcf"
+    #global outgroup_indel_specific_positions
+    #global outgroup_specific_positions
 
 
-    ### Start the core SNP pipeline steps
+
+    # Read filenames. Core variants and final results will be extracted considering only these files.
+    filter2_only_snp_vcf_filenames = args.filter2_only_snp_vcf_filenames
+    vcf_filenames_temp = []
+    with open(filter2_only_snp_vcf_filenames) as fp:
+        for line in fp:
+            line = line.strip()
+            line = args.filter2_only_snp_vcf_dir + line
+            vcf_filenames_temp.append(line)
+        fp.close()
+    vcf_filenames = sorted(vcf_filenames_temp)
+
+    make_sure_files_exists(vcf_filenames, Config, logger)
+
+    log_file_handle = "%s/%s_%s.log.txt" % (args.filter2_only_snp_vcf_dir, log_unique_time, analysis_name_log)
+
+    # Start Variant Calling Core Pipeline steps based on steps argument supplied.
     if "1" in args.steps:
+        """ 
+        core_prep step
+        """
+
+        # Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
         keep_logging('Gathering SNP position information from each final *_no_proximate_snp.vcf file...', 'Gathering SNP position information from each final *_no_proximate_snp.vcf file...', logger, 'info')
 
-        """
-        Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters
-        from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
-        """
+        # # Extract All the unique SNO and Indel position list from final filtered *_no_proximate_snp.vcf files.
         unique_position_file = create_positions_filestep(vcf_filenames)
+        unique_indel_position_file = create_indel_positions_filestep(vcf_filenames)
 
-        tmp_dir = "/tmp/temp_%s/" %log_unique_time
+        # Debug Commenting
+        # # # bgzip and tabix all the vcf files in core_temp_dir.
+        # files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
+        # tabix(files_for_tabix, "vcf", logger, Config)
 
-        bgzip_cmd = "for i in %s/*.vcf; do bgzip -c $i > $i%s; done" % (args.filter2_only_snp_vcf_dir, ".gz")
-        tabix_cmd = "for i in %s/*.vcf.gz; do tabix $i; done" % (args.filter2_only_snp_vcf_dir)
-        os.system(bgzip_cmd)
-        os.system(tabix_cmd)
+        # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
+        tmp_dir = "/tmp/temp_%s/" % log_unique_time
 
-        """ Get the cluster option; create and run jobs based on given parameter """
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
 
-        """ Find ProPhage region in reference genome """
-        #run_phaster(args.reference)
+        create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
+
+        # If Phaster Summary file doesn't exist in reference genome folder
+        if not os.path.isfile("%s/summary.txt" % os.path.dirname(args.reference)):
+            if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                keep_logging('Functional class filter is set to yes. Preparing Functional class filters\n',
+                             'Functional class filter is set to yes. Preparing Functional class filters\n', logger,
+                             'info')
+                if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
+                    # Submit Phaster jobs to find ProPhage region in reference genome.
+                    run_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
+
+        call("cp %s %s/Logs/core_prep/" % (log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     if "2" in args.steps:
-        # #Adhoc
+        """ 
+        core step 
+        """
+
+        # Set variables; check if the output from core_prep steps (*label files) exists and was completed without any errors.
+        snp_unique_positions_file = args.filter2_only_snp_vcf_dir + "/unique_positions_file"
+        indel_unique_positions_file = args.filter2_only_snp_vcf_dir + "/unique_indel_positions_file"
+        uniq_snp_positions = sum(1 for line in open('%s' % snp_unique_positions_file))
+        uniq_indel_positions = sum(1 for line in open('%s' % indel_unique_positions_file))
+        if not os.path.isfile(snp_unique_positions_file) and not os.path.isfile(indel_unique_positions_file):
+            keep_logging('Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.','Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.', logger,'exception')
+            exit()
+        make_sure_label_files_exists(vcf_filenames, uniq_snp_positions, uniq_indel_positions, Config, logger)
+
+        # Set up Report and results directories to transfer the final results.
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
 
-        # # """ Generate SNP Filter Label Matrix """
-        # generate_paste_command()
-        # #
-        # # """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-        # generate_position_label_data_matrix()
-        # #
-        # # """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
-        # generate_vcf_files()
-        # #
-        # # """ Generate consensus fasta file from core vcf files """
-        # extract_only_ref_variant_fasta_from_reference()
-        # #
-        # # """ Generate consensus fasta file with only reference and variant position bases """
-        # extract_only_ref_variant_fasta(core_vcf_fasta_dir)
-        # #
-        # # """ Analyze the positions that were filtered out only due to insufficient depth"""
-        # DP_analysis()
+        functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
 
-        """ Run snpEff annotation step """
-        variant_annotation()
+        # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
+        core_prep_indel(core_vcf_fasta_dir)
 
-        keep_logging('Wait for individual cluster jobs to finish before running the third step', 'Wait for individual cluster jobs to finish before running the third step', logger, 'info')
+        core_prep_snp(core_vcf_fasta_dir)
+
+        # Moving this up before core_prep_snp; for some weird reason, it is failing to generate Only_ref_indel
+        #core_prep_indel(core_vcf_fasta_dir)
+
+        # Annotate core variants. Generate SNP and Indel matrix.
+        annotated_snp_matrix()
+
+        # Read new allele matrix and generate fasta; generate a seperate function
+        keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')
+
+        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
+
+        extract_only_ref_variant_fasta_from_reference_allele_variant()
+
+        call("cp %s %s/Logs/core/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     if "3" in args.steps:
+        """ 
+        report step 
+        """
+
         keep_logging('Step 3: Generate Reports and Results folder.', 'Step 3: Generate Reports and Results folder.', logger, 'info')
-        """ Generate DP barplots data """
-        DP_analysis_barplot()
 
-        """ Analyze the FQ values of all the unique variant """
-        FQ_analysis()
+        ## Temporary fix. A bug was introduced that is causing the pipeline to generate *vcf_no_proximate_snp.vcf_filter2_consensus.fa
+        call("rm %s/*vcf_no_proximate_snp.vcf_filter2_consensus.fa" % args.filter2_only_snp_vcf_dir, logger)
 
+        # Generate DP barplots data and Analyze the FQ values of all the unique variant
+        # DP_analysis_barplot()
+        # FQ_analysis()
+
+        # Set up Report and results directories to transfer the final results.
+        # Set up Report and results directories to transfer the final results.
         data_matrix_dir = args.results_dir + '/data_matrix'
         core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
-        consensus_var_dir = core_vcf_fasta_dir + '/consensus_variant_positions'
-        consensus_ref_var_dir = core_vcf_fasta_dir + '/consensus_ref_variant_positions'
-
+        make_sure_path_exists(args.results_dir)
         make_sure_path_exists(data_matrix_dir)
         make_sure_path_exists(core_vcf_fasta_dir)
+        data_matrix_dir = args.results_dir + '/data_matrix'
+        data_matrix_snpeff_dir = data_matrix_dir + '/snpEff_results'
+        core_vcf_fasta_dir = args.results_dir + '/core_snp_consensus'
+        consensus_var_dir = core_vcf_fasta_dir + '/consensus_variant_positions'
+        core_vcf_dir = core_vcf_fasta_dir + '/core_vcf'
+        consensus_allele_var_dir = core_vcf_fasta_dir + '/consensus_allele_variant_positions'
+        consensus_ref_allele_var_dir = core_vcf_fasta_dir + '/consensus_ref_allele_variant_positions'
+        consensus_ref_var_dir = core_vcf_fasta_dir + '/consensus_ref_variant_positions'
+        consensus_ref_allele_unmapped_variant_dir = core_vcf_fasta_dir + '/consensus_ref_allele_unmapped_variant'
+        make_sure_path_exists(data_matrix_dir)
+        make_sure_path_exists(data_matrix_snpeff_dir)
+        make_sure_path_exists(core_vcf_fasta_dir)
         make_sure_path_exists(consensus_var_dir)
+        make_sure_path_exists(core_vcf_dir)
+        make_sure_path_exists(consensus_allele_var_dir)
+        #make_sure_path_exists(consensus_ref_allele_var_dir)
         make_sure_path_exists(consensus_ref_var_dir)
-
-        move_data_matrix_results = "cp -r %s/*.txt %s/temp* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
+        make_sure_path_exists(consensus_ref_allele_unmapped_variant_dir)
+        reference_base = os.path.basename(args.reference).split('.')[0]
+        # Move results to the results directory
+        move_data_matrix_results = "cp -r %s/unique_positions_file %s/unique_indel_positions_file %s/*.csv %s/*.txt %s/temp_* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
-        move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
+        move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz* %s/*_ANN* %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_consensus_var_fasta_results = "mv %s/*_variants.fa %s/" % (core_vcf_fasta_dir, consensus_var_dir)
         move_consensus_ref_var_fasta_results = "mv %s/*.fa %s/" % (core_vcf_fasta_dir, consensus_ref_var_dir)
+        move_core_vcf = "mv %s/*_core.vcf.gz %s/*vcf_core.vcf.gz.tbi %s/" % (core_vcf_fasta_dir, core_vcf_fasta_dir, core_vcf_dir)
+        move_consensus_allele_var_fasta_results = "mv %s/*allele_variants.fa %s/" % (consensus_var_dir, consensus_allele_var_dir)
+        remove_ref_allele = "rm %s/*_ref_allele_variants.fa" % consensus_allele_var_dir
+        #move_consensus_ref_allele_var_fasta_results = "mv %s/*_ref_allele_variants.fa %s/" % (consensus_allele_var_dir, consensus_ref_allele_var_dir)
+        move_consensus_ref_allele_unmapped_var_fasta_results = "mv %s/*_ref_allele_unmapped_variants.fa %s/" % (consensus_var_dir, consensus_ref_allele_unmapped_variant_dir)
+        move_snpeff_results = "mv %s/*ANN* %s/" % (data_matrix_dir, data_matrix_snpeff_dir)
+        move_snpeff_vcf_results = "mv %s/*ANN* %s/" % (core_vcf_fasta_dir, data_matrix_snpeff_dir)
+        copy_reference = "cp %s %s/%s.fa" % (args.reference, consensus_ref_var_dir, reference_base)
+        #copy_reference_2 = "cp %s %s/%s.fa" % (args.reference, consensus_ref_allele_var_dir, reference_base)
 
-
-        os.system(move_data_matrix_results)
-        os.system(move_core_vcf_fasta_results)
-        os.system(move_consensus_var_fasta_results)
-        os.system(move_consensus_ref_var_fasta_results)
-
+        call("%s" % move_data_matrix_results, logger)
+        call("%s" % move_core_vcf_fasta_results, logger)
+        call("%s" % move_consensus_var_fasta_results, logger)
+        call("%s" % move_consensus_ref_var_fasta_results, logger)
+        call("%s" % move_core_vcf, logger)
+        call("%s" % move_consensus_allele_var_fasta_results, logger)
+        call("%s" % remove_ref_allele, logger)
+        #call("%s" % move_consensus_ref_allele_var_fasta_results, logger)
+        call("%s" % move_consensus_ref_allele_unmapped_var_fasta_results, logger)
+        call("%s" % copy_reference, logger)
+        #call("%s" % copy_reference_2, logger)
+        call("%s" % move_snpeff_results, logger)
+        call("%s" % move_snpeff_vcf_results, logger)
         subprocess.call(["sed -i 's/title_here/%s/g' %s/generate_diagnostics_plots.R" % (os.path.basename(args.results_dir), data_matrix_dir)], shell=True)
 
-        # Check if the variant consensus files generated are of same length
+        # Sanity Check if the variant consensus files generated are of same length
         count = 0
-        for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines(  ): count += 1
-        ref_variants = count - 1
-
+        for line in open("%s/Only_ref_variant_positions_for_closely_matrix.txt" % data_matrix_dir).xreadlines():
+            count += 1
+            ref_variants = count - 1
         variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
-
         for f in variant_consensus_files:
-            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
+            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (
+            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
             proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
             (out2, err2) = proc.communicate()
 
@@ -1349,20 +3946,65 @@ if __name__ == '__main__':
                 int(out2) != int(ref_variants)
             except OSError as exception:
                 if exception.errno != errno.EEXIST:
-                    print "Error generating variant consensus position file: %s\n" % f
-                    keep_logging('Error generating variant consensus position file: %s' % f, 'Error generating variant consensus position file: %s' % f, logger, 'exception')
+                    keep_logging('Error generating variant consensus position file: %s' % f,
+                                 'Error generating variant consensus position file: %s' % f, logger, 'info')
+                    keep_logging('Error generating variant consensus position file: %s' % f,
+                                 'Error generating variant consensus position file: %s' % f, logger, 'exception')
+                    exit()
 
-        """ Generate DP barplots data """
-        #DP_analysis_barplot()
+        # Move and organize data_matrix_dir directory
+        os.chdir(data_matrix_dir)
+        plots_dir = "%s/plots" % data_matrix_dir
+        matrices_dir = "%s/matrices" % data_matrix_dir
+        functional_ann_dir = "%s/Functional_annotation_results" % data_matrix_dir
+        logs_dir = "%s/logs" % data_matrix_dir
+        make_sure_path_exists(plots_dir)
+        make_sure_path_exists(matrices_dir)
+        make_sure_path_exists(functional_ann_dir)
+        make_sure_path_exists(logs_dir)
+        call("mv *.log.txt %s" % logs_dir, logger)
+        call("mv summary.txt detail.txt Functional_class_filter_positions.txt inexact_repeat_region_positions.txt phage_region_positions.txt repeat_region_positions.txt %s" % functional_ann_dir, logger)
+        call("mv temp_* All* Only* SNP_matrix_* Indel* extract_DP_positions.txt header.txt unique_indel_positions_file unique_positions_file %s" % matrices_dir, logger)
+        call("mv annotated_no_proximate_snp_* %s/snpEff_results/" % data_matrix_dir, logger)
+        call("mv bargraph* generate_diagnostics_plots.R %s" % plots_dir, logger)
+        call("cp %s/temp_Only_filtered_positions_for_closely_matrix_FQ.txt %s/" % (matrices_dir, plots_dir), logger)
 
-        """ Analyze the FQ values of all the unique variant """
-        #FQ_analysis()
+        # """ Generate alignment report """
+        # alignment_report(data_matrix_dir)
+        #
+        # """ Generate core snps report """
+        # variant_report(data_matrix_dir)
 
-        """ Generate alignment report """
-        alignment_report(data_matrix_dir)
+        """ Generating Gubbins MFA files"""
+        reference_base = os.path.basename(args.reference).split('.')[0]
+        gubbins_dir = args.results_dir + '/gubbins'
+        tree_dir = args.results_dir + '/trees'
 
-        """ Generate core snps report """
-        variant_report(data_matrix_dir)
+        make_sure_path_exists(gubbins_dir)
+        #make_sure_path_exists(tree_dir)
+
+
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_ref_allele.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_core_var_aln.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_noncore_plus_core_variants_aln.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+        #prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),reference_base)
+        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_alt_allele_unmapped.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+
+        prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
+        prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
+        prepare_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_allele_variant_positions/*_allele_variants.fa > %s" % (
+        args.results_dir, prepare_allele_var_consensus_input)
+        #prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_allele_var_consensus_input)
+        prepare_ref_allele_unmapped_consensus_input_cmd = "cat %s %s/core_snp_consensus/consensus_ref_allele_unmapped_variant/*.fa > %s" % (args.reference, args.results_dir, prepare_ref_allele_unmapped_consensus_input)
+        call("%s" % prepare_ref_var_consensus_input_cmd, logger)
+        call("%s" % prepare_var_consensus_input_cmd, logger)
+        call("%s" % prepare_allele_var_consensus_input_cmd, logger)
+        #call("%s" % prepare_ref_allele_var_consensus_input_cmd, logger)
+        call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
+        # os.system(prepare_ref_var_consensus_input_cmd)
+        # os.system(prepare_var_consensus_input_cmd)
 
         print_details = "Results for core pipeline can be found in: %s\n" \
               "Description of Results:\n" \
@@ -1370,36 +4012,157 @@ if __name__ == '__main__':
               "2. core_snp_consensus contains all the core vcf and fasta files. *_core.vcf.gz: core vcf files, *.fa and *_variants.fa: core consensus fasta file and core consensus fasta with only variant positions." % (args.results_dir)
         keep_logging(print_details, print_details, logger, 'info')
 
-    if "4" in args.steps:
-        keep_logging('Step 4: Ongoing Testing.', 'Step 4: Ongoing Testing.', logger, 'info')
-        #parse_phaster(args.reference)
+        call("cp %s %s/Logs/report/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
+    if "4" in args.steps:
+        """ 
+        Gubbins/Raxml step
+        """
+
+        keep_logging('Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.', 'Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.', logger, 'info')
+
+        #parse_phaster(args.reference)
+        reference_base = os.path.basename(args.reference).split('.')[0]
         gubbins_dir = args.results_dir + '/gubbins'
         tree_dir = args.results_dir + '/trees'
 
         make_sure_path_exists(gubbins_dir)
-        make_sure_path_exists(tree_dir)
+        #make_sure_path_exists(tree_dir)
 
-        prepare_ref_var_consensus_input = "%s/gubbins/%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''))
-        prepare_var_consensus_input = "%s/gubbins/%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''))
+
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_ref_allele.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_core_var_aln.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_noncore_plus_core_variants_aln.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+        #prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),reference_base)
+        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_alt_allele_unmapped.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
 
         prepare_ref_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_var_consensus_input)
-        prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*.fa > %s" % (args.results_dir, prepare_var_consensus_input)
+        prepare_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_variant_positions/*_variants.fa > %s" % (args.results_dir, prepare_var_consensus_input)
+        prepare_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_allele_variant_positions/*_allele_variants.fa > %s" % (
+        args.results_dir, prepare_allele_var_consensus_input)
+        #prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_allele_var_consensus_input)
+        prepare_ref_allele_unmapped_consensus_input_cmd = "cat %s %s/core_snp_consensus/consensus_ref_allele_unmapped_variant/*.fa > %s" % (args.reference, args.results_dir, prepare_ref_allele_unmapped_consensus_input)
+        call("%s" % prepare_ref_var_consensus_input_cmd, logger)
+        call("%s" % prepare_var_consensus_input_cmd, logger)
+        call("%s" % prepare_allele_var_consensus_input_cmd, logger)
+        call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
 
 
-        os.system(prepare_ref_var_consensus_input_cmd)
-        os.system(prepare_var_consensus_input_cmd)
+        if args.gubbins and args.gubbins == "yes":
+            os.chdir(gubbins_dir)
+            call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input), logger)
+            call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
+            #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
+        else:
+            keep_logging('The gubbins argument is set to No.', 'The gubbins argument is set to No.', logger, 'info')
+            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input)
+            print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
 
-        fasttree(tree_dir, prepare_ref_var_consensus_input, args.jobrun)
-        fasttree(tree_dir, prepare_var_consensus_input, args.jobrun)
+        call("cp %s %s/Logs/tree/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
-        raxml(tree_dir, prepare_ref_var_consensus_input)
-        raxml(tree_dir, prepare_var_consensus_input)
+    """ The below steps are for debugging purpose only."""
+    if "5" in args.steps:
+        """ 
+        Debugging Purposes only: Run only SNP matrix annotation step 
+        """
 
-        # Disabling Gubbins function due to installation issues
-        #gubbins(gubbins_dir, prepare_ref_var_consensus_input)
+        keep_logging('Step 5: Running SNP matrix annotation step.', 'Step 5: Running SNP matrix annotation step.', logger, 'info')
 
+        functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
+
+        # Annotate core variants. Generate SNP and Indel matrix.
+        annotated_snp_matrix()
+
+        # Debug commenting
+        # # Read new allele matrix and generate fasta; generate a seperate function
+        keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')
+
+        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
+
+        extract_only_ref_variant_fasta_from_reference_allele_variant()
+
+        call("cp %s %s/Logs/core/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+
+    if "6" in args.steps:
+        """ 
+        Debugging Purposes only: Run only Gubbins
+        """
+        reference_base = os.path.basename(args.reference).split('.')[0]
+        gubbins_dir = args.results_dir + '/gubbins'
+        tree_dir = args.results_dir + '/trees'
+
+        make_sure_path_exists(gubbins_dir)
+        #make_sure_path_exists(tree_dir)
+
+
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
+            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+            reference_base)
+        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_ref_allele_unmapped_consensus.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+
+        if args.gubbins and args.gubbins == "yes":
+            gubbins(gubbins_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
+            #gubbins(gubbins_dir, prepare_ref_allele_var_consensus_input, logger, Config)
+            gubbins(gubbins_dir, prepare_ref_allele_unmapped_consensus_input,args.jobrun, logger, Config)
+        call("cp %s %s/Logs/tree/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+
+    if "7" in args.steps:
+        """ 
+        Debugging Purposes only: Run iqtree
+        """
+        reference_base = os.path.basename(args.reference).split('.')[0]
+        gubbins_dir = args.results_dir + '/gubbins'
+        tree_dir = args.results_dir + '/trees'
+
+        make_sure_path_exists(gubbins_dir)
+        #make_sure_path_exists(tree_dir)
+
+
+        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
+        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
+            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+            reference_base)
+        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_ref_allele_unmapped_consensus.fa" % (
+        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
+        reference_base)
+        iqtree(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
+        iqtree(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
+        iqtree(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
+        iqtree(tree_dir, prepare_ref_allele_unmapped_consensus_input, args.jobrun, logger, Config)
+    
     time_taken = datetime.now() - start_time_2
     if args.remove_temp:
         del_command = "rm -r %s" % temp_dir
         os.system(del_command)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

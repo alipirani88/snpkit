@@ -11,7 +11,10 @@
 # gubbins_iqtree_raxml.sh /path/to/snps/only/fasta/file 0
 
 # get prefix for output files
-pref=$(echo $1 | cut -d. -f1 | rev | cut -d/ -f1 | rev)
+#pref=$(echo $1 | cut -d. -f1 | rev | cut -d/ -f1 | rev)
+pref1="${1%.*}"
+pref="${pref1##*/}"
+echo prefix: $pref
 
 # get working directory
 wd=$(dirname $1)
@@ -21,12 +24,12 @@ cd $wd
 modules=$(echo python-anaconda2/201607 biopython fasttree dendropy reportlab RAxML raxml bioperl fastml/gub gubbins openmpi/1.10.2/gcc/4.8.5 gcc/4.8.5)
 
 # get account
-if [ $3 != '' ]; then
-  echo Will submit jobs to $3.
-  acct=$3
-else
+if [ -z "$3" ]; then
   echo Will submit jobs to esnitkin_flux.
   acct=esnitkin_flux
+else
+  echo Will submit jobs to $3.
+  acct=$3
 fi
 
 mkdir iqtree_results

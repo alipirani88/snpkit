@@ -39,6 +39,12 @@ def parser():
                                                                      '3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps')
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run pipeline on cluster/parallel-local/local. Make Sure to check if the [CLUSTER] section in config file is set up correctly.')
     optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: OFF')
+    optional.add_argument('-coverage_depth', action='store', dest="coverage_depth",
+                          help='Downsample Reads to this user specified depth')
+    optional.add_argument('-genome_size', action='store', dest="genome_size",
+                          help='Genome Size. If not provided, will be estimated from Mash')
+    optional.add_argument('-downsample', action='store', dest="downsample",
+                          help='yes/no: Downsample Reads data to default depth of 100X or user specified depth')
     return parser
 
 # Main Pipeline method
@@ -184,6 +190,14 @@ def pipeline(args, logger):
     # ############################################################################ End ####################################################
 
 
+
+    if args.downsample == "yes":
+        read1, read2 = downsample(args, logger)
+        args.forward_raw = read1
+        args.reverse_raw = read2
+        print "Using downsampled forward reads %s" % args.forward_raw
+        print "Using downsampled reverse reads %s" % args.reverse_raw
+
     if len(steps_list) == 1:
         if steps_list[0] == "coverage_depth_stats":
             #clean()
@@ -288,6 +302,9 @@ def pipeline(args, logger):
         elif steps_list[0] == "varcall":
             #Sanity Check Post-aligned-BAM and Bed files here
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+            if not os.path.exists("%s.bai" % out_sorted_bam):
+                index_bam(out_sorted_bam, args.output_folder, logger, Config)
+
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
             if not os.path.exists(gatk_depth_of_coverage_file):
                 gatk_depth_of_coverage_file = coverage_depth_stats()
@@ -477,6 +494,142 @@ def cleanup(args, logger):
         os.system("mv %s/*.log.txt %s/%s_logs" % (args.output_folder, args.output_folder, args.analysis_name))
         make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
         os.system("mv %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+
+def downsample(args, logger):
+
+    keep_logging('Downsampling Coverage Depth to: %s' % args.coverage_depth, 'Downsampling Coverage Depth to: %s' % args.coverage_depth, logger, 'info')
+
+
+    # Run Mash to estimate Genome size
+    keep_logging('Running: /nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s' % args.forward_raw,
+                 'Running: /nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s' % args.forward_raw, logger, 'info')
+
+    mash_cmd = "/nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout" % args.forward_raw
+
+    keep_logging('Running: %s' % mash_cmd,
+                 'Running: %s' % mash_cmd, logger, 'info')
+
+
+    try:
+        call(mash_cmd, logger)
+    except sp.CalledProcessError:
+        keep_logging('Error running Mash for estimating genome size.', 'Error running Mash for estimating genome size', logger, 'exception')
+        sys.exit(1)
+
+    with open("/tmp/sketch_stdout", 'rU') as file_open:
+        for line in file_open:
+            if line.startswith('Estimated genome size:'):
+                gsize = float(line.split(': ')[1].strip())
+            if line.startswith('Estimated coverage:'):
+                est_cov = float(line.split(': ')[1].strip())
+    file_open.close()
+
+
+    keep_logging('Estimated Genome Size from Mash Sketch: %s' % gsize,
+                 'Estimated Genome Size from Mash Sketch: %s' % gsize, logger, 'info')
+
+    # Extract basic fastq reads stats with seqtk
+    seqtk_check = "/nfs/esnitkin/bin_group/seqtk/seqtk fqchk -q3 %s > /tmp/%s_fastqchk.txt" % (args.forward_raw, os.path.basename(args.forward_raw))
+
+    keep_logging('Running seqtk to extract Fastq statistics: %s' % seqtk_check,
+                 'Running seqtk to extract Fastq statistics: %s' % seqtk_check, logger, 'info')
+
+
+    try:
+        call(seqtk_check, logger)
+    except sp.CalledProcessError:
+        keep_logging('Error running seqtk for extracting fastq statistics.', 'Error running seqtk for extracting fastq statistics.', logger, 'exception')
+        sys.exit(1)
+
+
+    with open("/tmp/%s_fastqchk.txt" % os.path.basename(args.forward_raw), 'rU') as file_open:
+        for line in file_open:
+            if line.startswith('min_len'):
+                line_split = line.split(';')
+                min_len = line_split[0].split(': ')[1]
+                max_len = line_split[1].split(': ')[1]
+                avg_len = line_split[2].split(': ')[1]
+            if line.startswith('ALL'):
+                line_split = line.split('\t')
+                total_bases = int(line_split[1]) * 2
+    file_open.close()
+
+
+    keep_logging('Average Read Length: %s' % avg_len,
+                 'Average Read Length: %s' % avg_len, logger, 'info')
+
+    keep_logging('Total number of bases in fastq: %s' % total_bases,
+                 'Total number of bases in fastq: %s' % total_bases, logger, 'info')
+
+    # Calculate original depth and check if it needs to be downsampled to a default coverage.
+    ori_coverage_depth = int(total_bases / gsize)
+
+    keep_logging('Original Covarage Depth: %s x' % ori_coverage_depth,
+                 'Original Covarage Depth: %s x' % ori_coverage_depth, logger, 'info')
+
+    proc = sp.Popen(["nproc"], stdout=sp.PIPE, shell=True)
+    (nproc, err) = proc.communicate()
+    nproc = nproc.strip()
+
+    if not args.coverage_depth and ori_coverage_depth > 100:
+        # Downsample to 100
+        factor = float(100 / ori_coverage_depth)
+        #print round(factor, 3)
+        r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
+
+        # Downsample using seqtk
+        try:
+            call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
+        except sp.CalledProcessError:
+            keep_logging('Error running seqtk for downsampling raw fastq reads.',
+                         'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
+            sys.exit(1)
+
+        if args.reverse_raw:
+            r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
+
+            try:
+                call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                    args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
+            except sp.CalledProcessError:
+                keep_logging('Error running seqtk for downsampling raw fastq reads.',
+                             'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
+                sys.exit(1)
+        else:
+            r2_sub = "None"
+    elif not args.coverage_depth and ori_coverage_depth < 100:
+        r1_sub = args.forward_raw
+        r2_sub = args.reverse_raw
+    else:
+        factor = float(float(args.coverage_depth) / ori_coverage_depth)
+        #print round(factor, 3)
+        r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
+
+        # Downsample using seqtk
+        try:
+            call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
+        except sp.CalledProcessError:
+            keep_logging('Error running seqtk for downsampling raw fastq reads.',
+                         'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
+            sys.exit(1)
+
+        if args.reverse_raw:
+            r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
+
+            try:
+                call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                    args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
+            except sp.CalledProcessError:
+                keep_logging('Error running seqtk for downsampling raw fastq reads.',
+                             'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
+                sys.exit(1)
+        else:
+            r2_sub = "None"
+
+
+    return r1_sub, r2_sub
 
 
 # Start of Main Method/Pipeline
