@@ -1064,3 +1064,9 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O14_W0022a
 Ref_Name: Pt0_Chromosome_OXA232.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Pt0_Chromosome_OXA232/
+
+[NTHi_86-028NP]
+# Name of reference genome fasta file.
+Ref_Name: NTHi_86-028NP.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/NTHi_86-028NP/

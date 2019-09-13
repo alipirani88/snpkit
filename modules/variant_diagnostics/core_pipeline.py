@@ -4645,7 +4645,7 @@ if __name__ == '__main__':
         unique_position_file = create_positions_filestep(vcf_filenames)
         unique_indel_position_file = create_indel_positions_filestep(vcf_filenames)
 
-        # # bgzip and tabix all the vcf files in core_temp_dir.
+        # bgzip and tabix all the vcf files in core_temp_dir.
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
         tabix(files_for_tabix, "vcf", logger, Config)
 
@@ -5115,17 +5115,6 @@ if __name__ == '__main__':
     if args.remove_temp:
         del_command = "rm -r %s" % temp_dir
         os.system(del_command)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
