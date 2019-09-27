@@ -648,7 +648,6 @@ def downsample(args, logger):
 
     return r1_sub, r2_sub
 
-
 # Start of Main Method/Pipeline
 if __name__ == '__main__':
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

@@ -661,7 +661,7 @@ def generate_paste_command_outgroup():
         f4=open(paste_file, 'w+')
         paste_command = "paste %s/unique_positions_file" % args.filter2_only_snp_vcf_dir
         for i in vcf_filenames:
-            if outgroup not in i:
+            if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in i:
                 label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_positions_label')
                 paste_command = paste_command + " " + label_file
 
@@ -865,7 +865,7 @@ def generate_indel_paste_command_outgroup():
 
         # Generate paste command
         for i in vcf_filenames:
-            if outgroup not in i:
+            if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in i:
                 label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_indel_positions_label')
                 paste_command = paste_command + " " + label_file
         # Change header awk command to exclude outgroup
@@ -1094,7 +1094,7 @@ def generate_position_label_data_matrix():
 
         if args.outgroup:
             for i in vcf_filenames:
-                if outgroup not in i:
+                if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in i:
                     print_string_header = print_string_header + os.path.basename(i) + "\t"
         else:
             for i in vcf_filenames:
@@ -1106,6 +1106,7 @@ def generate_position_label_data_matrix():
         ref_var = ['reference_allele', 'VARIANT']
 
         if args.outgroup:
+            print "here"
             with open("%s/temp_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter='\t')
                 next(csv_reader, None)
@@ -1113,6 +1114,7 @@ def generate_position_label_data_matrix():
                     if set(ref_var) & set(row[1:]):
                         if set(lll) & set(row[1:]):
                             if int(row[0]) not in outgroup_specific_positions:
+
                                 print_string = ""
                                 for i in row[1:]:
                                     print_string = print_string + "\t" + i
@@ -1272,6 +1274,7 @@ def generate_position_label_data_matrix():
         f_bar_perc = open("%s/bargraph_percentage.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f_bar_count.write("Sample\tunmapped_positions\treference_allele\ttrue_variant\tOnly_low_FQ\tOnly_DP\tOnly_low_MQ\tother\n")
         f_bar_perc.write("Sample\tunmapped_positions_perc\ttrue_variant_perc\tOnly_low_FQ_perc\tOnly_DP_perc\tOnly_low_MQ_perc\tother_perc\n")
+
         for i in xrange(1, end, 1):
             """ Bar Count Statistics: Variant Position Count Statistics """
             true_variant = columns[i].count('VARIANT')
@@ -1283,8 +1286,11 @@ def generate_position_label_data_matrix():
             low_FQ_other_parameters = columns[i].count('LowFQ_QUAL_DP_proximate_SNP') + columns[i].count('LowFQ_DP_QUAL_proximate_SNP') + columns[i].count('LowFQ_QUAL_proximate_SNP') + columns[i].count('LowFQ_DP_proximate_SNP') + columns[i].count('LowFQ_proximate_SNP') + columns[i].count('LowFQ_QUAL_DP') + columns[i].count('LowFQ_DP_QUAL') + columns[i].count('LowFQ_QUAL') + columns[i].count('LowFQ_DP')
             high_FQ_other_parameters = columns[i].count('HighFQ_QUAL_DP_proximate_SNP') + columns[i].count('HighFQ_DP_QUAL_proximate_SNP') + columns[i].count('HighFQ_QUAL_proximate_SNP') + columns[i].count('HighFQ_DP_proximate_SNP') + columns[i].count('HighFQ_proximate_SNP') + columns[i].count('HighFQ_QUAL_DP') + columns[i].count('HighFQ_DP_QUAL') + columns[i].count('HighFQ_QUAL')
             other = low_FQ_other_parameters + high_FQ_other_parameters
+
             total = true_variant + unmapped_positions + reference_allele + Only_low_FQ + Only_DP + low_FQ_other_parameters + high_FQ_other_parameters + Only_low_MQ
+
             filename_count = i - 1
+
             if args.outgroup:
                 bar_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(vcf_filenames_outgroup[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), unmapped_positions, reference_allele, true_variant, Only_low_FQ, Only_DP, Only_low_MQ, other)
                 f_bar_count.write(bar_string)
@@ -1293,7 +1299,7 @@ def generate_position_label_data_matrix():
                     vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
                                                                    unmapped_positions, reference_allele, true_variant,
                                                                    Only_low_FQ, Only_DP, Only_low_MQ, other)
-                f_bar_count.write(bar_string)
+            #f_bar_count.write(bar_string)
             """ Bar Count Percentage Statistics: Variant Position Percentage Statistics """
             try:
                 true_variant_perc = float((columns[i].count('VARIANT') * 100) / total)
@@ -1334,9 +1340,9 @@ def generate_position_label_data_matrix():
             else:
                 bar_perc_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(
                     vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
-                                                                   unmapped_positions, reference_allele, true_variant,
-                                                                   Only_low_FQ, Only_DP, Only_low_MQ, other)
-                f_bar_count.write(bar_string)
+                                                                        unmapped_positions_perc, reference_allele_perc, true_variant_perc,
+                                                                        Only_low_FQ_perc, Only_DP_perc, Only_low_MQ_perc, other_perc)
+            f_bar_count.write(bar_string)
             f_bar_perc.write(bar_perc_string)
         f_bar_count.close()
         f_bar_perc.close()
@@ -1489,7 +1495,8 @@ def generate_indel_position_label_data_matrix():
         print_string_header = "\t"
         if args.outgroup:
             for i in vcf_filenames:
-                if outgroup not in i:
+
+                if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in i:
                     print_string_header = print_string_header + os.path.basename(i) + "\t"
         else:
             for i in vcf_filenames:
@@ -1660,6 +1667,7 @@ def generate_indel_position_label_data_matrix():
             open('%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir,
                  'r'), delimiter='\t')
         columns = list(zip(*c_reader))
+        print len(columns)
         keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
         counts = 1
 
@@ -1668,6 +1676,7 @@ def generate_indel_position_label_data_matrix():
             end = end - 1
         else:
             end = len(vcf_filenames) + 1
+        print end
 
         f_bar_count = open("%s/bargraph_indel_counts.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f_bar_perc = open("%s/bargraph_indel_percentage.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -1675,6 +1684,7 @@ def generate_indel_position_label_data_matrix():
         f_bar_perc.write("Sample\tunmapped_positions_perc\ttrue_variant_perc\tOnly_low_AF_perc\tOnly_DP_perc\tOnly_low_MQ_perc\tother_perc\n")
         for i in xrange(1, end, 1):
             """ Bar Count Statistics: Variant Position Count Statistics """
+            print i
             true_variant = columns[i].count('VARIANT')
             unmapped_positions = columns[i].count('reference_unmapped_position')
             reference_allele = columns[i].count('reference_allele')
@@ -1689,6 +1699,7 @@ def generate_indel_position_label_data_matrix():
             # bar_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(vcf_filenames_outgroup[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), unmapped_positions, reference_allele, true_variant, Only_low_AF, Only_DP, Only_low_MQ, other)
             if args.outgroup:
                 ###
+
                 bar_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(
                     vcf_filenames_outgroup[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
                                                                    unmapped_positions, reference_allele, true_variant,
@@ -4622,7 +4633,7 @@ if __name__ == '__main__':
             line = args.filter2_only_snp_vcf_dir + line
             vcf_filenames_temp.append(line)
             if args.outgroup:
-                if outgroup not in line:
+                if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in line:
                     vcf_filenames_temp_outgroup.append(line)
         fp.close()
     vcf_filenames = sorted(vcf_filenames_temp)
