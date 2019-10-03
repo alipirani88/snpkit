@@ -79,6 +79,8 @@ def make_sure_files_exists(vcf_file_array, Config, logger):
         for i in not_found_files:
             keep_logging('Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
                          'Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), logger, 'exception')
+            keep_logging('File not found: %s' % i,
+                         'File not found: %s' % i, logger, 'debug')
         exit()
 
 def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_positions, Config, logger):
