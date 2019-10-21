@@ -1101,6 +1101,31 @@ def generate_position_label_data_matrix():
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
 
         f33.write('\t' + print_string_header.strip() + '\n')
+
+        """ GET individual PHAGE/Repetitive/masked region positions to assign functional class group string """
+
+        phage_positions = []
+        repetitive_positions = []
+        mask_positions = []
+
+        phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
+        if os.path.isfile(phage_region_positions):
+            with open(phage_region_positions, 'rU') as fphage:
+                for line in fphage:
+                    phage_positions.append(line.strip())
+            fphage.close()
+        else:
+            raise IOError('%s/phage_region_positions.txt does not exist.' % args.filter2_only_snp_vcf_dir)
+            exit()
+
+        """ End: Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
+
+        f_open_temp_Only_filtered_positions_for_closely_matrix = open("%s/temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+
+        f_open_temp_Only_filtered_positions_for_closely_matrix.write('\t' + print_string_header.strip() + '\n')
+
+
+
         keep_logging('Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir, 'Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir, logger, 'info')
         lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP', 'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP', 'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP', 'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP', 'HighFQ_DP_QUAL_proximate_SNP', 'HighFQ_QUAL_DP_proximate_SNP', 'HighFQ_proximate_SNP', '_proximate_SNP']
         ref_var = ['reference_allele', 'VARIANT']
@@ -1120,8 +1145,16 @@ def generate_position_label_data_matrix():
                                     print_string = print_string + "\t" + i
                                 STRR2 = row[0] + print_string + "\n"
                                 f33.write(STRR2)
+
+                                if str(row[0]) not in phage_positions:
+                                    print_string_2 = ""
+                                    for i in row[1:]:
+                                        print_string_2 = print_string_2 + "\t" + i
+                                    STRR3 = row[0] + print_string_2 + "\n"
+                                    f_open_temp_Only_filtered_positions_for_closely_matrix.write(STRR3)
             csv_file.close()
             f33.close()
+            f_open_temp_Only_filtered_positions_for_closely_matrix.close()
 
         else:
             with open("%s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
@@ -1130,12 +1163,19 @@ def generate_position_label_data_matrix():
                 for row in csv_reader:
                     if set(ref_var) & set(row[1:]):
                         if set(lll) & set(row[1:]):
-
                             print_string = ""
                             for i in row[1:]:
                                 print_string = print_string + "\t" + i
                             STRR2 = row[0] + print_string + "\n"
                             f33.write(STRR2)
+                            if str(row[0]) not in phage_positions:
+                                print_string_2 = ""
+                                for i in row[1:]:
+                                    print_string_2 = print_string_2 + "\t" + i
+                                STRR3 = row[0] + print_string_2 + "\n"
+                                f_open_temp_Only_filtered_positions_for_closely_matrix.write(STRR3)
+
+
             csv_file.close()
             f33.close()
         """
@@ -1259,8 +1299,19 @@ def generate_position_label_data_matrix():
         This will give a visual explanation of how many positions in each samples were filtered out because of different reason
         """
 
-        c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
-        columns = list(zip(*c_reader))
+        print "Exluding Phage regions from temp_Only_filtered_positions_for_closely_matrix.txt file. The results will be outputed to temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt"
+
+
+
+
+
+        temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt" % args.filter2_only_snp_vcf_dir
+        print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
+        #c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+        c_reader_2 = csv.reader(
+            open(temp_Only_filtered_positions_for_closely_matrix_exclude_phage, 'r'), delimiter='\t')
+        columns_2 = list(zip(*c_reader_2))
+        print len(columns_2)
         keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
         counts = 1
 
@@ -1277,14 +1328,14 @@ def generate_position_label_data_matrix():
 
         for i in xrange(1, end, 1):
             """ Bar Count Statistics: Variant Position Count Statistics """
-            true_variant = columns[i].count('VARIANT')
-            unmapped_positions = columns[i].count('reference_unmapped_position')
-            reference_allele = columns[i].count('reference_allele')
-            Only_low_FQ = columns[i].count('LowFQ')
-            Only_DP = columns[i].count('HighFQ_DP')
-            Only_low_MQ = columns[i].count('HighFQ')
-            low_FQ_other_parameters = columns[i].count('LowFQ_QUAL_DP_proximate_SNP') + columns[i].count('LowFQ_DP_QUAL_proximate_SNP') + columns[i].count('LowFQ_QUAL_proximate_SNP') + columns[i].count('LowFQ_DP_proximate_SNP') + columns[i].count('LowFQ_proximate_SNP') + columns[i].count('LowFQ_QUAL_DP') + columns[i].count('LowFQ_DP_QUAL') + columns[i].count('LowFQ_QUAL') + columns[i].count('LowFQ_DP')
-            high_FQ_other_parameters = columns[i].count('HighFQ_QUAL_DP_proximate_SNP') + columns[i].count('HighFQ_DP_QUAL_proximate_SNP') + columns[i].count('HighFQ_QUAL_proximate_SNP') + columns[i].count('HighFQ_DP_proximate_SNP') + columns[i].count('HighFQ_proximate_SNP') + columns[i].count('HighFQ_QUAL_DP') + columns[i].count('HighFQ_DP_QUAL') + columns[i].count('HighFQ_QUAL')
+            true_variant = columns_2[i].count('VARIANT')
+            unmapped_positions = columns_2[i].count('reference_unmapped_position')
+            reference_allele = columns_2[i].count('reference_allele')
+            Only_low_FQ = columns_2[i].count('LowFQ')
+            Only_DP = columns_2[i].count('HighFQ_DP')
+            Only_low_MQ = columns_2[i].count('HighFQ')
+            low_FQ_other_parameters = columns_2[i].count('LowFQ_QUAL_DP_proximate_SNP') + columns_2[i].count('LowFQ_DP_QUAL_proximate_SNP') + columns_2[i].count('LowFQ_QUAL_proximate_SNP') + columns_2[i].count('LowFQ_DP_proximate_SNP') + columns_2[i].count('LowFQ_proximate_SNP') + columns_2[i].count('LowFQ_QUAL_DP') + columns_2[i].count('LowFQ_DP_QUAL') + columns_2[i].count('LowFQ_QUAL') + columns_2[i].count('LowFQ_DP')
+            high_FQ_other_parameters = columns_2[i].count('HighFQ_QUAL_DP_proximate_SNP') + columns_2[i].count('HighFQ_DP_QUAL_proximate_SNP') + columns_2[i].count('HighFQ_QUAL_proximate_SNP') + columns_2[i].count('HighFQ_DP_proximate_SNP') + columns_2[i].count('HighFQ_proximate_SNP') + columns_2[i].count('HighFQ_QUAL_DP') + columns_2[i].count('HighFQ_DP_QUAL') + columns_2[i].count('HighFQ_QUAL')
             other = low_FQ_other_parameters + high_FQ_other_parameters
 
             total = true_variant + unmapped_positions + reference_allele + Only_low_FQ + Only_DP + low_FQ_other_parameters + high_FQ_other_parameters + Only_low_MQ
@@ -1302,35 +1353,35 @@ def generate_position_label_data_matrix():
             #f_bar_count.write(bar_string)
             """ Bar Count Percentage Statistics: Variant Position Percentage Statistics """
             try:
-                true_variant_perc = float((columns[i].count('VARIANT') * 100) / total)
+                true_variant_perc = float((columns_2[i].count('VARIANT') * 100) / total)
             except ZeroDivisionError:
                 true_variant_perc = 0
             try:
-                unmapped_positions_perc = float((columns[i].count('reference_unmapped_position') * 100) / total)
+                unmapped_positions_perc = float((columns_2[i].count('reference_unmapped_position') * 100) / total)
             except ZeroDivisionError:
                 unmapped_positions_perc = 0
             try:
-                reference_allele_perc = float((columns[i].count('reference_allele') * 100) / total)
+                reference_allele_perc = float((columns_2[i].count('reference_allele') * 100) / total)
             except ZeroDivisionError:
                 reference_allele_perc = 0
             try:
-                Only_low_FQ_perc = float((columns[i].count('LowFQ') * 100) / total)
+                Only_low_FQ_perc = float((columns_2[i].count('LowFQ') * 100) / total)
             except ZeroDivisionError:
                 Only_low_FQ_perc = 0
             try:
-                Only_DP_perc = float((columns[i].count('HighFQ_DP') * 100) / total)
+                Only_DP_perc = float((columns_2[i].count('HighFQ_DP') * 100) / total)
             except ZeroDivisionError:
                 Only_DP_perc = 0
             try:
-                Only_low_MQ_perc = float((columns[i].count('HighFQ') * 100) / total)
+                Only_low_MQ_perc = float((columns_2[i].count('HighFQ') * 100) / total)
             except ZeroDivisionError:
                 Only_low_MQ_perc = 0
             try:
-                low_FQ_other_parameters_perc = float(((columns[i].count('LowFQ_QUAL_DP_proximate_SNP') + columns[i].count('LowFQ_DP_QUAL_proximate_SNP') + columns[i].count('LowFQ_QUAL_proximate_SNP') + columns[i].count('LowFQ_DP_proximate_SNP') + columns[i].count('LowFQ_proximate_SNP') + columns[i].count('LowFQ_QUAL_DP') + columns[i].count('LowFQ_DP_QUAL') + columns[i].count('LowFQ_QUAL') + columns[i].count('LowFQ_DP'))  * 100) / total)
+                low_FQ_other_parameters_perc = float(((columns_2[i].count('LowFQ_QUAL_DP_proximate_SNP') + columns_2[i].count('LowFQ_DP_QUAL_proximate_SNP') + columns_2[i].count('LowFQ_QUAL_proximate_SNP') + columns_2[i].count('LowFQ_DP_proximate_SNP') + columns_2[i].count('LowFQ_proximate_SNP') + columns_2[i].count('LowFQ_QUAL_DP') + columns_2[i].count('LowFQ_DP_QUAL') + columns_2[i].count('LowFQ_QUAL') + columns_2[i].count('LowFQ_DP'))  * 100) / total)
             except ZeroDivisionError:
                 low_FQ_other_parameters_perc = 0
             try:
-                high_FQ_other_parameters_perc = float(((columns[i].count('HighFQ_QUAL_DP_proximate_SNP') + columns[i].count('HighFQ_DP_QUAL_proximate_SNP') + columns[i].count('HighFQ_QUAL_proximate_SNP') + columns[i].count('HighFQ_DP_proximate_SNP') + columns[i].count('HighFQ_proximate_SNP') + columns[i].count('HighFQ_QUAL_DP') + columns[i].count('HighFQ_DP_QUAL') + columns[i].count('HighFQ_QUAL')) * 100) / total)
+                high_FQ_other_parameters_perc = float(((columns_2[i].count('HighFQ_QUAL_DP_proximate_SNP') + columns_2[i].count('HighFQ_DP_QUAL_proximate_SNP') + columns_2[i].count('HighFQ_QUAL_proximate_SNP') + columns_2[i].count('HighFQ_DP_proximate_SNP') + columns_2[i].count('HighFQ_proximate_SNP') + columns_2[i].count('HighFQ_QUAL_DP') + columns_2[i].count('HighFQ_DP_QUAL') + columns_2[i].count('HighFQ_QUAL')) * 100) / total)
             except ZeroDivisionError:
                 high_FQ_other_parameters_perc = 0
 
@@ -2988,11 +3039,6 @@ def annotated_snp_matrix():
     """ End: Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
 
 
-
-
-
-
-
     """ Generate a position_label and position_indel_label dictionary that will contain information about each unique variant position that passed variant filters in any sample and reasons for being filtered out in any sample """
     position_label = OrderedDict()
     with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
@@ -3022,9 +3068,6 @@ def annotated_snp_matrix():
     csv_file.close()
 
     """ End: Generate a position_label and position_indel_label dictionary """
-
-
-
 
 
     """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ """
@@ -4532,8 +4575,19 @@ def mask_fq_mq_positions_specific_to_outgroup():
 
 
     else:
+        position_label = OrderedDict()
+
+        with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            next(csv_reader, None)
+            for row in csv_reader:
+                position_label[row[0]] = row[1:]
         for key in position_label.keys():
-            label_sep_array = position_label[key].split(',')
+            label_sep_array = str(position_label[key]).split(',')
             for i in label_sep_array:
                 if "LowFQ" in str(i):
                     if key not in mask_fq_mq_positions:
@@ -4656,14 +4710,14 @@ if __name__ == '__main__':
         unique_position_file = create_positions_filestep(vcf_filenames)
         unique_indel_position_file = create_indel_positions_filestep(vcf_filenames)
 
-        # bgzip and tabix all the vcf files in core_temp_dir.
-        files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
-        tabix(files_for_tabix, "vcf", logger, Config)
+        # # bgzip and tabix all the vcf files in core_temp_dir.
+        # files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
+        # tabix(files_for_tabix, "vcf", logger, Config)
 
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
 
-        create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
+        #create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir)
 
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir)
 
