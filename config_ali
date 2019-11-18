@@ -11,24 +11,24 @@ binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 
 #resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 [scheduler]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
-large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=50:00:00
+large_resources: nodes=1:ppn=12,mem=47gb,walltime=50:00:00
 email: apirani@med.umich.edu
 queue: flux
 flux_account: esnitkin_flux
 notification: a
 
 [flux]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
-large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=50:00:00
+large_resources: nodes=1:ppn=12,mem=47gb,walltime=50:00:00
 email: apirani@med.umich.edu
 queue: flux
 flux_account: esnitkin_flux
 notification: a
 
 [slurm]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
-large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=50:00:00
+large_resources: nodes=1:ppn=12,mem=47gb,walltime=50:00:00
 email: apirani@med.umich.edu
 queue: flux
 flux_account: esnitkin_flux
@@ -1070,3 +1070,9 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Pt0_Chromosome_O
 Ref_Name: NTHi_86-028NP.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/NTHi_86-028NP/
+
+[Legionella_SG6_Thunder_Bay]
+# Name of reference genome fasta file.
+Ref_Name: Legionella_SG6_Thunder_Bay.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Legionella_SG6_Thunder_Bay/

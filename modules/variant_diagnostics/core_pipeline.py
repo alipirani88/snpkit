@@ -1302,9 +1302,6 @@ def generate_position_label_data_matrix():
         print "Exluding Phage regions from temp_Only_filtered_positions_for_closely_matrix.txt file. The results will be outputed to temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt"
 
 
-
-
-
         temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt" % args.filter2_only_snp_vcf_dir
         print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
         #c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
@@ -1408,7 +1405,7 @@ def generate_position_label_data_matrix():
     keep_logging('Running: Changing variables in data matrices to codes for faster processing...', 'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
     temp_generate_position_label_data_matrix_All_label()
     keep_logging('Running: Generating Barplot statistics data matrices...', 'Running: Generating Barplot statistics data matrices...', logger, 'info')
-    barplot_stats()
+    #barplot_stats()
 
 def generate_indel_position_label_data_matrix():
 
@@ -2278,29 +2275,29 @@ def generate_vcf_files():
             f1.write(print_string)
         f1.close()
 
-    # Turning off generating core fasta alignemnets. No longer used in pipeline
-    # filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
-    # keep_logging('Generating Consensus...', 'Generating Consensus...', logger, 'info')
-    # for file in filtered_out_vcf_files:
-    #     f1 = open(filename, 'a+')
-    #     bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
-    #     f1.write(bgzip_cmd)
-    #     subprocess.call([bgzip_cmd], shell=True)
-    #     tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
-    #     f1.write(tabix_cmd)
-    #     subprocess.call([tabix_cmd], shell=True)
-    #     fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s.fa\n" % (args.reference, base_vcftools_bin, file, file.replace('_filter2_final.vcf_core.vcf', ''))
-    #     f1.write(fasta_cmd)
-    #     subprocess.call([fasta_cmd], shell=True)
-    #     base = os.path.basename(file)
-    #     header = base.replace('_filter2_final.vcf_core.vcf', '')
-    #     sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
-    #     subprocess.call([sed_command], shell=True)
-    #     f1.write(sed_command)
-    # keep_logging('The consensus commands are in : %s' % filename, 'The consensus commands are in : %s' % filename, logger, 'info')
-    # sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
-    # #os.system(sequence_lgth_cmd)
-    # call("%s" % sequence_lgth_cmd, logger)
+    #Turning off generating core fasta alignemnets. No longer used in pipeline
+    filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
+    keep_logging('Generating Consensus...', 'Generating Consensus...', logger, 'info')
+    for file in filtered_out_vcf_files:
+        f1 = open(filename, 'a+')
+        bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
+        f1.write(bgzip_cmd)
+        subprocess.call([bgzip_cmd], shell=True)
+        tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
+        f1.write(tabix_cmd)
+        subprocess.call([tabix_cmd], shell=True)
+        fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s.fa\n" % (args.reference, base_vcftools_bin, file, file.replace('_filter2_final.vcf_core.vcf', ''))
+        f1.write(fasta_cmd)
+        subprocess.call([fasta_cmd], shell=True)
+        base = os.path.basename(file)
+        header = base.replace('_filter2_final.vcf_core.vcf', '')
+        sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
+        subprocess.call([sed_command], shell=True)
+        f1.write(sed_command)
+    keep_logging('The consensus commands are in : %s' % filename, 'The consensus commands are in : %s' % filename, logger, 'info')
+    sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
+    #os.system(sequence_lgth_cmd)
+    call("%s" % sequence_lgth_cmd, logger)
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
@@ -2674,9 +2671,9 @@ def annotated_snp_matrix():
 
     """Annotate all VCF file formats with SNPeff"""
     # Commented for debugging
-    variant_annotation()
-
-    indel_annotation()
+    # variant_annotation()
+    #
+    # indel_annotation()
 
 
     """ Start of Extract Annotation information from Genbank file 
@@ -2699,8 +2696,6 @@ def annotated_snp_matrix():
     locus_tag_to_gene_name = {}
     locus_tag_to_product = {}
     locus_tag_to_strand = {}
-    #locus_tag_to_uniprot = {}
-    #locus_tag_to_ec_number = {}
 
     keep_logging(
         'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
@@ -2731,11 +2726,6 @@ def annotated_snp_matrix():
     last_element = len(record.features) - 1
     last_locus_tag = record.features[last_element].qualifiers['locus_tag'][0]
 
-    # #Debugging prints
-    # print first_locus_tag
-    # print locus_tag_to_gene_name[first_locus_tag]
-    # print last_locus_tag
-    # print locus_tag_to_gene_name[last_locus_tag]
 
     """ End of Extract Annotation information from Genbank file 
 
@@ -2747,8 +2737,6 @@ def annotated_snp_matrix():
 
     """
 
-
-
     """ Start of Merging Step:
     
     - Merge Individual Annotated raw and filtered vcf files to generate a Final merged vcf file using Gatk combine variants method.
@@ -2759,10 +2747,10 @@ def annotated_snp_matrix():
     keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, logger, 'info')
 
     #Commented for debugging
-    files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
-    tabix(files_for_tabix, "vcf", logger, Config)
-    files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
-    tabix(files_for_tabix, "vcf", logger, Config)
+    # files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    # tabix(files_for_tabix, "vcf", logger, Config)
+    # files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    # tabix(files_for_tabix, "vcf", logger, Config)
 
     files = ' '.join(vcf_filenames)
 
@@ -2781,39 +2769,39 @@ def annotated_snp_matrix():
 
     """ Merge with Gatk combine variants method """
     # #Commented for debugging
-    merged_file_suffix = "_no_proximate_snp.vcf"
-
-    annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
-    annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
-
-    with open(annotated_no_proximate_snp_file, 'w+') as fopen:
-        for i in vcf_filenames:
-            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
-    fopen.close()
-
-    with open(annotated_no_proximate_snp_indel_file, 'w+') as fopen:
-        for i in vcf_filenames:
-            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
-    fopen.close()
-
-    #files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
-    files_gatk = ""
-    for i in vcf_filenames:
-        files_gatk = files_gatk + " --variant " + i
-    final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
-
-    # Test this merge and annotate this merged file - Testing Mode Right now.
-    #merged_file_suffix = "_no_proximate_snp_1.vcf"
-    #final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
-    merged_file_suffix = "_indel.vcf"
-    final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
-                                                                         '_filter2_indel_final.vcf_ANN.vcf.gz'),
-                                                      args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
-                                                      logger, Config)
-
-    """ Tabix index the combined GATK Final vcf file """
-    files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
-    tabix(files_for_tabix, "vcf", logger, Config)
+    # merged_file_suffix = "_no_proximate_snp.vcf"
+    #
+    # annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
+    # annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
+    #
+    # with open(annotated_no_proximate_snp_file, 'w+') as fopen:
+    #     for i in vcf_filenames:
+    #         fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
+    # fopen.close()
+    #
+    # with open(annotated_no_proximate_snp_indel_file, 'w+') as fopen:
+    #     for i in vcf_filenames:
+    #         fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
+    # fopen.close()
+    #
+    # #files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
+    # files_gatk = ""
+    # for i in vcf_filenames:
+    #     files_gatk = files_gatk + " --variant " + i
+    # final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
+    #
+    # # Test this merge and annotate this merged file - Testing Mode Right now.
+    # #merged_file_suffix = "_no_proximate_snp_1.vcf"
+    # #final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
+    # merged_file_suffix = "_indel.vcf"
+    # final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+    #                                                                      '_filter2_indel_final.vcf_ANN.vcf.gz'),
+    #                                                   args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
+    #                                                   logger, Config)
+    #
+    # """ Tabix index the combined GATK Final vcf file """
+    # files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
+    # tabix(files_for_tabix, "vcf", logger, Config)
 
 
     """ End of Merging Step. """
@@ -2837,8 +2825,6 @@ def annotated_snp_matrix():
     print_string_header = "\t"
     for i in vcf_filenames:
         print_string_header = print_string_header + os.path.basename(i) + "\t"
-
-
 
     """ Generate an array of core positions. Read Only_ref_variant_positions_for_closely* to get final core variant positions into core_positions array"""
     core_positions = []
@@ -2864,8 +2850,6 @@ def annotated_snp_matrix():
         fp.close()
 
     """ End: Generate an array of core positions. """
-
-
 
     """ Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
     """ Read in functional class filter positions. """
@@ -2915,8 +2899,6 @@ def annotated_snp_matrix():
     """ End: Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
 
 
-
-
     """ Read and parse final GATK merged vcf file cyvcf library; Generate a header string from the sample lis fo this merged vcf file"""
 
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
@@ -2929,8 +2911,6 @@ def annotated_snp_matrix():
     header_print_string = header_print_string + "\n"
 
     """ End """
-
-
 
 
     """ Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
@@ -3144,14 +3124,6 @@ def annotated_snp_matrix():
     """ End: Generate mask_fq_mq_positions array """
 
 
-
-
-
-
-
-
-
-
     """ Main: Generate SNP Matrix """
 
 
@@ -3225,28 +3197,6 @@ def annotated_snp_matrix():
             code_string = code_string.replace('VARIANT', '-2')
         else:
             code_string = code_string.replace('VARIANT', '3')
-
-        # Remove this commented section: Deprecated
-        # Changing SNP type: Date 28/05/2019
-        # Assign type of snp: coding / non-coding
-        # if variants.INFO.get('ANN'):
-        #     if "protein_coding" in variants.INFO.get('ANN'):
-        #         snp_type = "Coding SNP"
-        #     else:
-        #         snp_type = "Non-coding SNP"
-        # else:
-        #     if len(variants.ALT) > 1 and snp_var_ann_dict[variants.POS]:
-        #         #print variants.ALT
-        #         #print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
-        #         #print variants.POS
-        #         #print set(snp_var_ann_dict[variants.POS])
-        #         if "protein_coding" in set(snp_var_ann_dict[variants.POS].split(',')):
-        #             snp_type = "Coding SNP"
-        #         else:
-        #             snp_type = "Non-coding SNP"
-        #     else:
-        #         snp_type = "Non-coding SNP"
-        # Remove this commented section: Deprecated
 
         # Annotation Bug fix 2
         # Changing SNP type: Date 28/05/2019
@@ -3675,17 +3625,8 @@ def annotated_snp_matrix():
             for i in ntd_string_array[1:]:
                 ntd_string = ntd_string + "\t" + "N"
             ntd_string_array = ntd_string.split('\t')
-            #print ntd_string_array
 
-
-        if str(variants.POS) in mask_fq_mq_positions:
-            ntd_string_array = ntd_string.split('\t')
-            #print ntd_string_array
-            ntd_string = ""
-            for i in ntd_string_array[1:]:
-                ntd_string = ntd_string + "\t" + "N"
-            ntd_string_array = ntd_string.split('\t')
-            #print ntd_string_array
+        ## 2019-11-18; Was masking both FQ and MQ regions found in mask_fq_mq_positions. BUG FOUND. SHould be Commented; Never ever unComment this out.
 
 
         """ Generate a print_string for each of the matrix - SNP_matrix_allele_new.csv and SNP_matrix_allele_phage.csv """
@@ -3707,6 +3648,13 @@ def annotated_snp_matrix():
     fp_allele_new.close()
     fp_allele_new_phage.close()
 
+
+
+    """ Generate Variant QC report """
+    os.system("conda activate variant_QC_env")
+    os.system("Rscript /nfs/esnitkin/bin_group/pipeline/Github/scripts/render_variant_matrix_qc.R SNP_matrix_code.csv %s" % os.path.dirname(args.filter2_only_snp_vcf_dir))
+
+
 ######################################
     """ Indel matrix """
     """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
@@ -3723,19 +3671,6 @@ def annotated_snp_matrix():
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
 
-    # """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
-    # mask_fq_mq_positions = []
-    # for key in position_indel_label.keys():
-    #     label_sep_array = position_indel_label[key].split(',')
-    #     for i in label_sep_array:
-    #         if "LowAF" in i:
-    #             if key not in mask_fq_mq_positions:
-    #                 mask_fq_mq_positions.append(key)
-    #         if i == "HighAF":
-    #             if key not in mask_fq_mq_positions:
-    #                 mask_fq_mq_positions.append(key)
-    #
-    # print "Length of indel mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
 
     """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
     mask_fq_mq_positions = []
@@ -3800,11 +3735,6 @@ def annotated_snp_matrix():
 
     print "Length of Indel mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
     print "Length of Indel mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
-
-
-
-
-
 
 
     for variants in VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
@@ -3974,9 +3904,6 @@ def annotated_snp_matrix():
                         ann_string = ann_string + '|'.join(
                             [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
-                    # Debugging
-                    if i_split[3] == "CD630_00290":
-                        print ann_string
                 # Changing SNP type: Date 28/05/2019
                 else:
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
@@ -4394,7 +4321,7 @@ def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
     elif jobrun == "parallel-cluster":
         job_file_name = "%s/gubbins_%s.pbs" % (gubbins_dir, os.path.basename(input_fasta))
         job_name = os.path.basename(job_file_name)
-        job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=12,mem=47000mb,walltime=250:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], gubbins_dir, load_module, gubbins_cmd)
+        job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=12,mem=47000mb,walltime=50:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\ncd %s\n%s\n%s" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], gubbins_dir, load_module, gubbins_cmd)
         f1=open(job_file_name, 'w+')
         f1.write(job_print_string)
         f1.close()
@@ -4562,10 +4489,6 @@ def mask_fq_mq_positions_specific_to_outgroup():
         fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
         args.reference, base_vcftools_bin, vcf_filename_unmapped, outgroup)
 
-        # print bgzip_cmd
-        # print tabix_cmd
-        # print fasta_cmd
-
         subprocess.call([bgzip_cmd], shell=True)
         subprocess.call([tabix_cmd], shell=True)
         subprocess.call([fasta_cmd], shell=True)
@@ -4602,6 +4525,7 @@ def mask_fq_mq_positions_specific_to_outgroup():
         fp.close()
 
         print "Length of mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
+
 
 """
 Pending inclusion
@@ -4802,7 +4726,7 @@ if __name__ == '__main__':
 
         create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
 
-        #extract_only_ref_variant_fasta_from_reference_allele_variant()
+        extract_only_ref_variant_fasta_from_reference_allele_variant()
 
         mask_fq_mq_positions_specific_to_outgroup()
 
@@ -4853,7 +4777,7 @@ if __name__ == '__main__':
         make_sure_path_exists(consensus_ref_allele_unmapped_variant_dir)
         reference_base = os.path.basename(args.reference).split('.')[0]
         # Move results to the results directory
-        move_data_matrix_results = "cp -r %s/unique_positions_file %s/unique_indel_positions_file %s/*.csv %s/*.txt %s/temp_* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), data_matrix_dir)
+        move_data_matrix_results = "cp -r %s/unique_positions_file %s/unique_indel_positions_file %s/*.csv %s/*.txt %s/temp_* %s/All* %s/Only* %s/*.R %s/R_scripts/generate_diagnostics_plots.R %s/*.html %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, data_matrix_dir)
         #move_core_vcf_fasta_results = "cp %s/*_core.vcf.gz %s/*.fa %s/*_variants.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
         move_core_vcf_fasta_results = "mv %s/*_core.vcf.gz* %s/*_ANN* %s/*.fa %s/" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, core_vcf_fasta_dir)
 
@@ -5115,9 +5039,9 @@ if __name__ == '__main__':
 
         create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file)
 
-        extract_only_ref_variant_fasta_from_reference_allele_variant()
+        #extract_only_ref_variant_fasta_from_reference_allele_variant()
 
-        mask_fq_mq_positions_specific_to_outgroup()
+        #mask_fq_mq_positions_specific_to_outgroup()
 
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
