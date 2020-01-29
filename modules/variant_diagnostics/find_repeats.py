@@ -52,16 +52,18 @@ def nucmer_repeat(reference, outdir, logger, Config):
 
     #Find Tandem repeats using Nucmer
     tandem_repeats = []
-    with open("%s_tandem_repeats_file" % prefix) as fp:
-        for i in xrange(5):
-            fp.next()
-        for line in fp:
-            line = line.strip()
-            line_split = line.split()
-            end_coords = int(line_split[0]) + int(line_split[1])
-            tandem_repeats.extend(list(range(int(line_split[0]), end_coords)))
-    keep_logging('No. of Tandem repeat matches positions: %s' % len(set(sorted(tandem_repeats))),
-                 'No. of Tandem repeat matches positions: %s' % len(set(sorted(tandem_repeats))), logger, 'info')
+    num_lines = sum(1 for line in open("%s_tandem_repeats_file" % prefix))
+    if int(num_lines) > 5:
+        with open("%s_tandem_repeats_file" % prefix) as fp:
+            for i in xrange(5):
+                fp.next()
+            for line in fp:
+                line = line.strip()
+                line_split = line.split()
+                end_coords = int(line_split[0]) + int(line_split[1])
+                tandem_repeats.extend(list(range(int(line_split[0]), end_coords)))
+        keep_logging('No. of Tandem repeat matches positions: %s' % len(set(sorted(tandem_repeats))),
+                     'No. of Tandem repeat matches positions: %s' % len(set(sorted(tandem_repeats))), logger, 'info')
 
     # Not including inexact repeats filter
     #All_repeats = sorted(set(inexact_repeat_positions + tandem_repeats))

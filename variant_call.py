@@ -32,10 +32,12 @@ def parser():
                                                                      '1.   All: Run all variant calling  steps starting from trimming the reads, mapping, post-processing the alignments and calling variants;\n'
                                                                      '2.   core_All: Extract core snps and generate different types of alignments, SNP/Indel Matrices and diagnostics plots.')
     required.add_argument('-analysis', action='store', dest="analysis_name", help='Unique analysis name that will be used as prefix to saving results and log files.', required=True)
+    optional.add_argument('-gubbins_env', action='store', dest="gubbins_env",
+                          help='Name of the Gubbins Raxml Iqtree environment to load for Phylogenetic analysis')
     optional.add_argument('-config', action='store', dest="config", help='Path to Config file, Make sure to check config settings before running pipeline', required=False)
     optional.add_argument('-suffix', action='store', dest="suffix", help='Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz', required=False)
     optional.add_argument('-filenames', action='store', dest="filenames", help='fastq filenames with one single-end filename per line. \nIf the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. \nUseful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. \nOtherwise the pipeline will consider all the samples available in reads directory.', required=False)
-    optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in one of the four modes. Default: local. Suggested mode for core snp is \"cluster\" that will run all the steps in parallel with the available cores. Make sure to provide a large memory node for this option\nThe possible modes are: cluster/parallel-local/local\nSet your specific hpc cluster parameters in config file under the [scheduler] section. Supports only PBS scheduling system. ')
+    optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in local or cluster mode.\nDefault: local.\nSet your specific hpc cluster parameters in config file under the [scheduler] section. Supports PBS/SLURM scheduling system.')
     optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: OFF')
     optional.add_argument('-extract_unmapped', action='store', dest="extract_unmapped", help='Extract unmapped reads, assemble it and detect AMR genes using ariba')
     optional.add_argument('-datadir', action='store', dest="datadir", help='Path to snpEff data directory')
@@ -48,7 +50,7 @@ def parser():
     optional.add_argument('-coverage_depth', action='store', dest="coverage_depth",
                           help='Downsample Reads to this user specified depth')
     optional.add_argument('-scheduler', action='store', dest="scheduler",
-                          help='Type of Scheduler for generating cluster jobs')
+                          help='Type of Scheduler for generating cluster jobs: PBS, SLURM, LOCAL')
     return parser
 
 
@@ -113,6 +115,38 @@ def get_filenames(dir, type, filenames, analysis, suffix):
                 list_of_files.append(line)
     return list_of_files
 
+def get_scheduler_directive(scheduler, Config):
+    """ Generate Cluster Directive lines for a scheduler provided with args.scheduler"""
+    # Scheduler Changes here; current changes
+    if scheduler and scheduler == "SLURM":
+        script_Directive = "#SBATCH"
+        job_name_flag = "--job-name="
+        scheduler_directives = "#SBATCH --mail-user=%s\n#SBATCH --mail-type=%s\n#SBATCH --export=ALL\n#SBATCH --partition=%s\n#SBATCH --account=%s\n#SBATCH %s\n" \
+                          % (ConfigSectionMap("slurm", Config)['email'],
+                             ConfigSectionMap("slurm", Config)['notification'],
+                             ConfigSectionMap("slurm", Config)['partition'],
+                             ConfigSectionMap("slurm", Config)['flux_account'],
+                             ConfigSectionMap("slurm", Config)['resources'])
+    elif scheduler and scheduler == "PBS":
+        script_Directive = "#PBS"
+        job_name_flag = "-N"
+        scheduler_directives = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
+                          % (ConfigSectionMap("scheduler", Config)['email'],
+                             ConfigSectionMap("scheduler", Config)['notification'],
+                             ConfigSectionMap("scheduler", Config)['resources'],
+                             ConfigSectionMap("scheduler", Config)['queue'],
+                             ConfigSectionMap("scheduler", Config)['flux_account'])
+    else:
+        script_Directive = "#SBATCH"
+        job_name_flag = "--job-name="
+        scheduler_directives = "#SBATCH --mail-user=%s\n#SBATCH --mail-type=%s\n#SBATCH --export=ALL\n#SBATCH --partition=%s\n#SBATCH --account=%s\n#SBATCH %s\n" \
+                               % (ConfigSectionMap("slurm", Config)['email'],
+                                  ConfigSectionMap("slurm", Config)['notification'],
+                                  ConfigSectionMap("slurm", Config)['partition'],
+                                  ConfigSectionMap("slurm", Config)['flux_account'],
+                                  ConfigSectionMap("slurm", Config)['resources'])
+    return scheduler_directives, script_Directive, job_name_flag
+
 """ Methods to generate jobs for various pipeline tasks """
 def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, config_file, logger):
     """Takes a list of files and other arguments, generate variant calling jobs.
@@ -129,28 +163,12 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
     make_sure_path_exists(jobs_temp_dir)
     keep_logging('Generating cluster jobs in temporary directory %s' % jobs_temp_dir, 'Generating cluster jobs in temporary directory %s' % jobs_temp_dir, logger, 'exception')
 
-    # # Scheduler Changes here; current changes
-    # if args.scheduler and args.scheduler == "slurm":
-    #     script_Directive = "#SBATCH"
-    #     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
-    #                       % (ConfigSectionMap("scheduler", Config)['email'],
-    #                          ConfigSectionMap("scheduler", Config)['notification'],
-    #                          ConfigSectionMap("scheduler", Config)['resources'],
-    #                          ConfigSectionMap("scheduler", Config)['queue'],
-    #                          ConfigSectionMap("scheduler", Config)['flux_account'])
-    # elif args.scheduler and args.scheduler == "flux":
-    #     script_Directive = "#PBS"
-    #     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
-    #                       % (ConfigSectionMap("scheduler", Config)['email'],
-    #                          ConfigSectionMap("scheduler", Config)['notification'],
-    #                          ConfigSectionMap("scheduler", Config)['resources'],
-    #                          ConfigSectionMap("scheduler", Config)['queue'],
-    #                          ConfigSectionMap("scheduler", Config)['flux_account'])
+    scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
 
 
-
-    Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
-                      % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
+    # Deprecated
+    # Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
+    #                   % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
 
 
 
@@ -165,52 +183,52 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                 second_part = filename_base.replace("R1_001_final.fastq.gz", "R2_001_final.fastq.gz")
                 first_part_split = filename_base.split('R1_001_final.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "R1_001.fastq.gz" in filename_base:
                 second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
                 first_part_split = filename_base.split('R1_001.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "_R1.fastq.gz" in filename_base:
                 second_part = filename_base.replace("_R1.fastq.gz", "_R2.fastq.gz")
                 first_part_split = filename_base.split('_R1.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "R1.fastq.gz" in filename_base:
                 second_part = filename_base.replace("R1.fastq.gz", "R2.fastq.gz")
                 first_part_split = filename_base.split('R1.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "1_combine.fastq.gz" in filename_base:
                 second_part = filename_base.replace("1_combine.fastq.gz", "2_combine.fastq.gz")
                 first_part_split = filename_base.split('1_combine.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "1_sequence.fastq.gz" in filename_base:
                 second_part = filename_base.replace("1_sequence.fastq.gz", "2_sequence.fastq.gz")
                 first_part_split = filename_base.split('1_sequence.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "_forward.fastq.gz" in filename_base:
                 second_part = filename_base.replace("_forward.fastq.gz", "_reverse.fastq.gz")
                 first_part_split = filename_base.split('_forward.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "R1_001.fastq.gz" in filename_base:
                 second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
                 first_part_split = filename_base.split('R1_001.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif "_1.fastq.gz" in filename_base:
                 second_part = filename_base.replace("_1.fastq.gz", "_2.fastq.gz")
                 first_part_split = filename_base.split('_1.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
             elif ".1.fastq.gz" in filename_base:
                 second_part = filename_base.replace(".1.fastq.gz", ".2.fastq.gz")
                 first_part_split = filename_base.split('.1.fastq.gz')
                 first_part = first_part_split[0].replace('_L001', '')
-                first_part = re.sub("_S.*_", "", first_part)
+                first_part = re.sub("_S[0-9].*_", "", first_part)
 
             """ Have a standard filename preparation step"""
             # else:
@@ -220,24 +238,27 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
             #     first_part = first_part_split[0].replace('_L001', '')
             #     first_part = re.sub("_S.*_", "", first_part)
             second_file = args.dir + "/" + second_part
-            job_name = jobs_temp_dir + "/" + first_part + ".pbs"
+            if args.scheduler == "SLURM":
+                job_name = jobs_temp_dir + "/" + first_part + ".sbat"
+            else:
+                job_name = jobs_temp_dir + "/" + first_part + ".pbs"
             if not steps:
                 steps == "All"
             if type == "SE":
                 if args.clean:
-                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s -clean" % (
+                    command = "python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s -clean" % (
                     os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part,
                     reference, config_file, steps)
                 else:
-                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
+                    command = "python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
 
             else:
                 if args.clean:
-                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (
+                    command = "python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (
                     os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part,
                     first_part, reference, config_file, steps)
                 else:
-                    command = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
+                    command = "python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
 
 
             # # Adding Downsampling support 2019-06-20
@@ -250,12 +271,10 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                 command = command + " -downsample yes -coverage_depth %s" % depth
 
             with open(job_name, 'w') as out:
-                job_title = "#PBS -N %s" % first_part
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, first_part)
+                out.write("#!/bin/sh" + '\n')
                 out.write(job_title+'\n')
-                out.write(Pbs_model_lines+'\n')
-                #out.write(cd_command+'\n') ## changed it to automatically change to PBS working directory
-                out.write("#  Change to the directory you submitted from\nif [ -n \"$PBS_O_WORKDIR\" ]; then cd $PBS_O_WORKDIR; fi" + '\n')
-                out.write("echo $PBS_O_WORKDIR" + '\n')
+                out.write(scheduler_directives+'\n')
                 out.write("cd %s/temp_jobs" % output_folder + '\n')
                 out.write(command+'\n')
         elif "R2_001_final.fastq.gz" in filename_base or "R2.fastq.gz" in filename_base or "2_combine.fastq.gz" in filename_base or "2_sequence.fastq.gz" in filename_base or "_reverse.fastq.gz" in filename_base or "R2_001.fastq.gz" in filename_base or "_2.fastq.gz" in filename_base or ".2.fastq.gz" in filename_base or "_R2.fastq.gz" in filename_base:
@@ -264,7 +283,10 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
             keep_logging('Error while generating cluster jobs. Make sure the fastq filenames ends with one of these suffix: R1_001_final.fastq.gz, R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, R1_001.fastq.gz, _1.fastq.gz, .1.fastq.gz, _R1.fastq.gz', 'Error while generating cluster jobs. Make sure the fastq filenames ends with one of these suffix: R1_001_final.fastq.gz, R1.fastq.gz, 1_combine.fastq.gz, 1_sequence.fastq.gz, _forward.fastq.gz, R1_001.fastq.gz, _1.fastq.gz, .1.fastq.gz, _R1.fastq.gz', logger, 'exception')
             print filename_base
             exit()
-    list_of_jobs = glob.glob("%s/*.pbs" % jobs_temp_dir)
+    if args.scheduler == "SLURM":
+        list_of_jobs = glob.glob("%s/*.sbat" % jobs_temp_dir)
+    else:
+        list_of_jobs = glob.glob("%s/*.pbs" % jobs_temp_dir)
     return list_of_jobs
 
 def generate_custom_vcf_file_list(filenames_array, logger):
@@ -336,25 +358,33 @@ def run_command_list(command):
     return done
 
 def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, output_folder, logger):
-    #Generate command list to run on single cluster or in parallel
     command_list = ""
     command_list_qsub = []
     for job in list_of_jobs:
         command_list = command_list + "bash %s\n" % job
         command_list_qsub.append(job)
 
-    #cluster mode
+    job_id_array = []
     if cluster == "cluster":
         keep_logging('Running Jobs in cluster mode', 'Running Jobs in cluster mode', logger, 'info')
         for job in command_list_qsub:
-            keep_logging('Submitting Job: qsub %s' % job, 'Submitting Job: qsub %s' % job, logger, 'info')
-            call("qsub %s" % job, logger)
-
-    elif cluster == "parallel-cluster":
-        keep_logging('Running Jobs in parallel-cluster mode', 'Running Jobs in parallel-cluster mode', logger, 'info')
-        for job in command_list_qsub:
-            keep_logging('Submitting Job: qsub %s' % job, 'Submitting Job: qsub %s' % job, logger, 'info')
-            call("qsub %s" % job, logger)
+            keep_logging('Submitting Job: %s' % job, 'Submitting Job: %s' % job, logger, 'info')
+            if args.scheduler == "SLURM":
+                #call("sbatch %s" % job, logger)
+                keep_logging("sbatch %s" % job, "sbatch %s" % job, logger, 'info')
+                #proc = subprocess.Popen(["sbatch %s" % job], stdout=subprocess.PIPE, shell=True)
+                #(out, err) = proc.communicate()
+                #job_id_array.append(out.split(' ')[3].strip())
+                # job_id_array.append('123xx')
+                # break
+            elif args.scheduler == "PBS":
+                #call("qsub %s" % job, logger)
+                keep_logging("qsub %s" % job, "qsub %s" % job, logger, 'info')
+                #proc = subprocess.Popen(["qsub %s" % job], stdout=subprocess.PIPE, shell=True)
+                #(out, err) = proc.communicate()
+                #job_id_array.append(out.split('.')[0].strip())
+                # job_id_array.append('123xx')
+                # break
 
     elif cluster == "parallel-local":
         keep_logging('Running Jobs in parallel-local mode', 'Running Jobs in parallel-local mode', logger, 'info')
@@ -366,21 +396,27 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
         num_cores = multiprocessing.cpu_count()
         keep_logging('Number of cores available: %s' % num_cores, 'Number of cores available: %s' % num_cores, logger, 'info')
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(i) for i in command_list_qsub)
+
     elif cluster == "local":
         keep_logging('Running Jobs in local mode', 'Running Jobs in local mode', logger, 'info')
         for job in command_list_qsub:
             keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
             call("bash %s" % job, logger)
+    return job_id_array
 
 """ Pipeline individual task methods """
 def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, config_file):
     file_exists(reference)
     if args.debug_mode == "yes":
-        core_prep_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file)
+        core_prep_pipeline = "python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file)
     else:
-        core_prep_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file)
+        core_prep_pipeline = "python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s -scheduler %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file, args.scheduler)
 
-    job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
+
+    if args.scheduler == "SLURM":
+        job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".sbat"
+    else:
+        job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
                       % (ConfigSectionMap("scheduler", Config)['email'],
@@ -425,9 +461,9 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
 def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     file_exists(reference)
     if args.debug_mode == "yes":
-        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        core_pipeline = "python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     else:
-        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        core_pipeline = "python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
 
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
@@ -468,9 +504,9 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
 def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     file_exists(reference)
     if args.debug_mode == "yes":
-        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        core_pipeline = "python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     else:
-        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        core_pipeline = "python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
@@ -504,13 +540,15 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
 
 def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     if args.debug_mode == "yes":
-        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        core_pipeline = "python %s/modules/variant_diagnostics/core_pipeline_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
         if args.gubbins == "yes":
             core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+            if args.gubbins_env:
+                core_pipeline = core_pipeline + " -gubbins_env %s" % args.gubbins_env
         if args.outgroup:
             core_pipeline = core_pipeline + " -outgroup %s" % args.outgroup
     else:
-        core_pipeline = "/nfs/esnitkin/bin_group/anaconda2/bin/python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
+        core_pipeline = "python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file)
         if args.gubbins == "yes":
             core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
         if args.outgroup:
@@ -603,13 +641,18 @@ if __name__ == '__main__':
         """ Main Variant calling Methods: Generate and Run the jobs"""
         list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
         list_of_jobs = create_varcall_jobs(list_of_files, args.type, args.output_folder, args.index, args.steps, config_file, logger)
-        run_varcall_jobs(list_of_jobs, cluster_mode, log_unique_time, args.analysis_name, args.output_folder, logger)
+        job_submitted = run_varcall_jobs(list_of_jobs, cluster_mode, log_unique_time, args.analysis_name, args.output_folder, logger)
+        print job_submitted
         time_taken = datetime.now() - start_time_2
         keep_logging('Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, logger, 'info')
         keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
         keep_logging('End: Variant calling Pipeline', 'End: Variant calling Pipeline', logger, 'info')
 
     elif "core_All" in args.steps or "2" in args.steps:
+        # job_submitted = []
+        # job_submitted.append('123xx')
+        # job_submitted.append('123xxx')
+
         core_All_cmds = []
         """ Set Up Core Prep logs folder/logger object, cluster mode and copy config files to it"""
         core_prep_logs_folder = logs_folder + "/core_prep"
@@ -621,8 +664,6 @@ if __name__ == '__main__':
         make_sure_path_exists(core_temp_dir)
         keep_logging('\nCopying vcf files to %s\n' % core_temp_dir, '\nCopying vcf files to %s\n' % core_temp_dir, logger, 'info')
         cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s/*/*_vcf_results/*_indel_gatk.vcf %s/*/*_stats_results/*_depth_* %s/*/*_stats_results/*_markduplicates_metrics %s/*/*_stats_results/*_markduplicates_metrics %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
-
-
 
         call(cp_command, logger)
 
@@ -681,9 +722,6 @@ if __name__ == '__main__':
                              'This can be done by checking if all the variant call results folder contains final variant call vcf file: *.vcf_no_proximate_snp.vcf file' % core_temp_dir, 'Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
                                                                                                                                                                                               'This can be done by checking if all the variant call results folder contains final variant call vcf file: *.vcf_no_proximate_snp.vcf file' % core_temp_dir, logger, 'exception')
                 exit()
-
-
-
 
 
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
@@ -846,23 +884,19 @@ if __name__ == '__main__':
 
         core_All_cmds.append(run_tree_analysis_cmd)
 
-        combine_job_name = core_temp_dir + "/" + log_unique_time + "_" + args.analysis_name + "_core_All.pbs"
+        if args.scheduler == "SLURM":
+            combine_job_name = core_temp_dir + "/" + log_unique_time + "_" + args.analysis_name + "_core_All.sbat"
+        else:
+            combine_job_name = core_temp_dir + "/" + log_unique_time + "_" + args.analysis_name + "_core_All.pbs"
 
-        Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n" \
-                          % (ConfigSectionMap("scheduler", Config)['email'],
-                             ConfigSectionMap("scheduler", Config)['notification'],
-                             ConfigSectionMap("scheduler", Config)['large_resources'],
-                             ConfigSectionMap("scheduler", Config)['queue'],
-                             ConfigSectionMap("scheduler", Config)['flux_account'])
+        scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
 
         with open(combine_job_name, 'w') as out:
-            job_title = "#PBS -N %s_%s_core_All" % (log_unique_time, args.analysis_name)
+            job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(combine_job_name))
+            out.write("#!/bin/sh" + '\n')
             out.write(job_title + '\n')
-            out.write(Pbs_model_lines + '\n')
-            out.write(
-                "#  Change to the directory you submitted from\nif [ -n \"$PBS_O_WORKDIR\" ]; then cd $PBS_O_WORKDIR; fi" + '\n')
-            out.write("echo \"PBS working directory: $PBS_O_WORKDIR\"" + '\n')
-            out.write("cd %s" % core_temp_dir + '\n')
+            out.write(scheduler_directives + '\n')
+            out.write("cd %s/" % core_temp_dir + '\n')
             for cmds in core_All_cmds:
                 out.write(cmds + '\n')
         out.close()
@@ -871,8 +905,11 @@ if __name__ == '__main__':
                      'Running: %s\n' % combine_job_name,
                      logger, 'info')
 
-        call("qsub %s" % combine_job_name, logger)
+        #call("qsub %s" % combine_job_name, logger)
 
+        # keep_logging('Running: sbatch --dependency=afterany:%s %s\n' % (",".join(job_submitted), combine_job_name),
+        #              'Running: sbatch --dependency=afterany:%s %s\n' % (",".join(job_submitted), combine_job_name),
+        #              logger, 'info')
 
     elif "core_prep" in args.steps:
         """ Set Up Core Prep logs folder/logger object, cluster mode and copy config files to it"""

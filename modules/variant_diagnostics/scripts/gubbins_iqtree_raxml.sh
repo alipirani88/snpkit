@@ -23,6 +23,9 @@ cd $wd
 # modules to load (some of these might not be necessary)
 modules=$(echo python-anaconda2/201607 biopython fasttree dendropy reportlab RAxML raxml bioperl fastml/gub gubbins openmpi/1.10.2/gcc/4.8.5 gcc/4.8.5)
 
+# Get Directory name where the bash script is located: Changes by Ali 31 Oct 2019
+DIRECTORY=`dirname $0`
+
 # get account
 if [ -z "$3" ]; then
   echo Will submit jobs to esnitkin_flux.
@@ -47,13 +50,13 @@ if [ $2 = 1 ]; then
 echo $raxml > ${pref}_raxml_command.sh
 
   # iqtree command
-  iqtree=$(echo /nfs/esnitkin/bin_group/anaconda3/bin/iqtree -s ../$pref.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre $pref)
+  iqtree=$(echo iqtree -s ../$pref.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre $pref)
   echo $iqtree > ${pref}_iqtree_command.sh
   
   # generate pbs scripts for gubbins, raxml, iqtree
-  /nfs/esnitkin/bin_group/anaconda3/bin/python /nfs/esnitkin/bin_group/pipeline/Github/scripts/pbs_script_maker.py -c ${pref}_gubbins_command.sh -o ${pref}_gubbins.pbs -M "$modules" -a $acct -wd $wd
-  /nfs/esnitkin/bin_group/anaconda3/bin/python /nfs/esnitkin/bin_group/pipeline/Github/scripts/pbs_script_maker.py -c ${pref}_iqtree_command.sh -o ${pref}_iqtree.pbs -M "$modules" -a $acct -wd $wd/iqtree_results
-  /nfs/esnitkin/bin_group/anaconda3/bin/python /nfs/esnitkin/bin_group/pipeline/Github/scripts/pbs_script_maker.py -c ${pref}_raxml_command.sh -o ${pref}_raxml.pbs -M "$modules" -a $acct -wd $wd/raxml_results
+  python $DIRECTORY/pbs_script_maker.py -c ${pref}_gubbins_command.sh -o ${pref}_gubbins.pbs -M "$modules" -a $acct -wd $wd
+  python $DIRECTORY/pbs_script_maker.py -c ${pref}_iqtree_command.sh -o ${pref}_iqtree.pbs -M "$modules" -a $acct -wd $wd/iqtree_results
+  python $DIRECTORY/pbs_script_maker.py -c ${pref}_raxml_command.sh -o ${pref}_raxml.pbs -M "$modules" -a $acct -wd $wd/raxml_results
 
   # start gubbins, iqtree, raxml jobs
   echo qsub ${pref}_gubbins.pbs
@@ -80,19 +83,19 @@ else
   echo Will not run gubbins.
 
   echo Finding and removing invariant sites.
-  /nfs/esnitkin/bin_group/anaconda3/bin/snp-sites -o ${pref}_varSites.fa $1
+  snp-sites -o ${pref}_varSites.fa $1
 
   # raxml command
   raxml=$(echo mpirun -np 2 raxmlHPC-HYBRID-SSE3 -f a -x 12345 -p 12345 -N autoMRE -m ASC_GTRGAMMA --asc-corr=lewis -s ../${pref}_varSites.fa -n ${pref}_raxML -T 6)
   echo $raxml > ${pref}_raxml_command.sh
 
   # iqtree command
-  iqtree=$(echo /nfs/esnitkin/bin_group/anaconda3/bin/iqtree -s ../${pref}_varSites.fa -nt AUTO -bb 1000 -m MFP+ASC -pre ${pref}_varSites)
+  iqtree=$(echo iqtree -s ../${pref}_varSites.fa -nt AUTO -bb 1000 -m MFP+ASC -pre ${pref}_varSites)
   echo $iqtree > ${pref}_iqtree_command.sh
 
   # generate pbs scripts for iqtree, raxml
-  /nfs/esnitkin/bin_group/anaconda3/bin/python /nfs/esnitkin/bin_group/pipeline/Github/scripts/pbs_script_maker.py -c ${pref}_iqtree_command.sh -o ${pref}_iqtree.pbs -M "$modules" -a $acct -wd $wd/iqtree_results
-  /nfs/esnitkin/bin_group/anaconda3/bin/python /nfs/esnitkin/bin_group/pipeline/Github/scripts/pbs_script_maker.py -c ${pref}_raxml_command.sh -o ${pref}_raxml.pbs -M "$modules" -a $acct -wd $wd/raxml_results
+  python $DIRECTORY/pbs_script_maker.py -c ${pref}_iqtree_command.sh -o ${pref}_iqtree.pbs -M "$modules" -a $acct -wd $wd/iqtree_results
+  python $DIRECTORY/pbs_script_maker.py -c ${pref}_raxml_command.sh -o ${pref}_raxml.pbs -M "$modules" -a $acct -wd $wd/raxml_results
 
   # start iqtree, raxml jobs
 

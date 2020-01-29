@@ -24,7 +24,8 @@ def samtobam(out_sam, out_path, analysis, files_to_delete, logger, Config):
 
 def sort_bam(out_bam, out_path, analysis, logger, Config):
     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("samtools", Config)['samtools_bin'] + "/" + ConfigSectionMap("samtools", Config)['base_cmd']
-    cmd = "%s sort %s %s/%s_aln_sort" % (base_cmd, out_bam, out_path, analysis)
+    #cmd = "%s sort %s %s/%s_aln_sort" % (base_cmd, out_bam, out_path, analysis)
+    cmd = "%s sort %s -m 500M -@ 0 -o %s/%s_aln_sort.bam -T %s/%s_aln_sort_temp" % (base_cmd, out_bam, out_path, analysis, out_path, analysis)
     keep_logging('Sorting BAM file', 'Sorting BAM file', logger, 'info')
     keep_logging(cmd, cmd, logger, 'debug')
     try:

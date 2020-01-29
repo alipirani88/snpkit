@@ -48,6 +48,10 @@ parser.add_argument('-a', '--acct', metavar='ACCOUNT', type=str,
                     default='esnitkin_flux',
                     help='''flux account to submit pbs script to
                     (default: esnitkin_flux)''')
+parser.add_argument('-wd', '--wd', metavar='WD', type=str,
+                    default='$PBS_O_WORKDIR',
+                    help='''directory to submit pbs script from
+                    (default: $PBS_O_WORKDIR)''')
 
 args = parser.parse_args()
 
@@ -62,6 +66,7 @@ qos = acct.split('_')[-1]
 modules = args.modules
 commands = args.commands
 outfile = args.outfile
+wd = args.wd
 
 
 if args.jobname is None:
@@ -83,36 +88,39 @@ else:
            num_nodes, num_cores, mem, walltime)
 
 # print pbs script to output file
-print('#!/bin/sh',
-      '#### PBS preamble',
-      '',
-      '#PBS -N {}'.format(job_name),
-      '',
-      '# User info',
-      '#PBS -M {}'.format(email),
-      '#PBS -m abe',
-      '',
-      '# Number of cores, amount of memory, and walltime',
-      info,
-      '#PBS -j oe',
-      '#PBS -V',
-      '',
-      '#PBS -A {}'.format(acct),
-      '#PBS -q {}'.format(qos),
-      '#PBS -l qos=flux',
-      '',
-      '#### End PBS preamble',
-      '',
-      '# Show list of CPUs you ran on, if you\'re running under PBS',
-      'if [ -n "$PBS_NODEFILE" ]; then cat $PBS_NODEFILE; fi',
-      '',
-      '#  Change to the directory you submitted from',
-      'cd $PBS_O_WORKDIR',
-      '',
-      '# Load modules',
-      'module load {}'.format(modules),
-      '',
-      '# Job commands',
-      'bash {}'.format(commands),
-      sep='\n',
-      file=open(outfile, 'w'))
+file = open(outfile, 'w')
+file.write('#!/bin/sh\n')
+file.write('\n')
+file.write('#!/bin/sh\n')
+file.write('#### PBS preamble\n')
+file.write('\n')
+file.write('#PBS -N {}\n'.format(job_name))
+file.write('\n')
+file.write('# User info\n')
+file.write('#PBS -M {}\n'.format(email))
+file.write('#PBS -m abe\n')
+file.write('\n')
+file.write('# Number of cores, amount of memory, and walltime\n')
+file.write('%s\n' % info)
+file.write('#PBS -j oe\n')
+file.write('#PBS -V\n')
+file.write('\n')
+file.write('#PBS -A {}\n'.format(acct))
+file.write('#PBS -q {}\n'.format(qos))
+file.write('#PBS -l qos=flux\n')
+file.write('\n')
+file.write('#### End PBS preamble\n')
+file.write('\n')
+file.write('# Show list of CPUs you ran on, if you\'re running under PBS\n')
+file.write('if [ -n "$PBS_NODEFILE" ]; then cat $PBS_NODEFILE; fi\n')
+file.write('\n')
+file.write('#  Change to the directory you submitted from\n')
+file.write('#cd $PBS_O_WORKDIR\n')
+file.write('cd {}\n'.format(wd))
+file.write('echo {}\n'.format(wd))
+file.write('\n')
+file.write('# Load modules\n')
+file.write('module load {}\n'.format(modules))
+file.write('\n')
+file.write('# Job commands\n')
+file.write('bash {}\n'.format(commands))

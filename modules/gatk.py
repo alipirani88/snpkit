@@ -9,7 +9,7 @@ from sys import platform as _platform
 
 def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp):
     if ConfigSectionMap("pipeline", Config)['variant_caller'] == "samtools":
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
         filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
         print "Using variant filter parameters from: %s" % filter_criteria
         if ConfigSectionMap(filter_criteria, Config)['avg_depth'] == "yes":
@@ -26,9 +26,9 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
         AF_filter = "AF1 > %s" % float(ConfigSectionMap(filter_criteria, Config)['af'])
         gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, FQ_filter2, AF_filter)
         if os.path.exists(final_raw_vcf):
-            gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
+            gatk_filter2_command = "%s VariantFiltration -R %s -O %s/%s_filter2_gatk.vcf --variant %s --filter-expression \"%s\" --filter-name PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         else:
-            gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s.gz --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
+            gatk_filter2_command = "%s VariantFiltration -R %s -O %s/%s_filter2_gatk.vcf --variant %s.gz --filter-expression \"%s\" --filter-name PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (out_path, analysis, out_path, analysis)
         keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
         keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
@@ -41,8 +41,7 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
         gatk_filter2_final_vcf = "%s/%s_filter2_final.vcf" % (out_path, analysis)
         return gatk_filter2_final_vcf
     elif ConfigSectionMap("pipeline", Config)['variant_caller'] == "gatkhaplotypecaller":
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)[
-            'gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
         filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
         keep_logging("Using variant filter parameters from: %s" % filter_criteria, "Using variant filter parameters from: %s" % filter_criteria, logger, 'info')
         if ConfigSectionMap(filter_criteria, Config)['avg_depth'] == "yes":
@@ -59,10 +58,10 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
         gatk_filter2_parameter_expression = "%s && %s && %s && %s" % (
         MQ_filter, QUAL_filter, DP_filter, AF_filter)
         if os.path.exists(final_raw_vcf):
-            gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (
+            gatk_filter2_command = "%s VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filter-expression \"%s\" --filter-name PASS_filter2" % (
             base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         else:
-            gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s.gz --filterExpression \"%s\" --filterName PASS_filter2" % (
+            gatk_filter2_command = "%s VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s.gz --filter-expression \"%s\" --filter-name PASS_filter2" % (
             base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (
         out_path, analysis, out_path, analysis)
@@ -80,7 +79,7 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
 
 def gatk_filter_contamination(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp):
     if ConfigSectionMap("pipeline", Config)['variant_caller'] == "samtools":
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
         filter_criteria = "contamination_filters"
         if ConfigSectionMap(filter_criteria, Config)['avg_depth'] == "yes":
             keep_logging('The average depth filter is turned on.', 'The average depth filter is turned on.', logger, 'info')
@@ -95,9 +94,9 @@ def gatk_filter_contamination(final_raw_vcf, out_path, analysis, reference, logg
         AF_filter = "AF1 < %s" % float(ConfigSectionMap(filter_criteria, Config)['af'])
         gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, AF_filter)
         if os.path.exists(final_raw_vcf):
-            gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_contamination.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
+            gatk_filter2_command = "%s VariantFiltration -R %s -o %s/%s_filter2_contamination.vcf --variant %s --filter-expression \"%s\" --filter-name PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         else:
-            gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_contamination.vcf --variant %s.gz --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
+            gatk_filter2_command = "%s VariantFiltration -R %s -o %s/%s_filter2_contamination.vcf --variant %s.gz --filter-expression \"%s\" --filter-name PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_contamination.vcf > %s/%s_filter2_final_contamination.vcf" % (out_path, analysis, out_path, analysis)
         keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
         keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
@@ -176,8 +175,7 @@ def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Conf
     #     gatk_filter2_final_vcf = "%s/%s_filter2_indel_final.vcf" % (out_path, analysis)
     #     return gatk_filter2_final_vcf
     # elif ConfigSectionMap("pipeline", Config)['variant_caller'] == "gatkhaplotypecaller":
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)[
-        'gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
     filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
     keep_logging("Using variant filter parameters from: %s" % filter_criteria, "Using variant filter parameters from: %s" % filter_criteria, logger, 'info')
     if ConfigSectionMap(filter_criteria, Config)['avg_depth'] == "yes":
@@ -196,10 +194,10 @@ def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Conf
     gatk_filter2_parameter_expression = "%s && %s && %s && %s" % (MQ_filter, QUAL_filter, DP_filter, AF_filter)
 
     if os.path.exists(final_raw_vcf):
-        gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_indel_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (
+        gatk_filter2_command = "%s VariantFiltration -R %s -O %s/%s_filter2_indel_gatk.vcf --variant %s --filter-expression \"%s\" --filter-name PASS_filter2" % (
         base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
     else:
-        gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_indel_gatk.vcf --variant %s.gz --filterExpression \"%s\" --filterName PASS_filter2" % (
+        gatk_filter2_command = "%s VariantFiltration -R %s -O %s/%s_filter2_indel_gatk.vcf --variant %s.gz --filter-expression \"%s\" --filter-name PASS_filter2" % (
         base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
 
     filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_indel_gatk.vcf > %s/%s_filter2_indel_final.vcf" % (
@@ -217,8 +215,8 @@ def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Conf
     return gatk_filter2_final_vcf
 
 def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
-    cmd = "java -jar %s -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites" % (base_cmd, reference, out_path, analysis_name, out_sorted_bam)
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    cmd = "java -Xmx8G -jar %s/GenomeAnalysisTK.jar -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites" % (os.path.dirname(os.path.dirname(os.path.abspath(__file__))), reference, out_path, analysis_name, out_sorted_bam)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
@@ -230,8 +228,8 @@ def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, log
     return gatk_depth_of_coverage_file
 
 def gatk_vcf2fasta_filter2(only_snp_filter2_vcf_file, out_path, analysis, reference, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
-    vcf2fasta_filter2_cmd = "java -jar %s -R %s -T FastaAlternateReferenceMaker -o %s_filter2.fasta --variant %s" % (base_cmd, reference, only_snp_filter2_vcf_file, only_snp_filter2_vcf_file)
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    vcf2fasta_filter2_cmd = "%s FastaAlternateReferenceMaker -R %s -O %s_filter2.fasta --variant %s" % (base_cmd, reference, only_snp_filter2_vcf_file, only_snp_filter2_vcf_file)
     keep_logging(vcf2fasta_filter2_cmd, vcf2fasta_filter2_cmd, logger, 'debug')
     try:
         call(vcf2fasta_filter2_cmd, logger)
@@ -256,9 +254,9 @@ def gatk_vcf2fasta_filter2(only_snp_filter2_vcf_file, out_path, analysis, refere
     return gatk_vcf2fasta_filter2_file
 
 def gatkhaplotypecaller(out_finalbam, out_path, reference, analysis, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
     reference_filename = ConfigSectionMap(reference, Config)['ref_path'] + "/" + ConfigSectionMap(reference, Config)['ref_name']
-    cmd = "java -jar %s %s -R %s -I %s -o %s/%s_aln_mpileup_raw.vcf" % (base_cmd, ConfigSectionMap("gatk", Config)['haplotype_parameters'], reference_filename, out_finalbam, out_path, analysis)
+    cmd = "%s %s -R %s -I %s -O %s/%s_aln_mpileup_raw.vcf" % (base_cmd, ConfigSectionMap("gatk", Config)['haplotype_parameters'], reference_filename, out_finalbam, out_path, analysis)
     keep_logging('Running Command: [%s]' % cmd, 'Running Command: [%s]' % cmd, logger, 'info')
     #os.system(cmd)
     call(cmd, logger)
@@ -267,9 +265,9 @@ def gatkhaplotypecaller(out_finalbam, out_path, reference, analysis, logger, Con
 
 """ Unused methods """
 def gatk_filter1(final_raw_vcf, out_path, analysis, reference):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
     gatk_filter1_parameter_expression = ConfigSectionMap("gatk")['gatk_filter1_parameter_expression']
-    gatk_filter1_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter1_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter1" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter1_parameter_expression)
+    gatk_filter1_command = "%s VariantFiltration -R %s -O %s/%s_filter1_gatk.vcf --variant %s --filter-expression \"%s\" --filter-name PASS_filter1" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter1_parameter_expression)
     keep_logging('Running Command: [%s]' % gatk_filter1_command, 'Running Command: [%s]' % gatk_filter1_command, logger, 'info')
     os.system(gatk_filter1_command)
     filter_flag_command = "grep '#\|PASS_filter1' %s/%s_filter1_gatk.vcf > %s/%s_filter1_final.vcf" % (out_path, analysis, out_path, analysis)
@@ -278,15 +276,15 @@ def gatk_filter1(final_raw_vcf, out_path, analysis, reference):
     return gatk_filter1_final_vcf
 
 def indel_realign(out_marked_sort_bam_rename, reference, out_path, analysis):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
     #require fai index of reference
     #require seq dict of reference
     reference_filename = ConfigSectionMap(reference)['ref_path'] + "/" + ConfigSectionMap(reference)['ref_name']
     ref_fai_index(reference_filename)
     picard_seqdict(reference_filename, reference)
-    cmd = "java -jar %s -T RealignerTargetCreator -R %s -o %s/%s_aln_sort_marked.bam.list -I %s " % (base_cmd, reference_filename, out_path, analysis, out_marked_sort_bam_rename)
+    cmd = "%s RealignerTargetCreator -R %s -O %s/%s_aln_sort_marked.bam.list -I %s " % (base_cmd, reference_filename, out_path, analysis, out_marked_sort_bam_rename)
     os.system(cmd)
-    cmd = "java -jar %s -I %s -R %s -T IndelRealigner -targetIntervals %s/%s_aln_sort_marked.bam.list -o %s/%s_aln_realigned.bam" % (base_cmd, out_marked_sort_bam_rename, reference_filename, out_path, analysis, out_path, analysis)
+    cmd = "%s IndelRealigner -I %s -R %s -targetIntervals %s/%s_aln_sort_marked.bam.list O %s/%s_aln_realigned.bam" % (base_cmd, out_marked_sort_bam_rename, reference_filename, out_path, analysis, out_path, analysis)
     os.system(cmd)
     out_indel_realigned = "%s/%s_aln_realigned.bam" % (out_path, analysis)
     return out_indel_realigned
@@ -301,8 +299,8 @@ def indel_realign(out_marked_sort_bam_rename, reference, out_path, analysis):
 #     return final_raw_vcf
 
 def gatk_vcf2fasta_filter1(only_snp_filter1_vcf_file, out_path, analysis, reference):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
-    vcf2fasta_filter1_cmd = "java -jar %s -R %s -T FastaAlternateReferenceMaker -o %s_filter1.fasta --variant %s" % (base_cmd, reference, only_snp_filter1_vcf_file, only_snp_filter1_vcf_file)
+    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+    vcf2fasta_filter1_cmd = "%s FastaAlternateReferenceMaker -R %s -o %s_filter1.fasta --variant %s" % (base_cmd, reference, only_snp_filter1_vcf_file, only_snp_filter1_vcf_file)
     keep_logging('Running Command: [%s]' % vcf2fasta_filter1_cmd, 'Running Command: [%s]' % vcf2fasta_filter1_cmd, logger, 'info')
     os.system(vcf2fasta_filter1_cmd)
     if _platform == "darwin":

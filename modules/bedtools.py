@@ -41,7 +41,7 @@ def bedgraph_coverage(out_sorted_bam, out_path, analysis, reference, logger, Con
     reference_first_part_split = reference_filename_base.split('.')
     first_part = reference_first_part_split[0]
     reference_dir = os.path.dirname(reference)
-    makewindows_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bedtools", Config)['bedtools_bin'] + "/" + ConfigSectionMap("bedtools", Config)['version_for_coverage'] + ConfigSectionMap("bedtools", Config)['base_cmd'] + " makewindows -g %s -w 1000 > %s/%s.bed" % (reference_SIZE_file, reference_dir, first_part)
+    makewindows_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bedtools", Config)['base_cmd'] + " makewindows -g %s -w 1000 > %s/%s.bed" % (reference_SIZE_file, reference_dir, first_part)
     keep_logging(makewindows_cmd, makewindows_cmd, logger, 'debug')
     try:
         call(makewindows_cmd, logger)
@@ -49,7 +49,7 @@ def bedgraph_coverage(out_sorted_bam, out_path, analysis, reference, logger, Con
         keep_logging('Error in Bedtools Make Windows step. Exiting.', 'Error in Bedtools Make Windows step. Exiting.', logger, 'exception')
         sys.exit(1)
     reference_windows_file = "%s/%s.bed" % (reference_dir, first_part)
-    bedcoverage_command = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bedtools", Config)['bedtools_bin'] + "/" + ConfigSectionMap("bedtools", Config)['version_for_coverage'] + ConfigSectionMap("bedtools", Config)['base_cmd'] + " coverage -abam %s -b %s > %s/%s.bedcov" % (out_sorted_bam, reference_windows_file, out_path, analysis)
+    bedcoverage_command = ConfigSectionMap("bin_path", Config)['binbase'] + "/" +  ConfigSectionMap("bedtools", Config)['base_cmd'] + " coverage -abam %s -b %s > %s/%s.bedcov" % (out_sorted_bam, reference_windows_file, out_path, analysis)
     keep_logging(bedcoverage_command, bedcoverage_command, logger, 'debug')
     try:
         call(bedcoverage_command, logger)

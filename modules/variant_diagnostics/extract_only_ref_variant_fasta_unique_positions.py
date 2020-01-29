@@ -200,7 +200,7 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
         #print grab_vcf_filename
 
         sample_name_re = columns[i][0][:grab_vcf_filename]
-        print sample_name_re
+        #print sample_name_re
 
         # Replaced this with a more stable check
         #sample_name = str(columns[i][0])
