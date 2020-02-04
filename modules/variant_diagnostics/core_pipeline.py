@@ -19,6 +19,7 @@ import readline
 import errno
 from pyfasta import Fasta
 from datetime import datetime
+import time
 import threading
 import json
 from cyvcf2 import VCF
@@ -449,6 +450,8 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 num_cores = int(out.strip())
             elif args.scheduler == "PBS":
                 num_cores = multiprocessing.cpu_count()
+            else:
+                num_cores = 1
 
         print "Number of cores: %s" % num_cores
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
@@ -496,6 +499,8 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 num_cores = int(out.strip())
             elif args.scheduler == "PBS":
                 num_cores = multiprocessing.cpu_count()
+            else:
+                num_cores = 1
 
         print "Number of cores: %s" % num_cores
 
@@ -615,6 +620,8 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
                 num_cores = int(out.strip())
             elif args.scheduler == "PBS":
                 num_cores = multiprocessing.cpu_count()
+            else:
+                num_cores = 1
 
         print "Number of cores: %s" % num_cores
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
@@ -1010,7 +1017,7 @@ def generate_indel_paste_command_outgroup():
         call("%s" % remove_unwanted_text, logger)
     else:
         print "Skip generating seperate intermediate files for outgroup"
-@profile
+
 def generate_position_label_data_matrix():
 
         """
@@ -1164,8 +1171,6 @@ def generate_position_label_data_matrix():
             """ GET individual PHAGE/Repetitive/masked region positions to assign functional class group string """
 
             phage_positions = []
-            repetitive_positions = []
-            mask_positions = []
 
             phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
             if os.path.isfile(phage_region_positions):
@@ -1190,7 +1195,6 @@ def generate_position_label_data_matrix():
             ref_var = ['reference_allele', 'VARIANT']
 
             if args.outgroup:
-                print "here"
                 with open("%s/temp_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
                     csv_reader = csv.reader(csv_file, delimiter='\t')
                     next(csv_reader, None)
@@ -1216,6 +1220,8 @@ def generate_position_label_data_matrix():
                 f_open_temp_Only_filtered_positions_for_closely_matrix.close()
 
             else:
+                program_starts = time.time()
+                print "Debugging this method."
                 with open("%s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
                     csv_reader = csv.reader(csv_file, delimiter='\t')
                     next(csv_reader, None)
@@ -1238,6 +1244,8 @@ def generate_position_label_data_matrix():
                 csv_file.close()
                 f33.close()
                 f_open_temp_Only_filtered_positions_for_closely_matrix.close()
+                now = time.time()
+                print "Time taken to iterate the loop once - {0} seconds".format(now - program_starts)
             """
             Read temp_Only_filtered_positions_for_closely_matrix file and generate a matrix of positions that are being filtered just because of FQ
             """
@@ -2126,7 +2134,7 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filte
                 command_array.append(lines)
         fpp.close()
         if args.numcores:
-            num_cores = int(num_cores)
+            num_cores = int(args.numcores)
         else:
             # Slurm Changes here.
             if args.scheduler == "SLURM":
@@ -2135,6 +2143,8 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filte
                 num_cores = int(out.strip())
             elif args.scheduler == "PBS":
                 num_cores = multiprocessing.cpu_count()
+            else:
+                num_cores = 1
 
         print "Number of cores: %s" % num_cores
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
@@ -2952,9 +2962,7 @@ def indel_annotation():
         elif args.scheduler == "PBS":
             num_cores = multiprocessing.cpu_count()
         else:
-            proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
-            (out, err) = proc.communicate()
-            num_cores = int(out.strip())
+            num_cores = 1
 
     print "Number of cores: %s" % num_cores
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
@@ -2982,9 +2990,9 @@ def annotated_snp_matrix():
 
     """Annotate all VCF file formats with SNPeff"""
     # Commented for debugging
-    # variant_annotation()
-    # 
-    # indel_annotation()
+    variant_annotation()
+
+    indel_annotation()
 
 
     """ Start of Extract Annotation information from Genbank file 
@@ -3252,12 +3260,12 @@ def annotated_snp_matrix():
             second_part = filename_base.replace("R1_001_final.fastq.gz", "R2_001_final.fastq.gz")
             first_part_split = filename_base.split('R1_001_final.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
         elif "_R1.fastq.gz" in filename_base:
             second_part = filename_base.replace("_R1.fastq.gz", "_R2.fastq.gz")
             first_part_split = filename_base.split('_R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
             # Changed on 03/15/2019
         elif "R1.fastq.gz" in filename_base:
             second_part = filename_base.replace("R1.fastq.gz", "R2.fastq.gz")
@@ -3270,32 +3278,32 @@ def annotated_snp_matrix():
             second_part = filename_base.replace("1_combine.fastq.gz", "2_combine.fastq.gz")
             first_part_split = filename_base.split('1_combine.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
         elif "1_sequence.fastq.gz" in filename_base:
             second_part = filename_base.replace("1_sequence.fastq.gz", "2_sequence.fastq.gz")
             first_part_split = filename_base.split('1_sequence.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
         elif "_forward.fastq.gz" in filename_base:
             second_part = filename_base.replace("_forward.fastq.gz", "_reverse.fastq.gz")
             first_part_split = filename_base.split('_forward.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
         elif "R1_001.fastq.gz" in filename_base:
             second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
             first_part_split = filename_base.split('R1_001.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
         elif "_1.fastq.gz" in filename_base:
             second_part = filename_base.replace("_1.fastq.gz", "_2.fastq.gz")
             first_part_split = filename_base.split('_1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
         elif ".1.fastq.gz" in filename_base:
             second_part = filename_base.replace(".1.fastq.gz", ".2.fastq.gz")
             first_part_split = filename_base.split('.1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
         args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
@@ -5057,10 +5065,8 @@ if __name__ == '__main__':
 
         core_prep_snp(core_vcf_fasta_dir)
 
-        # Moving this up before core_prep_snp; for some weird reason, it is failing to generate Only_ref_indel
-        #core_prep_indel(core_vcf_fasta_dir)
-
         # Annotate core variants. Generate SNP and Indel matrix.
+        # Commented out for debugging
         annotated_snp_matrix()
 
         # Read new allele matrix and generate fasta; generate a seperate function
@@ -5252,7 +5258,37 @@ if __name__ == '__main__':
         make_sure_path_exists(args.results_dir + '/qc_report')
         print "%s" % os.path.dirname(os.path.dirname(args.results_dir))
         call("cp %s/*/*_stats_results/* %s/qc_report" % (os.path.dirname(os.path.dirname(args.results_dir)), args.results_dir), logger)
+        call("cp %s/*/*_trim_out.log %s/qc_report" % (
+        os.path.dirname(os.path.dirname(args.results_dir)), args.results_dir), logger)
+        call("cp %s/*/*_summary_metrics.txt %s/qc_report" % (
+            os.path.dirname(os.path.dirname(args.results_dir)), args.results_dir), logger)
         call("rm %s/snpEff_summary.html" % data_matrix_dir, logger)
+
+
+        # Generate Readme file for these results
+        readme_metedata_form = "%s/readme_metadata_form.txt" % args.filter2_only_snp_vcf_dir
+        Config_readme = ConfigParser.ConfigParser()
+        Config_readme.read(readme_metedata_form)
+        out_readme = "%s/README" % args.results_dir
+        f = open(out_readme, 'w+')
+        print "Generating README file for - %s" % os.path.basename(args.results_dir)
+        f.write("Request submitted by: %s\n" % ConfigSectionMap("Main", Config_readme)['submitter'])
+        f.write("Project Name: %s\n" % ConfigSectionMap("Main", Config_readme)['project_name'])
+        f.write("Date when pipeline was run: %s\n" % ConfigSectionMap("Main", Config_readme)['date'])
+        f.write("Pipeline Version: %s\n" % ConfigSectionMap("Main", Config_readme)['version'])
+        f.write("Comments: %s\n" % ConfigSectionMap("Description", Config_readme)['comments'])
+        f.write("Parameters used/changed: %s\n" % ConfigSectionMap("Description", Config_readme)['parameters'])
+        f.write("Filters used for this pipeline run: %s\n" % ConfigSectionMap("Description", Config_readme)['filters'])
+        f.write("Reference Genome Name: %s\n" % ConfigSectionMap("reference_genome", Config_readme)['name'])
+        f.write("Reference Genome Path: %s\n" % ConfigSectionMap("reference_genome", Config_readme)['path'])
+        f.write("Results Output Directory: %s\n" % args.results_dir)
+        f.write("Core whole genome alignment: %s\n" % os.path.basename(prepare_ref_var_consensus_input))
+        f.write("Non-core whole genome alignment: %s\n" % os.path.basename(prepare_ref_allele_unmapped_consensus_input))
+        f.close()
+
+
+
+
 
         print_details = "Results for core pipeline can be found in: %s\n" \
                         "Description of Results:\n" \

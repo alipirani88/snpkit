@@ -6,21 +6,6 @@ from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
 
-# """ Sanity Check Methods"""
-# def make_sure_path_exists(out_path):
-#     """
-#     Fuction to make sure output folder exists. If not, create it.
-#     :param: out_path
-#     :return: null/exception
-#     """
-#     try:
-#         os.makedirs(out_path)
-#     except OSError as exception:
-#         if exception.errno != errno.EEXIST:
-#             keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
-#                          '\nErrors in output folder path! please change the output path or analysis name\n', logger,
-#                          'info')
-#             exit()
 
 def make_sure_files_exists(vcf_file_array, Config, logger):
     """
@@ -44,13 +29,6 @@ def make_sure_files_exists(vcf_file_array, Config, logger):
                                         "filter2_final.vcf")
         ori_indel_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
                                        "filter2_indel_final.vcf")
-
-        # if os.path.isfile(ori_unmapped_file) and os.path.isfile(ori_proximate_file) and os.path.isfile(
-        #         ori_variant_position_file) and os.path.isfile(ori_5bp_mpileup_file) and os.path.isfile(
-        #         ori_mpileup_file) and os.path.isfile(ori_filter_file) and os.path.isfile(ori_indel_file):
-        #     continue
-        # else:
-        #     not_found_files.append(files)
 
         if not os.path.isfile(ori_unmapped_file):
             not_found_files.append(ori_unmapped_file)
