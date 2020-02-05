@@ -37,6 +37,7 @@ from gubbins import *
 from raxml import raxml
 from pyfasta import Fasta
 from core_prep_sanity_checks import *
+from core_prep_functions import *
 from iqtree import iqtree
 from memory_profiler import profile
 
@@ -100,6 +101,207 @@ def make_sure_path_exists(out_path):
                          'info')
             exit()
 
+def mask_fq_mq_positions_specific_to_outgroup():
+    """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
+    mask_fq_mq_positions = []
+    mask_fq_mq_positions_outgroup_specific = []
+    if args.outgroup:
+        position_label_exclude_outgroup = OrderedDict()
+        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+        csv_file.close()
+
+        position_indel_label_exclude_outgroup = OrderedDict()
+        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                if row[0] not in position_label_exclude_outgroup.keys():
+                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+                else:
+                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+                    keep_logging('Warning: position %s already present as a SNP' % row[0],
+                                 'Warning: position %s already present as a SNP' % row[0], logger, 'info')
+        csv_file.close()
+        for key in position_label_exclude_outgroup.keys():
+            label_sep_array = position_label_exclude_outgroup[key].split(',')
+            for i in label_sep_array:
+                if "LowFQ" in str(i):
+                    if key not in mask_fq_mq_positions:
+                        if int(key) not in outgroup_specific_positions:
+                            mask_fq_mq_positions.append(key)
+                        elif int(key) in outgroup_specific_positions:
+                            mask_fq_mq_positions_outgroup_specific.append(key)
+                if i == "HighFQ":
+                    if key not in mask_fq_mq_positions:
+                        if int(key) not in outgroup_specific_positions:
+                            mask_fq_mq_positions.append(key)
+                        elif int(key) in outgroup_specific_positions:
+                            mask_fq_mq_positions_outgroup_specific.append(key)
+
+        fp = open("%s/mask_fq_mq_positions_outgroup_specific.txt" % (args.filter2_only_snp_vcf_dir), 'w+')
+        for i in mask_fq_mq_positions_outgroup_specific:
+            fp.write(i + '\n')
+        fp.close()
+        print "Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
+
+        outgroup = get_outgroup()
+        fqmqpositionsspecifictooutgroup = []
+
+        fopen = open("%s/mask_fq_mq_positions_outgroup_specific.txt" % (args.filter2_only_snp_vcf_dir), 'r+')
+        for i in fopen:
+            i = i.strip()
+            fqmqpositionsspecifictooutgroup.append(i)
+        fopen.close()
+
+        print "Length of low MQ/FQ positions specific to outgroup: %s" % len(fqmqpositionsspecifictooutgroup)
+
+        vcf_filename_unmapped = "%s/%s_ref_allele_unmapped_masked.vcf" % (args.filter2_only_snp_vcf_dir, outgroup)
+
+        fp = open("%s/%s_ref_allele_unmapped_masked.vcf" % (args.filter2_only_snp_vcf_dir, outgroup), 'w+')
+
+        vcf_header = "##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\n" % outgroup
+        fp.write(vcf_header)
+
+        for variants in VCF("%s/%s_ref_allele_unmapped.vcf.gz" % (args.filter2_only_snp_vcf_dir, outgroup)):
+            print_string = ""
+            if str(variants.POS) in fqmqpositionsspecifictooutgroup:
+                print_string_array = [str(variants.CHROM), str(variants.POS), '.', str(variants.REF), 'N', '221.999',
+                                      '.', '.', '.', '.', '.']
+
+
+            else:
+                print_string_array = [str(variants.CHROM), str(variants.POS), '.', str(variants.REF),
+                                      str(variants.ALT[0]), '221.999', '.', '.', '.', '.', '.']
+            print_string = '\t'.join(print_string_array)
+            fp.write(print_string + '\n')
+        fp.close()
+        base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + \
+                            ConfigSectionMap("vcftools", Config)[
+                                'vcftools_bin']
+        bgzip_cmd = "%s/%s/bgzip -f %s\n" % (
+            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
+            vcf_filename_unmapped)
+
+        tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (
+            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
+            vcf_filename_unmapped)
+
+        fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
+        args.reference, base_vcftools_bin, vcf_filename_unmapped, outgroup)
+
+        # print bgzip_cmd
+        # print tabix_cmd
+        # print fasta_cmd
+
+        subprocess.call([bgzip_cmd], shell=True)
+        subprocess.call([tabix_cmd], shell=True)
+        subprocess.call([fasta_cmd], shell=True)
+        sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_unmapped_variants.fa\n" % (outgroup, outgroup)
+        subprocess.call([sed_command], shell=True)
+        # print sed_command
+
+
+    else:
+        position_label = OrderedDict()
+
+        with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            next(csv_reader, None)
+            for row in csv_reader:
+                position_label[row[0]] = row[1:]
+        for key in position_label.keys():
+            label_sep_array = str(position_label[key]).split(',')
+            for i in label_sep_array:
+                if "LowFQ" in str(i):
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+                if i == "HighFQ":
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+
+        fp = open("%s/mask_fq_mq_positions.txt" % (args.filter2_only_snp_vcf_dir), 'w+')
+        for i in mask_fq_mq_positions:
+            fp.write(i + '\n')
+        fp.close()
+
+        print "Length of mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
+
+def get_outgroup():
+    """
+    Prepare Outgroup Sample name from the argument.
+    """
+    if args.outgroup:
+        if "R1_001_final.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('R1_001_final.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "_R1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('_R1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "R1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('R1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            first_part = re.sub("_S.*_", "", first_part)
+            outgroup = re.sub("_S.*", "", first_part)
+
+        elif "1_combine.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('1_combine.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "1_sequence.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('1_sequence.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "_forward.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('_forward.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "R1_001.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('R1_001.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif "_1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('_1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        elif ".1.fastq.gz" in args.outgroup:
+            first_part_split = args.outgroup.split('.1.fastq.gz')
+            first_part = first_part_split[0].replace('_L001', '')
+            outgroup = re.sub("_S.*_", "", first_part)
+
+        keep_logging(
+            'Using %s as Outgroup Sample Name' % outgroup,
+            'Using %s as Outgroup Sample Name' % outgroup,
+            logger, 'info')
+
+        return outgroup
+    else:
+        keep_logging('Outgroup Sample Name not provided\n', 'Outgroup Sample Name not provided\n', logger, 'info')
+        outgroup = ""
 
 ## Great Lakes Integration Changes
 def get_scheduler_directive(scheduler, Config):
@@ -151,519 +353,14 @@ def run_command(i):
     done = "Completed: %s" % i
     return done
 
-"""core_prep methods 
-    
+"""core_prep methods
+
     This block contains methods that are respnsible for running the first part of core_All step of the pipeline.
     This methods generates all the necessary intermediate files required for the second part of core_All step.
     Example of intermediate files: various diagnostics files/matrices where it decides why a variant was filtered out.
-
+    
+    Updates - 2020-02-05 Moving core_prep methods to core_prep_functions python library
 """
-
-def create_positions_filestep(vcf_filenames):
-
-    """
-    This method gathers SNP positions from each final *_no_proximate_snp.vcf file (these are the positions that passed variant filter parameters
-    from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files. Use these *_no_proximate_snp.vcf_position files to generate a list of unique_position_file
-    :param: list of final vcf filenames i.e *.vcf_no_proximate_snp.vcf . These files are the final output of variant calling step for each sample.
-    :return: unique_position_file
-    """
-
-    filter2_only_snp_position_files_array = []
-    for file in vcf_filenames:
-        with open(file, 'rU') as csv_file:
-            file_name = temp_dir + "/" + os.path.basename(file) + "_positions"
-            addpositionfilenametoarray = file_name
-            filter2_only_snp_position_files_array.append(addpositionfilenametoarray)
-            f1 = open(file_name, 'w+')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            for row in csv_reader:
-                position = row[0]
-                if not position.startswith('#'):
-                    p_string = row[1] + "\n"
-                    f1.write(p_string)
-            f1.close()
-        csv_file.close()
-
-    """ Get Positions Specific to Outgroup Sample name """
-    if args.outgroup:
-        outgroup_position_file_name = temp_dir + "/" + outgroup_vcf_filename + "_positions"
-        outgroup_position_array = []
-        f1 = open(outgroup_position_file_name, 'r+')
-        for lines in f1:
-            lines = lines.strip()
-            outgroup_position_array.append(int(lines))
-        f1.close()
-
-
-        position_array_excluding_outgroup = []
-        for filess in filter2_only_snp_position_files_array:
-            if outgroup not in filess:
-                f = open(filess, 'r+')
-                for line in f:
-                    line = line.strip()
-                    position_array_excluding_outgroup.append(int(line))
-                f.close()
-        position_array_unique_excluding_outgroup = set(position_array_excluding_outgroup)
-        position_array_sort_excluding_outgroup = sorted(position_array_unique_excluding_outgroup)
-        outgroup_specific_positions = []
-        f_outgroup = open("%s/outgroup_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'w+')
-        for i in outgroup_position_array:
-            if i not in position_array_sort_excluding_outgroup:
-                f_outgroup.write(str(i) + '\n')
-                outgroup_specific_positions.append(int(i))
-        f_outgroup.close()
-
-        # Print Checks
-        print "No. of variant positions in outgroup: %s" % len(outgroup_position_array)
-        print "No. of variant positions specific to outgroup: %s" % len(outgroup_specific_positions)
-
-        position_array = []
-        for filess in filter2_only_snp_position_files_array:
-            f = open(filess, 'r+')
-            for line in f:
-                line = line.strip()
-                # Changed variable to suit sorting: 25-07-2018
-                position_array.append(int(line))
-            f.close()
-
-
-        keep_logging('Sorting unique variant positions.\n', 'Sorting unique variant positions.\n', logger, 'info')
-        position_array_unique = set(position_array)
-        position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort), '\nThe number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
-        unique_position_file = "%s/unique_positions_file" % args.filter2_only_snp_vcf_dir
-        f=open(unique_position_file, 'w+')
-        for i in position_array_sort:
-            # Changed variable to suit sorting: 25-07-2018
-            f.write(str(i) + "\n")
-        f.close()
-
-        if len(position_array_sort) == 0:
-            keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
-            exit()
-
-        return unique_position_file
-
-    else:
-
-        """ Create position array containing unique positiones from positions file """
-        position_array = []
-        for filess in filter2_only_snp_position_files_array:
-            f = open(filess, 'r+')
-            for line in f:
-                line = line.strip()
-                position_array.append(int(line))
-            f.close()
-
-        keep_logging('Sorting unique variant positions.\n', 'Sorting unique variant positions.\n', logger, 'info')
-        position_array_unique = set(position_array)
-        position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort), '\nThe number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
-        unique_position_file = "%s/unique_positions_file" % args.filter2_only_snp_vcf_dir
-        f=open(unique_position_file, 'w+')
-        for i in position_array_sort:
-            # Changed variable to suit sorting: 25-07-2018
-            f.write(str(i) + "\n")
-        f.close()
-
-        if len(position_array_sort) == 0:
-            keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
-            exit()
-        return unique_position_file
-
-def create_indel_positions_filestep(vcf_filenames):
-
-    """
-    This function gathers Indel positions from each final *_indel_final.vcf (these are the positions that passed variant filter parameters
-    from variant calling pipeline) and write to *_indel_final.vcf files. Use these *_indel_final.vcf_position files to generate a list of unique_position_file
-    :param: list of final vcf filenames i.e *_indel_final.vcf . These files are the final output of variant calling step for each sample.
-    :return: unique_indel_position_file
-    """
-
-    filter2_only_indel_position_files_array = []
-    for file in vcf_filenames:
-        indel_file = file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf')
-        with open(indel_file, 'rU') as csv_file:
-            file_name = temp_dir + "/" + os.path.basename(indel_file) + "_positions"
-            addpositionfilenametoarray = file_name
-            filter2_only_indel_position_files_array.append(addpositionfilenametoarray)
-            f1 = open(file_name, 'w+')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            for row in csv_reader:
-                position = row[0]
-                if not position.startswith('#'):
-                    p_string = row[1] + "\n"
-                    f1.write(p_string)
-            f1.close()
-        csv_file.close()
-
-    """ Get Positions Specific to Outgroup Sample name """
-    if args.outgroup:
-        outgroup_position_indel_file_name = temp_dir + "/" + outgroup_indel_vcf_filename + "_positions"
-        print outgroup_position_indel_file_name
-        outgroup_position_indel_array = []
-        f1 = open(outgroup_position_indel_file_name, 'r+')
-        for lines in f1:
-            lines = lines.strip()
-            outgroup_position_indel_array.append(int(lines))
-        f1.close()
-
-        position_array_indel_excluding_outgroup = []
-        for filess in filter2_only_indel_position_files_array:
-            if outgroup not in filess:
-                f = open(filess, 'r+')
-                for line in f:
-                    line = line.strip()
-                    position_array_indel_excluding_outgroup.append(int(line))
-                f.close()
-        position_array_indel_unique_excluding_outgroup = set(position_array_indel_excluding_outgroup)
-        position_array_sort_indel_excluding_outgroup = sorted(position_array_indel_unique_excluding_outgroup)
-        outgroup_indel_specific_positions = []
-        f_outgroup = open("%s/outgroup_indel_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'w+')
-        for i in outgroup_position_indel_array:
-            if i not in position_array_sort_indel_excluding_outgroup:
-                f_outgroup.write(str(i) + '\n')
-                outgroup_indel_specific_positions.append(int(i))
-        f_outgroup.close()
-
-        # Print Checks
-        print "No. of indel variant positions in outgroup: %s" % len(outgroup_position_indel_array)
-        print "No. of indel variant positions specific to outgroup: %s" % len(outgroup_indel_specific_positions)
-
-        position_array = []
-        for filess in filter2_only_indel_position_files_array:
-            f = open(filess, 'r+')
-            for line in f:
-                line = line.strip()
-                # Changed variable to suit sorting: 25-07-2018
-                position_array.append(int(line))
-            f.close()
-        position_array_unique = set(position_array)
-        position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique indel positions:%s' % len(position_array_sort), '\nThe number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
-        unique_indel_position_file = "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
-        f=open(unique_indel_position_file, 'w+')
-        for i in position_array_sort:
-            # Changed variable to suit sorting: 25-07-2018
-            f.write(str(i) + "\n")
-        f.close()
-        if len(position_array_sort) == 0:
-            keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
-            exit()
-        return unique_indel_position_file
-
-
-    else:
-
-        """ Create position array containing unique positiones from positions file """
-        position_array = []
-        for filess in filter2_only_indel_position_files_array:
-            f = open(filess, 'r+')
-            for line in f:
-                line = line.strip()
-                # Changed variable to suit sorting: 25-07-2018
-                position_array.append(int(line))
-            f.close()
-        position_array_unique = set(position_array)
-        position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique indel positions:%s' % len(position_array_sort), '\nThe number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
-        unique_indel_position_file = "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
-        f=open(unique_indel_position_file, 'w+')
-        for i in position_array_sort:
-            # Changed variable to suit sorting: 25-07-2018
-            f.write(str(i) + "\n")
-        f.close()
-        if len(position_array_sort) == 0:
-            keep_logging('ERROR: No unique positions found. Check if vcf files are empty?', 'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
-            exit()
-        return unique_indel_position_file
-
-def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_directives, script_Directive, job_name_flag):
-
-    """
-    This method takes the unique_position_file and list of final *_no_proximate_snp.vcf files and generates individual jobs/script.
-    Each of these jobs/scripts will generate a *label file. These label file for each sample contains a field description for each position in unique_position_file.
-    This field description denotes if the variant position made to the final variant list in a sample and if not then a reason/filter that caused it to filtered out from final list.
-    :param jobrun:
-    :param vcf_filenames:
-    :return:
-    """
-    if jobrun == "parallel-cluster":
-        """ Deprecated """
-        """
-        Supports only PBS clusters for now.
-        """
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\npython %s/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], os.path.dirname(os.path.abspath(__file__)),  args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
-            job_file_name = "%s.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
-            call("qsub %s" % i, logger)
-
-    elif jobrun == "parallel-local":
-        """
-        Generate a Command list of each job and run it in parallel on different cores available on local system
-        """
-        command_array = []
-        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-        ### Great Lakes changes
-        for i in vcf_filenames:
-            command = "python %s/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
-            job_file_name = "%s.pbs" % (i)
-
-
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title+'\n')
-                out.write(scheduler_directives+'\n')
-                out.write("cd %s/temp_jobs" % args.filter2_only_snp_vcf_dir + '\n')
-                out.write(command+'\n')
-            out.close()
-
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        if args.numcores:
-            num_cores = int(args.numcores)
-        else:
-            # Great Lakes Integration here.
-            if args.scheduler == "SLURM":
-                proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
-                (out, err) = proc.communicate()
-                num_cores = int(out.strip())
-            elif args.scheduler == "PBS":
-                num_cores = multiprocessing.cpu_count()
-            else:
-                num_cores = 1
-
-        print "Number of cores: %s" % num_cores
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
-    elif jobrun == "cluster":
-        #command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        #os.system("bash %s" % command_file)
-        command_array = []
-        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-        ### Great Lakes changes
-        for i in vcf_filenames:
-            command = "python %s/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
-            os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
-            job_file_name = "%s.pbs" % (i)
-
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title + '\n')
-                out.write(scheduler_directives + '\n')
-                out.write("cd %s/temp_jobs" % args.filter2_only_snp_vcf_dir + '\n')
-                out.write(command + '\n')
-            out.close()
-
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        if args.numcores:
-            num_cores = int(args.numcores)
-        else:
-            # Slurm Changes here.
-            if args.scheduler == "SLURM":
-                proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
-                (out, err) = proc.communicate()
-                num_cores = int(out.strip())
-            elif args.scheduler == "PBS":
-                num_cores = multiprocessing.cpu_count()
-            else:
-                num_cores = 1
-
-        print "Number of cores: %s" % num_cores
-
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
-    elif jobrun == "local":
-        """
-        Generate a Command list of each job and run it on local system one at a time
-        """
-
-        command_array = []
-        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-        ### Great Lakes changes
-        for i in vcf_filenames:
-            command = "python %s/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
-                os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, i, unique_position_file,
-                tmp_dir)
-            job_file_name = "%s.pbs" % (i)
-
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title + '\n')
-                out.write(scheduler_directives + '\n')
-                out.write("cd %s/temp_jobs" % args.filter2_only_snp_vcf_dir + '\n')
-                out.write(command + '\n')
-            out.close()
-
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-
-
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        call("bash %s" % command_file, logger)
-
-def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_directives, script_Directive, job_name_flag):
-
-    """
-    This method takes the unique_indel_position_file and list of final *_indel_final.vcf files and generates individual jobs/script.
-    Each of these jobs/scripts will generate a *label file. These label file for each sample contains a field description of each position in unique_indel_position_file.
-    This field description denotes if the variant position made to the final variant list in a sample and if not then a reason/filter that caused it to filtered out from final list.
-    :param jobrun:
-    :param vcf_filenames:
-    :return:
-    """
-    if jobrun == "parallel-cluster":
-        """ Deprecated """
-        """
-        Supports only PBS clusters for now.
-        """
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\npython %s/reason_job_indel_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (job_name, ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'], os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
-            job_file_name = "%s_indel.pbs" % (i)
-            f1=open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        #os.system("mv %s/*.pbs %s/temp" % (args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir))
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
-            # os.system("qsub %s" % i)
-            call("qsub %s" % i, logger)
-
-    elif jobrun == "parallel-local" or jobrun == "cluster":
-        """
-        Generate a Command list of each job and run it in parallel on different cores available on local system
-        """
-        command_array = []
-        command_file = "%s/commands_indel_list.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-        ### Great Lakes changes
-        for i in vcf_filenames:
-            command = "python %s/reason_job_indel_debug_gatk.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
-                os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, i, unique_position_file,
-                tmp_dir)
-            job_file_name = "%s_indel.pbs" % (i)
-
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title + '\n')
-                out.write(scheduler_directives + '\n')
-                out.write("cd %s/temp_jobs" % args.filter2_only_snp_vcf_dir + '\n')
-                out.write(command + '\n')
-            out.close()
-
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        if args.numcores:
-            num_cores = int(args.numcores)
-        else:
-            # Great Lakes Integration here.
-            if args.scheduler == "SLURM":
-                proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
-                (out, err) = proc.communicate()
-                num_cores = int(out.strip())
-            elif args.scheduler == "PBS":
-                num_cores = multiprocessing.cpu_count()
-            else:
-                num_cores = 1
-
-        print "Number of cores: %s" % num_cores
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
-    elif jobrun == "local":
-        """
-        Generate a Command list of each job and run it on local system one at a time
-        """
-
-        command_array = []
-        command_file = "%s/commands_list.sh" % args.filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-        # Great Lakes Integration here
-        for i in vcf_filenames:
-            command = "python %s/reason_job_indel_debug_gatk.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
-                os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, i, unique_position_file,
-                tmp_dir)
-            job_file_name = "%s_indel.pbs" % (i)
-
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title + '\n')
-                out.write(scheduler_directives + '\n')
-                out.write("cd %s/temp_jobs" % args.filter2_only_snp_vcf_dir + '\n')
-                out.write(command + '\n')
-            out.close()
-
-        pbs_dir = args.filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-
-
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        call("bash %s" % command_file, logger)
 
 """core methods 
 
@@ -2451,19 +2148,14 @@ def generate_vcf_files():
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
         keep_logging('Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions, 'Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions, logger,
                      'info')
-        # phage_positions = []
-        # phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
-        # with open(phage_region_positions, 'rU') as fp:
-        #     for line in fp:
-        #         phage_positions.append(line.strip())
-        # fp.close()
-
 
         functional_filter_pos_array = []
         with open(functional_class_filter_positions, 'rU') as f_functional:
             for line_func in f_functional:
                 functional_filter_pos_array.append(line_func.strip())
 
+
+        program_starts = time.time()
         ref_variant_position_array = []
         ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
         for line in ffp:
@@ -2471,6 +2163,9 @@ def generate_vcf_files():
             if line not in functional_filter_pos_array:
                 ref_variant_position_array.append(line)
         ffp.close()
+        now = time.time()
+        print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
+
 
         # Adding core indel support: 2018-07-24
         ref_indel_variant_position_array = []
@@ -2480,6 +2175,7 @@ def generate_vcf_files():
             if line not in functional_filter_pos_array:
                 ref_indel_variant_position_array.append(line)
         ffp.close()
+
 
     else:
         functional_filter_pos_array = []
@@ -2564,9 +2260,9 @@ def generate_vcf_files():
         subprocess.call([sed_command], shell=True)
         f1.write(sed_command)
     keep_logging('The consensus commands are in : %s' % filename, 'The consensus commands are in : %s' % filename, logger, 'info')
-    sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
-    #os.system(sequence_lgth_cmd)
-    call("%s" % sequence_lgth_cmd, logger)
+    # sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
+    # #os.system(sequence_lgth_cmd)
+    # call("%s" % sequence_lgth_cmd, logger)
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
@@ -2726,11 +2422,13 @@ def DP_analysis_barplot():
         bar_perc_string = "%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')), reference_position_perc, oneto5_perc, sixto10_perc, elevento14_perc, fifteenorabove_perc)
         f_bar_perc.write(bar_perc_string)
 
+""" Deprecated Method """
 def extract_only_ref_variant_fasta(core_vcf_fasta_dir):
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
         functional_filter = "yes"
     create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter, script_Directive, job_name_flag)
 
+""" Deprecated Method """
 def extract_only_ref_variant_fasta_from_reference():
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and \
             ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
@@ -2784,6 +2482,31 @@ def extract_only_ref_variant_fasta_from_reference_allele_variant():
     fp.write(final_fasta_string)
     fp.close()
 
+def core_prep_snp(core_vcf_fasta_dir):
+    """ Generate SNP Filter Label Matrix """
+    generate_paste_command()
+
+    generate_paste_command_outgroup()
+
+    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
+    generate_position_label_data_matrix()
+
+    """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
+    generate_vcf_files()
+
+    """ Analyze the positions that were filtered out only due to insufficient depth"""
+    #DP_analysis()
+
+def core_prep_indel(core_vcf_fasta_dir):
+    """ Generate SNP Filter Label Matrix """
+    generate_indel_paste_command()
+
+    generate_indel_paste_command_outgroup()
+
+    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
+    generate_indel_position_label_data_matrix()
+
+""" Annotation methods"""
 def prepare_snpEff_db(reference_basename):
     keep_logging('Preparing snpEff database requirements.', 'Preparing snpEff database requirements.', logger, 'info')
     reference_basename = (os.path.basename(args.reference)).split(".")
@@ -2895,23 +2618,6 @@ def variant_annotation():
         annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
                            (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
         annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
-    if args.numcores:
-        num_cores = int(args.numcores)
-    elif args.jobrun == "local":
-        num_cores = multiprocessing.cpu_count()
-    else:
-        # Slurm Changes here.
-        if args.scheduler == "SLURM":
-            proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
-            (out, err) = proc.communicate()
-            num_cores = int(out.strip())
-        elif args.scheduler == "PBS":
-            num_cores = multiprocessing.cpu_count()
-        else:
-            proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
-            (out, err) = proc.communicate()
-            num_cores = int(out.strip())
-
 
     #print annotate_vcf_cmd_array
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
@@ -4560,37 +4266,7 @@ def annotated_snp_matrix():
     fp_code.close()
     fp_allele.close()
 
-def core_prep_snp(core_vcf_fasta_dir):
-    """ Generate SNP Filter Label Matrix """
-    generate_paste_command()
-
-    generate_paste_command_outgroup()
-
-    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-    generate_position_label_data_matrix()
-
-    """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
-    generate_vcf_files()
-
-    """ Generate consensus fasta file from core vcf files """
-    extract_only_ref_variant_fasta_from_reference()
-
-    """ Generate consensus fasta file with only reference and variant position bases """
-    extract_only_ref_variant_fasta(core_vcf_fasta_dir)
-
-    """ Analyze the positions that were filtered out only due to insufficient depth"""
-    #DP_analysis()
-
-def core_prep_indel(core_vcf_fasta_dir):
-    """ Generate SNP Filter Label Matrix """
-    generate_indel_paste_command()
-
-    generate_indel_paste_command_outgroup()
-
-    """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-    generate_indel_position_label_data_matrix()
-
-""" report methods """
+""" Report methods """
 def alignment_report(data_matrix_dir):
     keep_logging('Generating Alignment report...', 'Generating Alignment report...', logger, 'info')
     varcall_dir = os.path.dirname(args.results_dir)
@@ -4637,6 +4313,7 @@ def variant_report(data_matrix_dir):
     fp.close()
     keep_logging('Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, 'Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, logger, 'info')
 
+""" Gubbins/Iqtree methods"""
 def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
     keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta,
                  logger,
@@ -4673,225 +4350,6 @@ def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
         f1.close()
         #os.system("qsub %s" % job_file_name)
         call("qsub %s" % job_file_name, logger)
-
-def get_outgroup():
-    """
-    Prepare Outgroup Sample name from the argument.
-    """
-    if args.outgroup:
-        if "R1_001_final.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('R1_001_final.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        elif "_R1.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('_R1.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        elif "R1.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('R1.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-            outgroup = re.sub("_S.*", "", first_part)
-
-        elif "1_combine.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('1_combine.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        elif "1_sequence.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('1_sequence.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        elif "_forward.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('_forward.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        elif "R1_001.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('R1_001.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        elif "_1.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('_1.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        elif ".1.fastq.gz" in args.outgroup:
-            first_part_split = args.outgroup.split('.1.fastq.gz')
-            first_part = first_part_split[0].replace('_L001', '')
-            outgroup = re.sub("_S.*_", "", first_part)
-
-        keep_logging(
-            'Using %s as Outgroup Sample Name' % outgroup,
-            'Using %s as Outgroup Sample Name' % outgroup,
-            logger, 'info')
-
-        return outgroup
-    else:
-        keep_logging('Outgroup Sample Name not provided\n', 'Outgroup Sample Name not provided\n', logger, 'info')
-        outgroup = ""
-
-def mask_fq_mq_positions_specific_to_outgroup():
-    """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
-    mask_fq_mq_positions = []
-    mask_fq_mq_positions_outgroup_specific = []
-    if args.outgroup:
-        position_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            for row in csv_reader:
-                position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
-        csv_file.close()
-
-        position_indel_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            for row in csv_reader:
-                if row[0] not in position_label_exclude_outgroup.keys():
-                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
-                else:
-                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
-                    keep_logging('Warning: position %s already present as a SNP' % row[0],
-                                 'Warning: position %s already present as a SNP' % row[0], logger, 'info')
-        csv_file.close()
-        for key in position_label_exclude_outgroup.keys():
-            label_sep_array = position_label_exclude_outgroup[key].split(',')
-            for i in label_sep_array:
-                if "LowFQ" in str(i):
-                    if key not in mask_fq_mq_positions:
-                        if int(key) not in outgroup_specific_positions:
-                            mask_fq_mq_positions.append(key)
-                        elif int(key) in outgroup_specific_positions:
-                            mask_fq_mq_positions_outgroup_specific.append(key)
-                if i == "HighFQ":
-                    if key not in mask_fq_mq_positions:
-                        if int(key) not in outgroup_specific_positions:
-                            mask_fq_mq_positions.append(key)
-                        elif int(key) in outgroup_specific_positions:
-                            mask_fq_mq_positions_outgroup_specific.append(key)
-
-        fp = open("%s/mask_fq_mq_positions_outgroup_specific.txt" % (args.filter2_only_snp_vcf_dir), 'w+')
-        for i in mask_fq_mq_positions_outgroup_specific:
-            fp.write(i + '\n')
-        fp.close()
-        print "Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
-
-        outgroup = get_outgroup()
-        fqmqpositionsspecifictooutgroup = []
-
-        fopen = open("%s/mask_fq_mq_positions_outgroup_specific.txt" % (args.filter2_only_snp_vcf_dir), 'r+')
-        for i in fopen:
-            i = i.strip()
-            fqmqpositionsspecifictooutgroup.append(i)
-        fopen.close()
-
-        print "Length of low MQ/FQ positions specific to outgroup: %s" % len(fqmqpositionsspecifictooutgroup)
-
-        vcf_filename_unmapped = "%s/%s_ref_allele_unmapped_masked.vcf" % (args.filter2_only_snp_vcf_dir, outgroup)
-
-        fp = open("%s/%s_ref_allele_unmapped_masked.vcf" % (args.filter2_only_snp_vcf_dir, outgroup), 'w+')
-
-        vcf_header = "##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\n" % outgroup
-        fp.write(vcf_header)
-
-        for variants in VCF("%s/%s_ref_allele_unmapped.vcf.gz" % (args.filter2_only_snp_vcf_dir, outgroup)):
-            print_string = ""
-            if str(variants.POS) in fqmqpositionsspecifictooutgroup:
-                print_string_array = [str(variants.CHROM), str(variants.POS), '.', str(variants.REF), 'N', '221.999',
-                                      '.', '.', '.', '.', '.']
-
-
-            else:
-                print_string_array = [str(variants.CHROM), str(variants.POS), '.', str(variants.REF),
-                                      str(variants.ALT[0]), '221.999', '.', '.', '.', '.', '.']
-            print_string = '\t'.join(print_string_array)
-            fp.write(print_string + '\n')
-        fp.close()
-        base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + \
-                            ConfigSectionMap("vcftools", Config)[
-                                'vcftools_bin']
-        bgzip_cmd = "%s/%s/bgzip -f %s\n" % (
-            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-            vcf_filename_unmapped)
-
-        tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (
-            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-            vcf_filename_unmapped)
-
-        fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
-        args.reference, base_vcftools_bin, vcf_filename_unmapped, outgroup)
-
-        # print bgzip_cmd
-        # print tabix_cmd
-        # print fasta_cmd
-
-        subprocess.call([bgzip_cmd], shell=True)
-        subprocess.call([tabix_cmd], shell=True)
-        subprocess.call([fasta_cmd], shell=True)
-        sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_unmapped_variants.fa\n" % (outgroup, outgroup)
-        subprocess.call([sed_command], shell=True)
-        # print sed_command
-
-
-    else:
-        position_label = OrderedDict()
-
-        with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            next(csv_reader, None)
-            for row in csv_reader:
-                position_label[row[0]] = row[1:]
-        for key in position_label.keys():
-            label_sep_array = str(position_label[key]).split(',')
-            for i in label_sep_array:
-                if "LowFQ" in str(i):
-                    if key not in mask_fq_mq_positions:
-                        mask_fq_mq_positions.append(key)
-                if i == "HighFQ":
-                    if key not in mask_fq_mq_positions:
-                        mask_fq_mq_positions.append(key)
-
-        fp = open("%s/mask_fq_mq_positions.txt" % (args.filter2_only_snp_vcf_dir), 'w+')
-        for i in mask_fq_mq_positions:
-            fp.write(i + '\n')
-        fp.close()
-
-        print "Length of mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
-
-"""
-Pending inclusion
-
-class FuncThread(threading.Thread):
-    def __init__(self, target, *args):
-        self._target = target
-        self._args = args
-        threading.Thread.__init__(self)
-    def run(self):
-        self._target(*self._args)
-
-def someOtherFunc(data, key):
-    print "someOtherFunc was called : data=%s; key=%s" % (str(data), str(key))
-
-Pending inclusion
-"""
 
 if __name__ == '__main__':
 
@@ -4940,6 +4398,20 @@ if __name__ == '__main__':
     Config.read(config_file)
     keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
 
+    global num_cores
+    if args.numcores:
+        num_cores = int(args.numcores)
+    else:
+        # Great Lakes Integration here.
+        if args.scheduler == "SLURM":
+            proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
+            (out, err) = proc.communicate()
+            num_cores = int(out.strip())
+        elif args.scheduler == "PBS":
+            num_cores = multiprocessing.cpu_count()
+        else:
+            num_cores = 1
+
     make_sure_path_exists(temp_dir)
 
     # Get outgroup_Sample name
@@ -4979,9 +4451,10 @@ if __name__ == '__main__':
         # Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
         keep_logging('Gathering SNP position information from each final *_no_proximate_snp.vcf file...', 'Gathering SNP position information from each final *_no_proximate_snp.vcf file...', logger, 'info')
 
-        # # Extract All the unique SNO and Indel position list from final filtered *_no_proximate_snp.vcf files.
-        unique_position_file = create_positions_filestep(vcf_filenames)
-        unique_indel_position_file = create_indel_positions_filestep(vcf_filenames)
+
+        # Extract All the unique SNO and Indel position list from final filtered *_no_proximate_snp.vcf files.
+        unique_position_file = create_positions_filestep(vcf_filenames, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
+        unique_indel_position_file = create_indel_positions_filestep(vcf_filenames, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
 
         # bgzip and tabix all the vcf files in core_temp_dir.
         files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
@@ -4990,9 +4463,9 @@ if __name__ == '__main__':
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
 
-        create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_directives, script_Directive, job_name_flag)
+        create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_directives, script_Directive, job_name_flag, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
 
-        create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir, scheduler_directives, script_Directive, job_name_flag)
+        create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir, scheduler_directives, script_Directive, job_name_flag, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
 
         # If Phaster Summary file doesn't exist in reference genome folder
         if not os.path.isfile("%s/summary.txt" % os.path.dirname(args.reference)):
@@ -5341,94 +4814,43 @@ if __name__ == '__main__':
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
 
 
-        if args.gubbins and args.gubbins == "yes":
-            if args.gubbins_env:
-                os.system("conda deactivate")
-                os.system("conda activate %s" % args.gubbins_env)
-            os.chdir(gubbins_dir)
-            if args.outgroup:
-                # Get outgroup_Sample name
-                outgroup = get_outgroup()
-                # Turn off callling gubbins/iqtree/raxml on core genome whole alignments
-                # keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup),
-                #              '%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup), logger, 'info')
-                # call("%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup), logger)
-                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (
-                os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
-                             '%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'' % (
-                             os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
-                             logger, 'info')
-                call("%s/scripts/gubbins_iqtree_raxml.sh %s 1 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup), logger)
-                # call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
-            else:
-                # Turn off callling gubbins/iqtree/raxml on core genome whole alignments
-                # keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1' % (
-                # os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input),
-                #              '%s/scripts/gubbins_iqtree_raxml.sh %s 1' % (
-                #              os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input),
-                #              logger, 'info')
-                # call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input), logger)
-                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 1' % (
-                    os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input),
-                             '%s/scripts/gubbins_iqtree_raxml.sh %s 1' % (
-                                 os.path.dirname(os.path.abspath(__file__)),
-                                 prepare_ref_allele_unmapped_consensus_input),
-                             logger, 'info')
-                #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input), logger)
-                #call("%s/scripts/gubbins_iqtree_raxml.sh %s 1" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_var_consensus_input), logger)
-
-                job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.pbs'))
-                load_conda = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '_conda.sh'))
-                print job_file_name
-                gubbins_command = "run_gubbins.py --prefix %s --threads 12 %s" % (os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), prepare_ref_allele_unmapped_consensus_input)
-                iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (os.path.dirname(prepare_ref_allele_unmapped_consensus_input), os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir, os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
-                with open(job_file_name, 'w') as out:
-                    job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
-                    out.write("#!/bin/sh" + '\n')
-                    out.write(job_title + '\n')
-                    out.write(scheduler_directives + '\n')
-                    out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
-                    #out.write("conda deactivate\n")
-                    #out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
-                    out.write(gubbins_command + '\n')
-                    out.write(iqtree_command + '\n')
-                out.close()
-
-                with open(load_conda, 'w') as out:
-                    out.write('conda deactivate' + '\n')
-                    out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
-                out.close()
-
-                keep_logging('Run following code on login terminal:\n', 'Run following code on login terminal:\n', logger, 'info')
-                keep_logging('conda deactivate', 'conda deactivate', logger, 'info')
-                keep_logging('conda activate variantcalling_env_gubbins_raxml_iqtree', 'conda activate variantcalling_env_gubbins_raxml_iqtree', logger, 'info')
-                keep_logging('sbatch %s' % job_file_name, 'sbatch %s' % job_file_name, logger, 'info')
+        #if args.gubbins and args.gubbins == "yes":
+        if args.gubbins_env:
+            os.system("conda deactivate")
+            os.system("conda activate %s" % args.gubbins_env)
+        os.chdir(gubbins_dir)
 
 
+        if args.scheduler == "SLURM":
+            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
         else:
-            if args.outgroup:
-                # Get outgroup_Sample name
-                outgroup = get_outgroup()
+            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.pbs'))
 
-                keep_logging('The gubbins argument is set to No.', 'The gubbins argument is set to No.', logger, 'info')
-                # Turn off callling gubbins/iqtree/raxml on core genome whole alignments
-                # keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
-                # os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup),
-                #              '%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
-                #              os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup),
-                #              logger, 'info')
-                # print "%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input, outgroup)
+        load_conda = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '_conda.sh'))
 
-                keep_logging('%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
-                    os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
-                             '%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'' % (
-                                 os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup),
-                             logger, 'info')
-                print "%s/scripts/gubbins_iqtree_raxml.sh %s 0 esnitkin_flux \'%s\'" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input, outgroup)
-            else:
-                keep_logging('The gubbins argument is set to No.', 'The gubbins argument is set to No.', logger, 'info')
-                # print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_var_consensus_input)
-                print "%s/scripts/gubbins_iqtree_raxml.sh %s 0" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
+        gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores, prepare_ref_allele_unmapped_consensus_input)
+        iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (os.path.dirname(prepare_ref_allele_unmapped_consensus_input), os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir, os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
+        with open(job_file_name, 'w') as out:
+            job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
+            out.write("#!/bin/sh" + '\n')
+            out.write(job_title + '\n')
+            out.write(scheduler_directives + '\n')
+            out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
+            #out.write("conda deactivate\n")
+            #out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
+            out.write(gubbins_command + '\n')
+            out.write(iqtree_command + '\n')
+        out.close()
+
+        with open(load_conda, 'w') as out:
+            out.write('conda deactivate' + '\n')
+            out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
+        out.close()
+
+        keep_logging('Run following code on login terminal:\n', 'Run following code on login terminal:\n', logger, 'info')
+        keep_logging('conda deactivate', 'conda deactivate', logger, 'info')
+        keep_logging('conda activate variantcalling_env_gubbins_raxml_iqtree', 'conda activate variantcalling_env_gubbins_raxml_iqtree', logger, 'info')
+        keep_logging('sbatch %s' % job_file_name, 'sbatch %s' % job_file_name, logger, 'info')
 
         call("cp %s %s/Logs/tree/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
