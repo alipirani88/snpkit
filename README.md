@@ -187,10 +187,14 @@ Possible options for the -cluster option (Supported system: pbs):
 
 ## Quick Start
 
-Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster (time and memory efficient). The default pbs resources used for parallel jobs are: 
+Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster (time and memory efficient). The default resources used for parallel jobs are: 
 
 ```
 nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
+
+OR
+
+--nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
 ```
 
 See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-the-config-file)
