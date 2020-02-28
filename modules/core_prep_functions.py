@@ -44,6 +44,10 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
     :param: list of final vcf filenames i.e *.vcf_no_proximate_snp.vcf . These files are the final output of variant calling step for each sample.
     :return: unique_position_file
     """
+<<<<<<< HEAD
+    outgroup_vcf_filename = str(outgroup.replace('_R1.fastq.gz', '')) + "_filter2_final.vcf_no_proximate_snp.vcf"
+=======
+>>>>>>> 0eaf4067806d42db46723d0d7c376cce5e2f57a9
 
     filter2_only_snp_position_files_array = []
     for file in vcf_filenames:
@@ -157,7 +161,11 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
     :param: list of final vcf filenames i.e *_indel_final.vcf . These files are the final output of variant calling step for each sample.
     :return: unique_indel_position_file
     """
+<<<<<<< HEAD
+    outgroup_indel_vcf_filename = str(outgroup.replace('_R1.fastq.gz', '')) + "_filter2_indel_final.vcf"
+=======
 
+>>>>>>> 0eaf4067806d42db46723d0d7c376cce5e2f57a9
     filter2_only_indel_position_files_array = []
     for file in vcf_filenames:
         indel_file = file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf')

@@ -31,7 +31,7 @@ args = parser.parse_args()
 #def downsample(forward_read, reverse_read, coverage_depth, genome_size):
     # Use forward read and run seqtk to extract basic information: min_len: 251; max_len: 251; avg_len: 251.00; 31 distinct quality values
     # Use total number of bases from the output file
-    # calculate genome size if not provided using Mash: /nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o sketch_out -k 32 -m 3 -r PCMP_H159_R1.fastq.gz
+    # calculate genome size if not provided using Mash: mash sketch -o sketch_out -k 32 -m 3 -r PCMP_H159_R1.fastq.gz
     # Calculate depth with total bases and estimated genome size if gsize is not provided
 
 if __name__ == '__main__':
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     print "Downsampling Coverage Depth to: %s" % depth
 
-    seqtk_check = "/nfs/esnitkin/bin_group/seqtk/seqtk fqchk -q3 %s > /tmp/%s_fastqchk.txt" % (args.read1, args.read1)
+    seqtk_check = "seqtk fqchk -q3 %s > /tmp/%s_fastqchk.txt" % (args.read1, args.read1)
     print "Running: %s" % seqtk_check
     os.system(seqtk_check)
     with open("/tmp/%s_fastqchk.txt" % os.path.basename(args.read1), 'rU') as file_open:
@@ -62,9 +62,9 @@ if __name__ == '__main__':
     print "Total number of bases in fastq: %s" % total_bases
 
     if not args.genome_size:
-        print "Running: /nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s" % args.read1
-        #os.system("/nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s" % args.read1)
-        mash_cmd = "/nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout" % args.read1
+        print "Running: mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s" % args.read1
+        #os.system("mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s" % args.read1)
+        mash_cmd = "mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout" % args.read1
         os.system(mash_cmd)
         with open("/tmp/sketch_stdout", 'rU') as file_open:
             for line in file_open:
@@ -99,6 +99,6 @@ if __name__ == '__main__':
     r2_sub = "/tmp/%s" % os.path.basename(args.read2)
 
     
-    os.system("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (args.read1, factor, nproc, os.path.basename(args.read1)))
-    os.system("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (args.read2, factor, nproc, os.path.basename(args.read2)))
+    os.system("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (args.read1, factor, nproc, os.path.basename(args.read1)))
+    os.system("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (args.read2, factor, nproc, os.path.basename(args.read2)))
     ## downsample(forward_read, reverse_read, coverage_depth, genome_size)
