@@ -20,16 +20,18 @@ The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads p
 
 ## Installation
 
-The dependencies are already installed in Snitkin lab bin_group folder:
-
 ```
-/nfs/esnitkin/bin_group/variant_calling_bin/
-```
+# Clone the latest Github version to your prefered loaction
+git clone https://github.com/alipirani88/variant_calling_pipeline.git
 
-Requires Python2:
+# To install dependencies, use the YML file located under variant_calling_pipeline folder that you just cloned.
+conda env create -f variant_calling_pipeline/environment.yml -n varcall
 
-```
-/nfs/esnitkin/bin_group/anaconda2/bin/python
+# activate the environment and test the help menu
+conda activate varcall
+
+python variant_calling_pipeline/variant_call.py -h
+
 ```
 
 ## Input Requirements
