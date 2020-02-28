@@ -202,7 +202,7 @@ See option resources in the scheduler section of the [config](https://github.com
 - Run variant calling step (All) on a set of PE reads with default parameters
 
 ```
-python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps All -cluster cluster
+python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps All -cluster cluster -scheduler SLURM
 
 ```
 
