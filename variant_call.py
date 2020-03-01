@@ -38,7 +38,7 @@ def parser():
     optional.add_argument('-suffix', action='store', dest="suffix", help='Fastq reads suffix such as fastq, fastq.gz, fq.gz, fq; Default: fastq.gz', required=False)
     optional.add_argument('-filenames', action='store', dest="filenames", help='fastq filenames with one single-end filename per line. \nIf the type is set to PE, it will detect the second paired-end filename with the suffix from first filename. \nUseful for running variant calling pipeline on selected files in a reads directory or extracting core snps for selected samples in input reads directory. \nOtherwise the pipeline will consider all the samples available in reads directory.', required=False)
     optional.add_argument('-cluster', action='store', dest='cluster', help='Run variant calling pipeline in local or cluster mode.\nDefault: local.\nSet your specific hpc cluster parameters in config file under the [scheduler] section. Supports PBS/SLURM scheduling system.')
-    optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: OFF')
+    optional.add_argument('-clean', action="store_true", help='clean up intermediate files. Default: ON')
     optional.add_argument('-extract_unmapped', action='store', dest="extract_unmapped", help='Extract unmapped reads, assemble it and detect AMR genes using ariba')
     optional.add_argument('-datadir', action='store', dest="datadir", help='Path to snpEff data directory')
     optional.add_argument('-snpeff_db', action='store', dest="snpeff_db", help='Name of pre-build snpEff database to use for Annotation')
@@ -250,7 +250,7 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                     os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part,
                     reference, config_file, steps)
                 else:
-                    command = "python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
+                    command = "python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s -clean" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
 
             else:
                 if args.clean:
@@ -258,7 +258,7 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                     os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part,
                     first_part, reference, config_file, steps)
                 else:
-                    command = "python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
+                    command = "python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
 
 
             # # Adding Downsampling support 2019-06-20
@@ -881,7 +881,9 @@ if __name__ == '__main__':
         keep_logging('Tree Step Logs will be recorded in file with extension log.txt in %s\n' % tree_logs_folder,
                      'Tree Step Logs will be recorded in file with extension log.txt in %s\n' % tree_logs_folder, logger, 'info')
 
-
+        # Add tree environments here
+        core_All_cmds.append("conda deactivate")
+        core_All_cmds.append("conda activate gubbins")
         core_All_cmds.append(run_tree_analysis_cmd)
 
         if args.scheduler == "SLURM":

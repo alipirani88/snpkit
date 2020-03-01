@@ -2966,50 +2966,50 @@ def annotated_snp_matrix():
             second_part = filename_base.replace("R1_001_final.fastq.gz", "R2_001_final.fastq.gz")
             first_part_split = filename_base.split('R1_001_final.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
         elif "_R1.fastq.gz" in filename_base:
             second_part = filename_base.replace("_R1.fastq.gz", "_R2.fastq.gz")
             first_part_split = filename_base.split('_R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
             # Changed on 03/15/2019
         elif "R1.fastq.gz" in filename_base:
             second_part = filename_base.replace("R1.fastq.gz", "R2.fastq.gz")
             first_part_split = filename_base.split('R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
             # Changed on 03/15/2019
             first_part = re.sub("_S.*", "", first_part)
         elif "1_combine.fastq.gz" in filename_base:
             second_part = filename_base.replace("1_combine.fastq.gz", "2_combine.fastq.gz")
             first_part_split = filename_base.split('1_combine.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
         elif "1_sequence.fastq.gz" in filename_base:
             second_part = filename_base.replace("1_sequence.fastq.gz", "2_sequence.fastq.gz")
             first_part_split = filename_base.split('1_sequence.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
         elif "_forward.fastq.gz" in filename_base:
             second_part = filename_base.replace("_forward.fastq.gz", "_reverse.fastq.gz")
             first_part_split = filename_base.split('_forward.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
         elif "R1_001.fastq.gz" in filename_base:
             second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
             first_part_split = filename_base.split('R1_001.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
         elif "_1.fastq.gz" in filename_base:
             second_part = filename_base.replace("_1.fastq.gz", "_2.fastq.gz")
             first_part_split = filename_base.split('_1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
         elif ".1.fastq.gz" in filename_base:
             second_part = filename_base.replace(".1.fastq.gz", ".2.fastq.gz")
             first_part_split = filename_base.split('.1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            #first_part = re.sub("_S.*_", "", first_part)
+            first_part = re.sub("_S.*_", "", first_part)
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
         args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
