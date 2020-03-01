@@ -8,11 +8,11 @@ The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads p
 ## Contents
 
 - [Installation](#installation)
-- [Input](#input-requirements)
 - [Steps](#steps)
+- [Quick start](#quick-start)
+- [Input](#input-requirements)
 - [Command line options](#command-line-options)
 - [Run pipeline on compute cluster](#run-pipeline-on-compute-cluster)
-- [Quick start](#quick-start)
 - [Output files](#output-files)
 - [Customizing the config file](#customizing-the-config-file)
 - [Log](#log)
@@ -33,53 +33,6 @@ conda activate varcall
 python variant_calling_pipeline/variant_call.py -h
 
 ```
-
-## Input Requirements
-
-- readsdir: folder containing SE/PE reads. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
-
-```
-
-- R1.fastq.gz/_R1.fastq.gz, 
-- 1_combine.fastq.gz, 
-- 1_sequence.fastq.gz, 
-- _forward.fastq.gz, 
-- _1.fastq.gz/.1.fastq.gz.
-
-```
-
-- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
-
-```
-[bin_path]
-binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
-```
-
-- index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
-
-```
-[KPNIH1]
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
-# Name of reference genome fasta file.
-Ref_Name: KPNIH1.fasta
-```
-
-Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section with a different index name.
-
-```
-[KPNIH1_new]
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
-# Name of reference genome fasta file.
-Ref_Name: KPNIH1_new.fasta
-```
-
-For more information, refer to [Customizing the config file](#customizing-the-config-file).
-
-<!--- Input is a directory (-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. These config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
-
-
 
 ## Steps
 
@@ -169,22 +122,6 @@ Optional arguments:
 
 ```
 
-## Run pipeline on compute cluster
-
-
-Variant calling can be run in parallel on each sample using the -cluster argument. Set pbs resources such as resources (-l), email (-M), queue (-q), flux_account (-A) and notification (-m) under the [scheduler] section in config file. 
-
-For more details, refer to the UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website for a detailed explanation of each pbs specification.
-
-
-Possible options for the -cluster option (Supported system: pbs):
-
-***cluster***: The pipeline is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on individual small compute clusters or on a single large cluster for core snp generation step. 
-
-***local***: This is the default option. When this option is set, the pipeline will analyze each sample one after the another. This will not make use of multiple cores present in your system or clusters. Use this option for small numbers of samples or for testing purposes.
-
-***parallel-local***:  This option will run the pipeline and analyze samples in parallel but on a local system. This is preferred for an input sample size of less than 20  and a multiple core local system.
-
 ## Quick Start
 
 Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster (time and memory efficient). The default resources used for parallel jobs are: 
@@ -216,6 +153,69 @@ The results of variant calling will be placed in an individual folder generated 
 python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps core_All -cluster cluster -gubbins yes -scheduler SLURM
 
 ```
+
+## Run pipeline on compute cluster
+
+
+Variant calling can be run in parallel on each sample using the -cluster argument. Set pbs resources such as resources (-l), email (-M), queue (-q), flux_account (-A) and notification (-m) under the [scheduler] section in config file. 
+
+For more details, refer to the UMICH [flux](http://arc-ts.umich.edu/systems-and-services/flux/) website for a detailed explanation of each pbs specification.
+
+
+Possible options for the -cluster option (Supported system: pbs):
+
+***cluster***: The pipeline is optimized for this option. When this option is set, the pipeline will run variant call jobs for each sample on individual small compute clusters or on a single large cluster for core snp generation step. 
+
+***local***: This is the default option. When this option is set, the pipeline will analyze each sample one after the another. This will not make use of multiple cores present in your system or clusters. Use this option for small numbers of samples or for testing purposes.
+
+***parallel-local***:  This option will run the pipeline and analyze samples in parallel but on a local system. This is preferred for an input sample size of less than 20  and a multiple core local system.
+
+
+
+## Input Requirements
+
+- readsdir: folder containing SE/PE reads. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+
+```
+
+- R1.fastq.gz/_R1.fastq.gz, 
+- 1_combine.fastq.gz, 
+- 1_sequence.fastq.gz, 
+- _forward.fastq.gz, 
+- _1.fastq.gz/.1.fastq.gz.
+
+```
+
+- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
+
+```
+[bin_path]
+binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
+```
+
+- index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
+
+```
+[KPNIH1]
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1.fasta
+```
+
+Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section with a different index name.
+
+```
+[KPNIH1_new]
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1_new.fasta
+```
+
+For more information, refer to [Customizing the config file](#customizing-the-config-file).
+
+<!--- Input is a directory (-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. These config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
 
 ## Output Files
 
