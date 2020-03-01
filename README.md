@@ -328,7 +328,7 @@ Some toy examples of how codes are arranged for different type of variants and h
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/phage_fq_mq.png)
 
-
+<!--
 **Bargraph matrices**
 
 bargraph_counts.txt and bargraph_indel_counts.txt contain distributions of all the variant positions called in each individual sample. Each color represents a type of variant filter. The bar corresponds to the number of variants that got filtered out due to that particular hard filter parameter in each sample.
@@ -440,6 +440,8 @@ Pending...
 
 -->
 
+
+-->
 ## Tips and Tricks
 
 - Run only part of a variant calling step
