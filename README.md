@@ -36,8 +36,9 @@ python variant_calling_pipeline/variant_call.py -h
 
 ## Steps
 
-
+<--!
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/pipeline.png)
+-->
 
 The pipeline is divided into two individual steps (-steps option) which should be run in sequential order (see below for command line arguments). 
 
