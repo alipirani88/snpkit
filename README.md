@@ -236,6 +236,7 @@ All the final results will be saved under date_time_core_results directory under
 ├── core_snp_consensus
 ├── data_matrix
 └── gubbins
+└── qc_report
 
 ```
 
@@ -247,9 +248,8 @@ The subdirectories for each of the above directories will be arranged in followi
 
 **gubbins** contains different combinations of core/non-core multi-fasta alignments. Alignments with "gubbins.fa" in their extension will be used as an input for Gubbins. Once the gubbins jobs finished, the pipeline runs RaxML and Iqtree on gubbins generated recombination filtered consensus fasta files. Raxml and iqtree results generated using these files will be placed in raxml_results and iqtree_results folder respectively.
 
-The two important MSA files that are used for gubbins/raxml/iqtree are genome_aln_w_ref_allele_gubbins.fa and genome_aln_w_alt_allele_unmapped_gubbins.fa
+The MSA file that is used for gubbins/and/iqtree is genome_aln_w_alt_allele_unmapped_gubbins.fa
 
-- genome_aln_w_ref_allele_gubbins.fa: This is a core genome alignment relative to the reference genome generated from core variant positions (final core variants + reference alleles).
 
 - genome_aln_w_alt_allele_unmapped_gubbins.fa: This genome alignment cotains all the variants that were called against each sample. It contains all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filter thresholds or falling under functional class filters. Non-core variants that met all filter thresholds will be substituted with variant allele. 
 
@@ -258,9 +258,7 @@ The different types of variants and the symbols that are used for each variant p
 1. If a position is unmapped in a sample, then it will be denoted by '-'
 2. If a position did not meet a hard filter criteria in a sample then it will be denoted by 'N' in that particular sample.
 3. If a position falls under any of the functional class filter such as phage region, repeat region or custom mask region, then it will be denoted by 'N'
-4. If a position did not meet hard filter criteria such as FQ or MQ in any one sample, then these position will be masked entirely in all the samples.
 
-- core_var_aln: alignment made up of only core variant positions.
 
 **data_matrix** This folder contains different types of data matrices and reports that can be queried for variant diagnostics/QC plots. 
 
