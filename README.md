@@ -318,9 +318,7 @@ Some toy examples of how codes are arranged for different type of variants and h
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/filtered_positions.png)
 
-- Filtered Positions masked due to Phage/FQ/MQ filters:
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/phage_fq_mq.png)
 
 **core_snp_consensus** The core_vcf folder under this directory contains annotated core vcf files that were used for generating core SNP consensus fasta results. Other folders contain different combination of core/non-core consensus fasta files for individual samples. The consensus file from these folders are concatenated to generate the multiple sequence alignment file which are then placed in gubbins folder and are used as an input for gubbins jobs.
 
