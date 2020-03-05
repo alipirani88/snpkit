@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generates various combinations of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/BEAST analysis.
+The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generate a phylogenetic tree from recombinant filtered high quality variants found against the reference genome.
 
 
 ## Contents
@@ -20,23 +20,31 @@ The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads p
 
 ## Installation
 
+The pipeline can be set up in two easy steps:
+
+1. Clone the github directory onto your system
+
 ```
 # Clone the latest Github version to your prefered loaction
 git clone https://github.com/alipirani88/variant_calling_pipeline.git
 
+```
+2. Use variant_calling_pipeline/environment.yml and variant_calling_pipeline/environment_gubbins.yml files to create conda environment.
+
+```
 # To install dependencies, use the YML file located under variant_calling_pipeline folder that you just cloned.
 conda env create -f variant_calling_pipeline/environment.yml -n varcall
+conda env create -f variant_calling_pipeline/environment_gubbins.yml -n varcall_gubbins
 
 # activate the environment and test the help menu
 conda activate varcall
 
+# Check installation
 python variant_calling_pipeline/variant_call.py -h
 
 ```
 
 ## Steps
-
-
 
 The pipeline is divided into two individual steps (-steps option) which should be run in sequential order (see below for command line arguments). 
 
