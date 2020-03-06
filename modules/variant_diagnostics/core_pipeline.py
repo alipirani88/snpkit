@@ -4555,9 +4555,8 @@ if __name__ == '__main__':
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     if "3" in args.steps:
-        """ 
-                report step 
-                """
+        """ report step """
+
 
         # Get outgroup_Sample name
         outgroup = get_outgroup()
@@ -4728,13 +4727,21 @@ if __name__ == '__main__':
 
         # Clean up directories
         call("mv %s/filtered_* %s/mask_fq_mq_* %s" % (data_matrix_dir, data_matrix_dir, matrices_dir), logger)
+
+        # Generate QC reports folder
         make_sure_path_exists(args.results_dir + '/qc_report')
-        print "%s" % os.path.dirname(os.path.dirname(args.results_dir))
-        call("cp %s/*/*_stats_results/* %s/qc_report" % (os.path.dirname(os.path.dirname(args.results_dir)), args.results_dir), logger)
-        call("cp %s/*/*_trim_out.log %s/qc_report" % (
-        os.path.dirname(os.path.dirname(args.results_dir)), args.results_dir), logger)
-        call("cp %s/*/*_summary_metrics.txt %s/qc_report" % (
-            os.path.dirname(os.path.dirname(args.results_dir)), args.results_dir), logger)
+        make_sure_path_exists(args.results_dir + '/qc_report/Alignment_stats')
+        make_sure_path_exists(args.results_dir + '/qc_report/GATK_metrics')
+        make_sure_path_exists(args.results_dir + '/qc_report/trimmomatic_logs')
+
+        call("cp %s/*/*_stats_results/*_collect_alignment_metrics.txt %s/qc_report/Alignment_stats" % (os.path.dirname(args.results_dir), args.results_dir), logger)
+        call("cp %s/*/*_stats_results/*_depth_of_coverage* %s/qc_report/GATK_metrics" % (
+        os.path.dirname(args.results_dir), args.results_dir), logger)
+        call("cp %s/*/*_stats_results/*_markduplicates_metrics %s/qc_report/GATK_metrics" % (
+            os.path.dirname(args.results_dir), args.results_dir), logger)
+        call("cp %s/*/*_trim_out.log %s/qc_report/trimmomatic_logs" % (
+            os.path.dirname(args.results_dir), args.results_dir), logger)
+
         call("rm %s/snpEff_summary.html" % data_matrix_dir, logger)
 
 
@@ -4808,9 +4815,9 @@ if __name__ == '__main__':
         args.results_dir, prepare_allele_var_consensus_input)
         #prepare_ref_allele_var_consensus_input_cmd = "cat %s/core_snp_consensus/consensus_ref_allele_variant_positions/*.fa > %s" % (args.results_dir, prepare_ref_allele_var_consensus_input)
         prepare_ref_allele_unmapped_consensus_input_cmd = "cat %s %s/core_snp_consensus/consensus_ref_allele_unmapped_variant/*.fa > %s" % (args.reference, args.results_dir, prepare_ref_allele_unmapped_consensus_input)
-        call("%s" % prepare_ref_var_consensus_input_cmd, logger)
-        call("%s" % prepare_var_consensus_input_cmd, logger)
-        call("%s" % prepare_allele_var_consensus_input_cmd, logger)
+        #call("%s" % prepare_ref_var_consensus_input_cmd, logger)
+        #call("%s" % prepare_var_consensus_input_cmd, logger)
+        #call("%s" % prepare_allele_var_consensus_input_cmd, logger)
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
 
 
@@ -4910,64 +4917,8 @@ if __name__ == '__main__':
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
-    if "6" in args.steps:
-        """ 
-        Debugging Purposes only: Run only Gubbins
-        """
-        reference_base = os.path.basename(args.reference).split('.')[0]
-        gubbins_dir = args.results_dir + '/gubbins'
-        tree_dir = args.results_dir + '/trees'
-
-        make_sure_path_exists(gubbins_dir)
-        #make_sure_path_exists(tree_dir)
 
 
-        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
-        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-        reference_base)
-        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
-            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-            reference_base)
-        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_ref_allele_unmapped_consensus.fa" % (
-        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-        reference_base)
-
-        if args.gubbins and args.gubbins == "yes":
-            gubbins(gubbins_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
-            #gubbins(gubbins_dir, prepare_ref_allele_var_consensus_input, logger, Config)
-            gubbins(gubbins_dir, prepare_ref_allele_unmapped_consensus_input,args.jobrun, logger, Config)
-        call("cp %s %s/Logs/tree/" % (
-            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
-
-    if "7" in args.steps:
-        """ 
-        Debugging Purposes only: Run iqtree
-        """
-        reference_base = os.path.basename(args.reference).split('.')[0]
-        gubbins_dir = args.results_dir + '/gubbins'
-        tree_dir = args.results_dir + '/trees'
-
-        make_sure_path_exists(gubbins_dir)
-        #make_sure_path_exists(tree_dir)
-
-
-        prepare_ref_var_consensus_input = "%s/gubbins/%s_%s_ref_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_var_consensus_input = "%s/gubbins/%s_%s_var_consensus.fa" % (args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''), reference_base)
-        prepare_allele_var_consensus_input = "%s/gubbins/%s_%s_allele_var_consensus.fa" % (
-        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-        reference_base)
-        prepare_ref_allele_var_consensus_input = "%s/gubbins/%s_%s_ref_allele_var_consensus.fa" % (
-            args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-            reference_base)
-        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_ref_allele_unmapped_consensus.fa" % (
-        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-        reference_base)
-        iqtree(tree_dir, prepare_ref_allele_var_consensus_input, args.jobrun, logger, Config)
-        iqtree(tree_dir, prepare_ref_var_consensus_input, args.jobrun, logger, Config)
-        iqtree(tree_dir, prepare_var_consensus_input, args.jobrun, logger, Config)
-        iqtree(tree_dir, prepare_ref_allele_unmapped_consensus_input, args.jobrun, logger, Config)
     
     time_taken = datetime.now() - start_time_2
     if args.remove_temp:
