@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generates various combinations of core/non-core consensus fasta files that can be used for phylogenetic reconstruction or as an input for Gubbins/BEAST analysis.
+The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generate a phylogenetic tree from recombinant filtered high quality variants found against the reference genome.
 
 
 ## Contents
@@ -20,24 +20,32 @@ The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads p
 
 ## Installation
 
+The pipeline can be set up in two easy steps:
+
+> 1. Clone the github directory onto your system.
+
 ```
-# Clone the latest Github version to your prefered loaction
 git clone https://github.com/alipirani88/variant_calling_pipeline.git
 
-# To install dependencies, use the YML file located under variant_calling_pipeline folder that you just cloned.
-conda env create -f variant_calling_pipeline/environment.yml -n varcall
+```
 
-# activate the environment and test the help menu
+> 2. Use variant_calling_pipeline/environment.yml and variant_calling_pipeline/environment_gubbins.yml files to create conda environment.
+
+Create two new environments - varcall and varcall_gubbins
+```
+conda env create -f variant_calling_pipeline/environment.yml -n varcall
+conda env create -f variant_calling_pipeline/environment_gubbins.yml -n varcall_gubbins
+```
+
+Check installation
+
+```
 conda activate varcall
 
 python variant_calling_pipeline/variant_call.py -h
-
 ```
 
 ## Steps
-
-
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/pipeline.png)
 
 The pipeline is divided into two individual steps (-steps option) which should be run in sequential order (see below for command line arguments). 
 
@@ -233,24 +241,21 @@ For more information, refer to [Customizing the config file](#customizing-the-co
 All the final results will be saved under date_time_core_results directory under the output folder. 
 ```
 
-2018_10_23_17_25_08_core_results
+2020_03_01_16_12_11_core_results
 ├── core_snp_consensus
 ├── data_matrix
-└── gubbins
+├── gubbins
+├── qc_report
+└── README
+
 
 ```
 
-The subdirectories for each of the above directories will be arranged in following fashion:
-
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/core_results_dir.png)
-
-**core_snp_consensus** The core_vcf folder under this directory contains annotated core vcf files that were used for generating core SNP consensus fasta results. Other folders contain different combination of core/non-core consensus fasta files for individual samples. The consensus file from these folders are concatenated to generate the multiple sequence alignment file which are then placed in gubbins folder and are used as an input for gubbins jobs.
 
 **gubbins** contains different combinations of core/non-core multi-fasta alignments. Alignments with "gubbins.fa" in their extension will be used as an input for Gubbins. Once the gubbins jobs finished, the pipeline runs RaxML and Iqtree on gubbins generated recombination filtered consensus fasta files. Raxml and iqtree results generated using these files will be placed in raxml_results and iqtree_results folder respectively.
 
-The two important MSA files that are used for gubbins/raxml/iqtree are genome_aln_w_ref_allele_gubbins.fa and genome_aln_w_alt_allele_unmapped_gubbins.fa
+The MSA file that is used for gubbins/and/iqtree is genome_aln_w_alt_allele_unmapped_gubbins.fa
 
-- genome_aln_w_ref_allele_gubbins.fa: This is a core genome alignment relative to the reference genome generated from core variant positions (final core variants + reference alleles).
 
 - genome_aln_w_alt_allele_unmapped_gubbins.fa: This genome alignment cotains all the variants that were called against each sample. It contains all core variant positions, non-core variant positions will be substituted with a dash (denoting unmapped) and N’s for not meeting hard variant filter thresholds or falling under functional class filters. Non-core variants that met all filter thresholds will be substituted with variant allele. 
 
@@ -259,9 +264,7 @@ The different types of variants and the symbols that are used for each variant p
 1. If a position is unmapped in a sample, then it will be denoted by '-'
 2. If a position did not meet a hard filter criteria in a sample then it will be denoted by 'N' in that particular sample.
 3. If a position falls under any of the functional class filter such as phage region, repeat region or custom mask region, then it will be denoted by 'N'
-4. If a position did not meet hard filter criteria such as FQ or MQ in any one sample, then these position will be masked entirely in all the samples.
 
-- core_var_aln: alignment made up of only core variant positions.
 
 **data_matrix** This folder contains different types of data matrices and reports that can be queried for variant diagnostics/QC plots. 
 
@@ -324,9 +327,9 @@ Some toy examples of how codes are arranged for different type of variants and h
 
 ![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/filtered_positions.png)
 
-- Filtered Positions masked due to Phage/FQ/MQ filters:
 
-![alt tag](https://github.com/alipirani88/variant_calling_pipeline/blob/master/img/phage_fq_mq.png)
+
+**core_snp_consensus** The core_vcf folder under this directory contains annotated core vcf files that were used for generating core SNP consensus fasta results. Other folders contain different combination of core/non-core consensus fasta files for individual samples. The consensus file from these folders are concatenated to generate the multiple sequence alignment file which are then placed in gubbins folder and are used as an input for gubbins jobs.
 
 <!--
 **Bargraph matrices**
