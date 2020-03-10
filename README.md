@@ -2,8 +2,7 @@
 
 ## Synopsis
 
-The pipeline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generate a phylogenetic tree from recombinant filtered high quality variants found against the reference genome.
-
+This is a highly customisable, automated variant detection pipeline that can be easily deployed for infectious disease outbreak investigations and other clinical microbiology projects.  
 
 ## Contents
 
@@ -46,6 +45,9 @@ python variant_calling_pipeline/variant_call.py -h
 ```
 
 ## Steps
+
+The piepline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generate a phylogenetic tree from recombinant filtered high quality variants found against the reference genome.
+
 
 The pipeline is divided into two individual steps (-steps option) which should be run in sequential order (see below for command line arguments). 
 
