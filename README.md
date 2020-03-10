@@ -7,8 +7,8 @@ This is a highly customisable, automated variant detection pipeline that can be 
 ## Contents
 
 - [Installation](#installation)
-- [Steps](#steps)
 - [Quick start](#quick-start)
+- [Steps](#steps)
 - [Input](#input-requirements)
 - [Command line options](#command-line-options)
 - [Run pipeline on compute cluster](#run-pipeline-on-compute-cluster)
@@ -42,6 +42,38 @@ Check installation
 conda activate varcall
 
 python variant_calling_pipeline/variant_call.py -h
+```
+
+## Quick Start
+
+Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster (time and memory efficient). The default resources used for parallel jobs are: 
+
+```
+nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
+
+OR
+
+--nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
+```
+
+See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-the-config-file)
+
+- Run variant calling step (All) on a set of PE reads with default parameters
+
+```
+python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps All -cluster cluster -scheduler SLURM -clean
+
+```
+
+The above command will run the variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in the output directory test_output_core. The config file contains options for some frequently used reference genomes. To know which reference genomes are included in the config file, look up the [config]() file or check the help menu of the pipeline.
+
+The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. A single log file of this step will be generated in the main output directory. For more information on log file prefix and convention, please refer to the [log](#log) section below.
+
+- Generate core SNPs/Matrices from variant calling results 
+
+```
+python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps core_All -cluster cluster -gubbins yes -scheduler SLURM
+
 ```
 
 ## Steps
@@ -143,37 +175,7 @@ Optional arguments:
 
 ```
 
-## Quick Start
 
-Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster (time and memory efficient). The default resources used for parallel jobs are: 
-
-```
-nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
-
-OR
-
---nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
-```
-
-See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-the-config-file)
-
-- Run variant calling step (All) on a set of PE reads with default parameters
-
-```
-python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps All -cluster cluster -scheduler SLURM -clean
-
-```
-
-The above command will run the variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in the output directory test_output_core. The config file contains options for some frequently used reference genomes. To know which reference genomes are included in the config file, look up the [config]() file or check the help menu of the pipeline.
-
-The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. A single log file of this step will be generated in the main output directory. For more information on log file prefix and convention, please refer to the [log](#log) section below.
-
-- Generate core SNPs/Matrices from variant calling results 
-
-```
-python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps core_All -cluster cluster -gubbins yes -scheduler SLURM
-
-```
 
 ## Run pipeline on compute cluster
 
