@@ -9,7 +9,7 @@ This is a highly customisable, automated variant detection pipeline that can be 
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Steps](#steps)
-- [Input](#input-requirements)
+- [Input](#input)
 - [Command line options](#command-line-options)
 - [Run pipeline on compute cluster](#run-pipeline-on-compute-cluster)
 - [Output files](#output-files)
@@ -76,9 +76,11 @@ python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your
 
 ```
 
-## Input Requirements
+## Input
 
-- readsdir: folder containing SE/PE reads. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+The pipeline requires three main inputs - 
+
+1. readsdir: Place your Illumina SE/PE reads in a folder and give path to this folder with -readsdir argument. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
 ```
 
