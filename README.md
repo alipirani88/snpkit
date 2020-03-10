@@ -76,6 +76,49 @@ python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your
 
 ```
 
+## Input Requirements
+
+- readsdir: folder containing SE/PE reads. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+
+```
+
+- R1.fastq.gz/_R1.fastq.gz, 
+- 1_combine.fastq.gz, 
+- 1_sequence.fastq.gz, 
+- _forward.fastq.gz, 
+- _1.fastq.gz/.1.fastq.gz.
+
+```
+
+- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
+
+```
+[bin_path]
+binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
+```
+
+- index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
+
+```
+[KPNIH1]
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1.fasta
+```
+
+Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section with a different index name.
+
+```
+[KPNIH1_new]
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1_new.fasta
+```
+
+For more information, refer to [Customizing the config file](#customizing-the-config-file).
+
 ## Steps
 
 The piepline calls variants on Illumina paired end(PE) / single end (SE) reads provided in a directory and generate a phylogenetic tree from recombinant filtered high quality variants found against the reference genome.
@@ -195,48 +238,7 @@ Possible options for the -cluster option (Supported system: pbs):
 
 
 
-## Input Requirements
 
-- readsdir: folder containing SE/PE reads. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
-
-```
-
-- R1.fastq.gz/_R1.fastq.gz, 
-- 1_combine.fastq.gz, 
-- 1_sequence.fastq.gz, 
-- _forward.fastq.gz, 
-- _1.fastq.gz/.1.fastq.gz.
-
-```
-
-- config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
-
-```
-[bin_path]
-binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
-```
-
-- index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
-
-```
-[KPNIH1]
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
-# Name of reference genome fasta file.
-Ref_Name: KPNIH1.fasta
-```
-
-Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section with a different index name.
-
-```
-[KPNIH1_new]
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
-# Name of reference genome fasta file.
-Ref_Name: KPNIH1_new.fasta
-```
-
-For more information, refer to [Customizing the config file](#customizing-the-config-file).
 
 <!--- Input is a directory (-readsdir) containing SE/PE reads and a config file where all the configuration settings for the pipeline are set. These config file settings will be used universally on all samples available in readsdir. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in the pipeline folder. You can customize this config file and provide it with the -config argument. -->
 
