@@ -49,7 +49,7 @@ OR
 --nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
 ```
 
-See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. Detailed information is in the section [Customizing config file](#customizing-the-config-file)
+See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. 
 
 - Run variant calling step (All) on a set of PE reads with default parameters
 
