@@ -93,13 +93,13 @@ The pipeline requires three main inputs -
 
 **2. config:** a high level easy to write YAML format configuration file that lets you configure your system wide runs and specify analysis parameters, path to the installed software, data and system information.
 
-This config file contain High level information about the system, including locations of installed programs like GATK and cores and memory usage, path to a reference genome, parameters used by different tools. These apply across multiple runs. 
+This config file contain High level information about the system, including locations of installed programs like GATK and cores and memory usage, path to a reference genome, parameters used by different tools. These settings will apply across multiple runs and samples. 
 
-The config file stores data in KEY: VALUE pair. These settings will be applied globally on all variant call jobs. 
+The config file stores data in KEY: VALUE pair. 
 
 An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
 
-The pipeline implements customisable variant calling configurations using the config file. The config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
+The config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
 Currently, The pipeline supports BWA aligner (mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
 
 ```
@@ -112,7 +112,7 @@ variant_caller: samtools
 
 ```
 
-Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in the config file.
+Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in the config file. If you wish to run pipeline in hpc compute environment such as PBS or SLURM, change the number of nodes/cores memory reuirements based on your needs else the pipeline will run with default settings.
 
 
 **3. index:** a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
