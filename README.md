@@ -80,7 +80,7 @@ python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your
 
 The pipeline requires three main inputs - 
 
-*** 1. readsdir: Place your Illumina SE/PE reads in a folder and give path to this folder with -readsdir argument. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+**1. readsdir:** Place your Illumina SE/PE reads in a folder and give path to this folder with -readsdir argument. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
 ```
 
@@ -92,7 +92,7 @@ The pipeline requires three main inputs -
 
 ```
 
-***2. index: a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
+**2. index:** a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
 
 ```
 [KPNIH1]
@@ -114,7 +114,7 @@ Ref_Name: KPNIH1_new.fasta
 
 For more information, refer to [Customizing the config file](#customizing-the-config-file).
 
-***3. config: a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. 
+**3. config:** a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. 
 
 The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
 
