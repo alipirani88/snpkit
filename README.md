@@ -9,7 +9,6 @@ This is a highly customisable, automated variant detection pipeline that can be 
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Input](#input)
-- [Command line options](#command-line-options)
 
 ## Installation
 
