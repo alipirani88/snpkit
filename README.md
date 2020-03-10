@@ -91,28 +91,17 @@ The pipeline requires three main inputs -
 
 ```
 
-**2. config:** a high level easy to write YAML format configuration file that lets you configure your system wide runs and specify analysis parameters, path to the installed software, data and system information.
+**2. config:** A high level easy to write YAML format configuration file that lets you configure your system wide runs and specify analysis parameters, path to the installed tools, data and system wide information.
 
-This config file contain High level information about the system, including locations of installed programs like GATK and cores and memory usage, path to a reference genome, parameters used by different tools. These settings will apply across multiple runs and samples. 
+- This config file will contain High level information such as locations of installed programs like GATK, cores and memory usage for running on HPC compute cluster, path to a reference genome, various parameters used by different tools. These settings will apply across multiple runs and samples. 
 
-The config file stores data in KEY: VALUE pair. 
+- The config file stores data in KEY: VALUE pair. 
 
-An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
+- An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
 
-The config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
-Currently, The pipeline supports BWA aligner (mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
+- Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in config file. 
 
-```
-# Set which tools to use in pipeline:
-[pipeline]
-# Options for Aligner:bwa / smalt / bowtie
-aligner: bwa
-# Options for variant_caller:  gatkhaplotypecaller /samtools
-variant_caller: samtools
-
-```
-
-Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in the config file. If you wish to run pipeline in hpc compute environment such as PBS or SLURM, change the number of nodes/cores memory reuirements based on your needs else the pipeline will run with default settings.
+- If you wish to run pipeline in hpc compute environment such as PBS or SLURM, change the number of nodes/cores memory reuirements based on your needs else the pipeline will run with default settings.
 
 
 **3. index:** a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
@@ -134,6 +123,8 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1_new.fasta
 ```
+
+THe pipeline also requires Phaster results of your reference genome to mask phage region. To enable this place the phaster results files in the reference genome folder.
 
 
 ## Steps
