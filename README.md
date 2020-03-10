@@ -13,7 +13,6 @@ This is a highly customisable, automated variant detection pipeline that can be 
 - [Command line options](#command-line-options)
 - [Run pipeline on compute cluster](#run-pipeline-on-compute-cluster)
 - [Output files](#output-files)
-- [Customizing the config file](#customizing-the-config-file)
 - [Log](#log)
 - [Bonus Ducks](https://knowyourmeme.com/memes/bonus-ducks)
 
@@ -92,7 +91,31 @@ The pipeline requires three main inputs -
 
 ```
 
-**2. index:** a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
+**2. config:** a high level easy to write YAML format configuration file that lets you configure your system wide runs and specify analysis parameters, path to the installed software, data and system information.
+
+This config file contain High level information about the system, including locations of installed programs like GATK and cores and memory usage, path to a reference genome, parameters used by different tools. These apply across multiple runs. 
+
+The config file stores data in KEY: VALUE pair. These settings will be applied globally on all variant call jobs. 
+
+An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
+
+The pipeline implements customisable variant calling configurations using the config file. The config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
+Currently, The pipeline supports BWA aligner (mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
+
+```
+# Set which tools to use in pipeline:
+[pipeline]
+# Options for Aligner:bwa / smalt / bowtie
+aligner: bwa
+# Options for variant_caller:  gatkhaplotypecaller /samtools
+variant_caller: samtools
+
+```
+
+Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in the config file.
+
+
+**3. index:** a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
 
 ```
 [KPNIH1]
@@ -102,7 +125,7 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
 Ref_Name: KPNIH1.fasta
 ```
 
-Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section with a different index name.
+Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section in your config file with a different index name.
 
 ```
 [KPNIH1_new]
@@ -111,18 +134,6 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1_new.fasta
 ```
-
-For more information, refer to [Customizing the config file](#customizing-the-config-file).
-
-**3. config:** a config file to set pipeline configuration settings such as setting up environment path for various tools, path to reference genomes and filter parameters. 
-
-The config file is a YAML format file that stores data in KEY: VALUE pair. This settings will be applied globally on all variant call jobs. An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included in code folder. You can customize this config file and provide it with the -config argument. An example parameter setting is shown below where we are setting the bin directory path. This is another way of telling the pipeline that all the tools required for variant calling are located in "binbase" directory of bin_path section.
-
-```
-[bin_path]
-binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
-```
-
 
 
 ## Steps
@@ -485,85 +496,6 @@ If you decide to exclude some samples from the core snp analysis step (step 3), 
 python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index MRSA_USA_300 -steps core -cluster parallel-cluster -filenames filenames_custom
 
 ```
-
-## Customizing the config file
-
-By default, the pipeline uses the config file that comes with the pipeline. Make sure to edit this config file or copy it to your local system, edit it and provide the path of this edited config file with the -config argument.
-
-```
-
-cp variant_calling_pipeline/config /Path-to-local/config_edit
-
-```
-
-The pipeline implements customisable variant calling configurations using the config file. The config file can be customised to use your choice of aligner and variant caller by changing two parameters under the section [pipeline]
-Currently, The pipeline supports BWA aligner (mem algorithm) for aligning reads to the reference genome and samtools for variant calling.
-
-```
-# Set which tools to use in pipeline:
-[pipeline]
-# Options for Aligner:bwa / smalt / bowtie
-aligner: bwa
-# Options for variant_caller:  gatkhaplotypecaller /samtools
-variant_caller: samtools
-
-```
-
-Make sure you have downloaded all the dependencies for the pipeline in a folder path provided in the binbase option of the [bin_path] section.
-
-```
-# Set bin folder path. Please make sure all the executables are placed in the bin folder. Also make sure the path for individual tools are correct.
-[bin_path]
-binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
-```
-
-NOTE: Add the required perl libraries (such as in the case of vcftools) PERL5LIB environment variable. For flux users, you can do that by loading perl-modules
-
-```
-module load perl-modules
-```
-
-If you wish to run the jobs on a cluster, make sure you cahnge the necessary scheduler parameters in the scheduler section shown below: for more information, visit the [flux](http://arc-ts.umich.edu/systems-and-services/flux/) homepage.
-
-```
-
-[scheduler]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
-email: username@umich.edu
-queue: XXX
-flux_account: XXX
-notification: a
-
-```
-
-Every tool has its own *_bin option where you can set the folder name in which the tool resides. For example, in the below Trimmomatic section example, the Trimmomatic tool resides in the /Trimmomatic/ folder that is set with the trimmomatic_bin option which in itself resides in /nfs/esnitkin/bin_group/variant_calling_bin/ folder that was set in the binbase option above.
-
-```
-[Trimmomatic]
-trimmomatic_bin: /Trimmomatic/
-adaptor_filepath: adapters/TruSeq3-Nextera_PE_combined.fa
-seed_mismatches: 2
-palindrome_clipthreshold: 30
-simple_clipthreshold: 10
-minadapterlength: 8
-keep_both_reads: true
-window_size: 4
-window_size_quality: 20
-minlength: 40
-headcrop_length: 0
-colon: :
-targetlength: 125
-crop_length: 40
-f_p: forward_paired.fq.gz
-f_up: forward_unpaired.fq.gz
-r_p: reverse_paired.fq.gz
-r_up: reverse_unpaired.fq.gz
-```
-
-Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in the config file.
-
-
-For example, to change the minadapterlength parameter of Trimmomatic from 8 to 10, replace minadapterlength of 8 with suppose 10 and restart the pipeline.
 
 ## Log:
 
