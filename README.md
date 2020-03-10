@@ -121,4 +121,5 @@ Ref_Name: KPNIH1_new.fasta
 THe pipeline also requires Phaster results of your reference genome to mask phage region. To enable this place the phaster results files in the reference genome folder.
 
 
+### For detailed information, please refer to the [wiki](https://github.com/alipirani88/variant_calling_pipeline/wiki) page.
 
