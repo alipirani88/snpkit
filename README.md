@@ -80,7 +80,7 @@ python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your
 
 The pipeline requires three main inputs - 
 
-***1. readsdir: Place your Illumina SE/PE reads in a folder and give path to this folder with -readsdir argument. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
+*** 1. readsdir: Place your Illumina SE/PE reads in a folder and give path to this folder with -readsdir argument. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
 ```
 
