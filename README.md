@@ -39,35 +39,31 @@ python variant_calling_pipeline/variant_call.py -h
 
 ## Quick Start
 
-Assuming you want to generate core snps for more than a few hundred samples and run the analysis in parallel on cluster (time and memory efficient). The default resources used for parallel jobs are: 
+Lets say you want to detect variants for more than a few hundred samples against a reference genome KPNIH1 and want the pipeline to run in parallel on HPC cluster. 
+
+
+- Run the first step of pipeline with option "-steps All" that will call variants for samples placed in test_readsdir against a reference genome KPNIH1
 
 ```
-nodes=1:ppn=4,pmem=4000mb,walltime=24:00:00
-
-OR
-
---nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
-```
-
-See option resources in the scheduler section of the [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file. 
-
-- Run variant calling step (All) on a set of PE reads with default parameters
-
-```
-python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps All -cluster cluster -scheduler SLURM -clean
+python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index KPNIH1 -steps All -cluster cluster -scheduler SLURM -clean
 
 ```
 
-The above command will run the variant calling (step 1) pipeline on a set of PE reads residing in test_readsdir. The results will be saved in the output directory test_output_core. The config file contains options for some frequently used reference genomes. To know which reference genomes are included in the config file, look up the [config]() file or check the help menu of the pipeline.
+- The above command will run the variant calling part of the pipeline on a set of PE reads residing in test_readsdir. 
+- The results will be saved in the output directory test_output_core. 
+- The reference genome and its path will be detected from the KPNIH1 settings that is set in config file.
 
-The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. A single log file of this step will be generated in the main output directory. For more information on log file prefix and convention, please refer to the [log](#log) section below.
 
-- Generate core SNPs/Matrices from variant calling results 
+The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. 
+
+- Run the second part of the pipeline to generate SNP and Indel Matrices and various multiple sequence alignments outputs.
 
 ```
 python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps core_All -cluster cluster -gubbins yes -scheduler SLURM
 
 ```
+
+This step will gather all the variant call results of the pipeline, generate SNP-Indel Matrices, qc reports and core/non-core sequence alignments that can be used as an input for phylogenetic analysis suchs as gubbins-iqtree-beast.
 
 ## Input
 
