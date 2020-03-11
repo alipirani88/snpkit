@@ -47,9 +47,15 @@ Lets say you want to detect variants for more than a few hundred samples against
 ```
 
 python variant_calling_pipeline/variant_call.py \
--type PE -readsdir /Path-To-Your/test_readsdir/ \
--outdir /Path/test_output_core/ -analysis output_prefix \
--index KPNIH1 -steps All -cluster cluster -scheduler SLURM -clean
+-type PE \
+-readsdir /Path-To-Your/test_readsdir/ \
+-outdir /Path/test_output_core/ \
+-analysis output_prefix \
+-index KPNIH1 \
+-steps All \
+-cluster cluster \
+-scheduler SLURM \
+-clean
 
 ```
 
@@ -63,7 +69,16 @@ The results of variant calling will be placed in an individual folder generated 
 - Run the second part of the pipeline to generate SNP and Indel Matrices and various multiple sequence alignments outputs.
 
 ```
-python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index reference.fasta -steps core_All -cluster cluster -gubbins yes -scheduler SLURM
+python variant_calling_pipeline/variant_call.py \
+-type PE \
+-readsdir /Path-To-Your/test_readsdir/ \
+-outdir /Path/test_output_core/ \
+-analysis output_prefix \
+-index reference.fasta \
+-steps core_All \
+-cluster cluster \
+-gubbins yes \
+-scheduler SLURM
 
 ```
 
