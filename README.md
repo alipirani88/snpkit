@@ -45,7 +45,11 @@ Lets say you want to detect variants for more than a few hundred samples against
 - Run the first step of pipeline with option "-steps All" that will call variants for samples placed in test_readsdir against a reference genome KPNIH1
 
 ```
-python variant_calling_pipeline/variant_call.py -type PE -readsdir /Path-To-Your/test_readsdir/ -outdir /Path/test_output_core/ -analysis output_prefix -index KPNIH1 -steps All -cluster cluster -scheduler SLURM -clean
+
+python variant_calling_pipeline/variant_call.py \
+-type PE -readsdir /Path-To-Your/test_readsdir/ \
+-outdir /Path/test_output_core/ -analysis output_prefix \
+-index KPNIH1 -steps All -cluster cluster -scheduler SLURM -clean
 
 ```
 
