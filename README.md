@@ -1,4 +1,4 @@
-# Variant Calling and core SNP diagnostics Pipeline
+# Variant Calling and diagnostics Pipeline
 
 ## Synopsis
 
