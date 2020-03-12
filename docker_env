@@ -5,3 +5,23 @@ channels:
   - defaults
 dependencies:
 - trimmomatic
+- bcftools
+- bedtools
+- bioawk
+- bowtie2
+- bwa
+- bzip2
+- gatk
+- gatk4
+- vcftools
+- mummer
+- mash
+- picard
+- pilon
+- qualimap
+- raxml
+- samtools
+- snpeff
+- subprocess32
+- tabix
+- pyfasta
