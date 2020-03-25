@@ -2850,27 +2850,7 @@ def merge_vcf():
 
     return annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf
 
-def annotated_snp_matrix():
-    """
-    :return: Annotate core vcf files generated at core_prep steps.
-    Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
-    This dictionary will then be used to insert annotation into SNP/Indel matrix
-    """
-
-    """Annotate all VCF file formats with SNPeff"""
-    # Commented for debugging
-    # variant_annotation()
-    #
-    # indel_annotation()
-
-    locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
-
-    annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
-
-
-
-
-
+def extract_annotations_from_multivcf():
     """ Extract ANN information from bcftools Final vcf file. (There is a reason why i am using bcftools merged file to extract ANN information) """
     snp_var_ann_dict = {}
     indel_var_ann_dict = {}
@@ -2883,16 +2863,9 @@ def annotated_snp_matrix():
         indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
 
     """ End of Extract ANN information from bcftools Final vcf file"""
+    return snp_var_ann_dict, indel_var_ann_dict
 
-
-
-    """ This step is no longer required: Remove this after testing. print_string_header will be the column names of SNP matrix. Column names = Sample names"""
-    print_string_header = "\t"
-    for i in vcf_filenames:
-        print_string_header = print_string_header + os.path.basename(i) + "\t"
-
-
-
+def extract_core_positions():
     """ Generate an array of core positions. Read Only_ref_variant_positions_for_closely* to get final core variant positions into core_positions array"""
     core_positions = []
     if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
@@ -2917,9 +2890,9 @@ def annotated_snp_matrix():
         fp.close()
 
     """ End: Generate an array of core positions. """
+    return core_positions, indel_core_positions
 
-
-
+def extract_functional_class_positions():
     """ Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
     """ Read in functional class filter positions. """
     functional_filter_pos_array = []
@@ -2967,26 +2940,10 @@ def annotated_snp_matrix():
 
     """ End: Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
 
+    return functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions
 
-
-
-    """ Read and parse final GATK merged vcf file cyvcf library; Generate a header string from the sample lis fo this merged vcf file"""
-
-    final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
-
-    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
-    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
-    for sample in final_merge_anno_file.samples:
-        # header_print_string = header_print_string + "," + sample
-        header_print_string = header_print_string + "\t" + sample
-    header_print_string = header_print_string + "\n"
-
-    """ End """
-
-
-
-
-    """ Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
+def generate_position_label_dict(final_merge_anno_file):
+    """ Prepare a *final_ordered_sorted.txt file with sorted unique variant positions. """
     paste_label_command = "paste %s/unique_positions_file " % args.filter2_only_snp_vcf_dir
     paste_indel_label_command = "paste %s/unique_indel_positions_file " % args.filter2_only_snp_vcf_dir
     paste_label_command_exclude_outgroup = "paste %s/unique_positions_file " % args.filter2_only_snp_vcf_dir
@@ -3042,9 +2999,9 @@ def annotated_snp_matrix():
             first_part = first_part_split[0].replace('_L001', '')
             first_part = re.sub("_S.*_", "", first_part)
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
-        args.filter2_only_snp_vcf_dir, first_part)
+            args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
-        args.filter2_only_snp_vcf_dir, first_part)
+            args.filter2_only_snp_vcf_dir, first_part)
         paste_label_command = paste_label_command + sample_label_file + " "
         paste_indel_label_command = paste_indel_label_command + sample_indel_label_file + " "
         if args.outgroup:
@@ -3066,7 +3023,6 @@ def annotated_snp_matrix():
             args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
         sort_ordered_indel_label_cmd_exclude_outgroup = "sort -n -k1,1 %s/All_indel_label_final_ordered_exclude_outgroup.txt > %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % (
             args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-
 
     with open('%s/All_label_final_ordered.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
         outfile.write(paste_label_command + '\n')
@@ -3091,13 +3047,13 @@ def annotated_snp_matrix():
 
     """ End: Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
 
-
     """ Generate a position_label and position_indel_label dictionary that will contain information about each unique variant position that passed variant filters in any sample and reasons for being filtered out in any sample """
     position_label = OrderedDict()
     with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-        keep_logging('Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                     'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                     logger, 'info')
+        keep_logging(
+            'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            logger, 'info')
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
             position_label[row[0]] = ','.join(row[1:])
@@ -3122,13 +3078,16 @@ def annotated_snp_matrix():
 
     """ End: Generate a position_label and position_indel_label dictionary """
 
+    return position_label, position_indel_label
 
+def get_low_fq_mq_positions():
     """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ """
     mask_fq_mq_positions = []
     mask_fq_mq_positions_outgroup_specific = []
     if args.outgroup:
         position_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
             keep_logging(
                 'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
                 'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -3138,9 +3097,10 @@ def annotated_snp_matrix():
                 position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
         csv_file.close()
 
-        #Commented for debugging
+        # Commented for debugging
         position_indel_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
             keep_logging(
                 'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
                 'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -3195,6 +3155,9 @@ def annotated_snp_matrix():
     print "Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
 
     """ End: Generate mask_fq_mq_positions array """
+    return mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific
+
+def generate_SNP_matrix():
 
     """ Main: Generate SNP Matrix """
 
@@ -3722,17 +3685,60 @@ def annotated_snp_matrix():
     fp_allele_new.close()
     fp_allele_new_phage.close()
 
+def annotated_snp_matrix():
+    """
+    :return: Annotate core vcf files generated at core_prep steps.
+    Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
+    This dictionary will then be used to insert annotation into SNP/Indel matrix
+    """
+
+    """Annotate all VCF file formats with SNPeff"""
+    # Commented for debugging
+    # variant_annotation()
+    #
+    # indel_annotation()
+
+    locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
+
+    annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
+
+    snp_var_ann_dict, indel_var_ann_dict = extract_annotations_from_multivcf()
+
+    core_positions,indel_core_positions = extract_core_positions()
+
+    functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions = extract_functional_class_positions()
+
+
+    """ Read and parse final GATK merged vcf file cyvcf library; Generate a header string from the sample list of this merged vcf file"""
+
+    final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
+
+    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
+    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
+    for sample in final_merge_anno_file.samples:
+        # header_print_string = header_print_string + "," + sample
+        header_print_string = header_print_string + "\t" + sample
+    header_print_string = header_print_string + "\n"
+
+    """ End """
+
+    position_label, position_indel_label = generate_position_label_dict(final_merge_anno_file)
+
+    mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions()
+
+    generate_SNP_matrix()
+
+
 ######################################
     """ Indel matrix """
-    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
+    """ Prepare Indel Matrix header print strings and add matrix row information subsequently """
     header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
     for sample in final_merge_anno_file.samples:
         # header_print_string = header_print_string + "," + sample
         header_print_string = header_print_string + "\t" + sample
     header_print_string = header_print_string + "\n"
-    #header_print_string = header_print_string.replace(':::,', ':::')
-    #header_print_string = header_print_string.replace(':::,', '\t')
+
     fp_code = open("%s/Indel_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_allele = open("%s/Indel_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
