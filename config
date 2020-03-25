@@ -18,7 +18,7 @@ resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
 large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
 queue: flux
-flux_account: micro612w20_class
+flux_account: esnitkin_flux
 notification: a
 
 [pbs]
@@ -30,11 +30,11 @@ flux_account: esnitkin
 notification: a
 
 [slurm]
-resources: --nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=25:00:00
-large_resources: --nodes=1 --ntasks-per-node=12 --mem=47000mb --time=50:00:00
+resources: --nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
+large_resources: --nodes=1 --ntasks-per-node=12 --mem=47000mb --time=250:00:00
 email: apirani@med.umich.edu
 partition: standard
-flux_account: micro612w20_class
+flux_account: esnitkin1
 notification: BEGIN,END,NONE,FAIL,REQUEUE
 
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
@@ -42,7 +42,7 @@ notification: BEGIN,END,NONE,FAIL,REQUEUE
 # Updated for Great Lakes and Conda Integration
 [Trimmomatic]
 trimmomatic_bin: //
-adaptor_filepath: /scratch/micro612w20_class_root/micro612w20_class/shared/conda_envs/day1pm/share/trimmomatic-0.39-1/adapters/TruSeq3-PE.fa
+adaptor_filepath: /home/apirani/.conda/envs/variantcalling_env_test/share/trimmomatic-0.39-1/adapters/NexteraPE-PE.fa
 seed_mismatches: 2
 palindrome_clipthreshold: 30
 simple_clipthreshold: 10
@@ -281,7 +281,7 @@ dataDir: /data/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1.fasta
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+Ref_Path: /scratch/esnitkin_root/esnitkin/apirani/Testing_pipelines/reference/KPNIH1/
 
 # Name of the reference genome. Provide this value with -index_name argument.
 [aus]
@@ -1074,3 +1074,15 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Pt0_Chromosome_O
 Ref_Name: NTHi_86-028NP.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/NTHi_86-028NP/
+
+[Legionella_SG6_Thunder_Bay]
+# Name of reference genome fasta file.
+Ref_Name: Legionella_SG6_Thunder_Bay.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Legionella_SG6_Thunder_Bay/
+
+[MNCRE9]
+# Name of reference genome fasta file.
+Ref_Name: MNCRE9.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MNCRE9/

@@ -86,15 +86,17 @@ if __name__ == '__main__':
         factor = float(100/ori_coverage_depth)
         print round(factor, 3)
     else:
-        factor = float(args.coverage_depth / ori_coverage_depth)
-        print round(factor, 3)
+        # Bug found.
+        # factor = float(args.coverage_depth / ori_coverage_depth)
+        # print round(factor, 3)
+        factor = 1
 
 
     proc = subprocess.Popen(["nproc"], stdout=subprocess.PIPE, shell=True)
     (nproc, err) = proc.communicate()
     nproc = nproc.strip()
 
-    analysis = "PCMP_H159"
+
     r1_sub = "/tmp/%s" % os.path.basename(args.read1)
     r2_sub = "/tmp/%s" % os.path.basename(args.read2)
 

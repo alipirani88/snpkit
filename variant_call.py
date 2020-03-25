@@ -49,6 +49,8 @@ def parser():
     optional.add_argument('-downsample', action='store', dest="downsample", help='yes/no: Downsample Reads data to default depth of 100X or user specified depth')
     optional.add_argument('-coverage_depth', action='store', dest="coverage_depth",
                           help='Downsample Reads to this user specified depth')
+    optional.add_argument('-genomesize', action='store', dest="genomesize",
+                          help='Genome size to calculate raw coverage')
     optional.add_argument('-scheduler', action='store', dest="scheduler",
                           help='Type of Scheduler for generating cluster jobs: PBS, SLURM, LOCAL')
     return parser
@@ -251,7 +253,8 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                     reference, config_file, steps)
                 else:
                     command = "python %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s -clean" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
-
+                if args.genomesize:
+                    command = command + " -genome_size %s" % args.genomesize
             else:
                 if args.clean:
                     command = "python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (
@@ -259,7 +262,8 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                     first_part, reference, config_file, steps)
                 else:
                     command = "python %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
-
+                if args.genomesize:
+                    command = command + " -genome_size %s" % args.genomesize
 
             # # Adding Downsampling support 2019-06-20
             if args.downsample == "yes":
@@ -685,7 +689,8 @@ if __name__ == '__main__':
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_files:
                     #print file
-                    depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'"
+                    depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')
+                    #print depth
                     proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
                     (out2, err2) = proc.communicate()
                     print file

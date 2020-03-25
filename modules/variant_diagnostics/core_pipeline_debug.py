@@ -2687,30 +2687,17 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
     os.system("bash %s" % merge_gatk_commands_file)
     return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
 
-def annotated_snp_matrix():
-    """
-    :return: Annotate core vcf files generated at core_prep steps.
-    Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
-    This dictionary will then be used to insert annotation into SNP/Indel matrix
-    """
+def extract_locus_tag_from_genbank():
+    """ Start of Extract Annotation information from Genbank file
 
-    """Annotate all VCF file formats with SNPeff"""
-    # Commented for debugging
-    variant_annotation()
+        Extract Annotation information from Genbank file
 
-    indel_annotation()
+        - Check if Reference genome Genbank file exists.
+        - Initiate dictionaries that maps locus tag to gene name and product. This information will be used for annotating SNP/Indel Matrix
+        - Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
 
-
-    """ Start of Extract Annotation information from Genbank file 
-    
-    Extract Annotation information from Genbank file 
-    
-    - Check if Reference genome Genbank file exists.
-    - Initiate dictionaries that maps locus tag to gene name and product. This information will be used for annotating SNP/Indel Matrix
-    - Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
-    
-    """
-
+        """
+    keep_logging('Extracting Locus Tag information from Genbank.', 'Extracting Locus Tag information from Genbank.', logger, 'info')
     reference_basename = (os.path.basename(args.reference)).split(".")
     if os.path.isfile("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0])):
         handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'rU')
@@ -2721,14 +2708,16 @@ def annotated_snp_matrix():
     locus_tag_to_gene_name = {}
     locus_tag_to_product = {}
     locus_tag_to_strand = {}
-    #locus_tag_to_uniprot = {}
-    #locus_tag_to_ec_number = {}
+    # locus_tag_to_uniprot = {}
+    # locus_tag_to_ec_number = {}
 
     keep_logging(
-        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
-        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
+        os.path.dirname(args.reference), reference_basename[0]),
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
+        os.path.dirname(args.reference), reference_basename[0]),
         logger, 'info')
-    for record in SeqIO.parse(handle, 'genbank') :
+    for record in SeqIO.parse(handle, 'genbank'):
         for feature in record.features:
             location = str(feature.location)
             strand = location.split('(')[1].replace(')', '')
@@ -2739,13 +2728,16 @@ def annotated_snp_matrix():
                 else:
                     locus_tag_to_gene_name[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
                 if 'product' in feature.qualifiers:
-                    locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = str(feature.qualifiers['product'][0])
+                    locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = str(
+                        feature.qualifiers['product'][0])
                 else:
                     locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
             else:
                 keep_logging(
-                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
-                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(
+                        feature),
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(
+                        feature),
                     logger, 'exception')
 
     # Annotation Bug fix 1
@@ -2753,11 +2745,14 @@ def annotated_snp_matrix():
     last_element = len(record.features) - 1
     last_locus_tag = record.features[last_element].qualifiers['locus_tag'][0]
 
+
+
     # #Debugging prints
     # print first_locus_tag
     # print locus_tag_to_gene_name[first_locus_tag]
     # print last_locus_tag
     # print locus_tag_to_gene_name[last_locus_tag]
+
 
     """ End of Extract Annotation information from Genbank file 
 
@@ -2769,18 +2764,22 @@ def annotated_snp_matrix():
 
     """
 
+    return locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag
 
-
+def merge_vcf():
     """ Start of Merging Step:
-    
-    - Merge Individual Annotated raw and filtered vcf files to generate a Final merged vcf file using Gatk combine variants method.
-    - Parse this merged Final_vcf* file and generate a SNP/Indel matrix 
-    
-    """
 
-    keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, logger, 'info')
+        - Merge Individual Annotated raw and filtered vcf files to generate a Final merged vcf file using Gatk combine variants method.
+        - Parse this merged Final_vcf* file and generate a SNP/Indel matrix
 
-    #Commented for debugging
+        """
+
+    keep_logging(
+        'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
+        'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
+        logger, 'info')
+
+    # Commented for debugging
     files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
     files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
@@ -2788,18 +2787,22 @@ def annotated_snp_matrix():
 
     files = ' '.join(vcf_filenames)
 
-
     """ bcftools merging is deprecated. Replaced with GATK combinevariants """
     merge_commands_file = "%s/bcftools_merge.sh" % args.filter2_only_snp_vcf_dir
 
     with open(merge_commands_file, 'w+') as fopen:
-        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
-        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir,files.replace("_filter2_final.vcf_no_proximate_snp.vcf","_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (
+        ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'],
+        args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf",
+                                                     "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (
+        ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'],
+        args.filter2_only_snp_vcf_dir,
+        files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
 
     fopen.close()
 
     os.system("bash %s" % merge_commands_file)
-
 
     """ Merge with Gatk combine variants method """
     # #Commented for debugging
@@ -2810,35 +2813,62 @@ def annotated_snp_matrix():
 
     with open(annotated_no_proximate_snp_file, 'w+') as fopen:
         for i in vcf_filenames:
-            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
+            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                  '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
     fopen.close()
 
     with open(annotated_no_proximate_snp_indel_file, 'w+') as fopen:
         for i in vcf_filenames:
-            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
+            fopen.write(
+                i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
     fopen.close()
 
-    #files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
+    # files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
     files_gatk = ""
     for i in vcf_filenames:
         files_gatk = files_gatk + " --variant " + i
-    final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
-
-    # Test this merge and annotate this merged file - Testing Mode Right now.
-    #merged_file_suffix = "_no_proximate_snp_1.vcf"
-    #final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
-    merged_file_suffix = "_indel.vcf"
-    final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
-                                                                         '_filter2_indel_final.vcf_ANN.vcf.gz'),
+    final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                                                         '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'),
                                                       args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
                                                       logger, Config)
+
+    # Test this merge and annotate this merged file - Testing Mode Right now.
+    # merged_file_suffix = "_no_proximate_snp_1.vcf"
+    # final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
+    merged_file_suffix = "_indel.vcf"
+    final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                                                           '_filter2_indel_final.vcf_ANN.vcf.gz'),
+                                                        args.reference, args.filter2_only_snp_vcf_dir,
+                                                        merged_file_suffix,
+                                                        logger, Config)
 
     """ Tabix index the combined GATK Final vcf file """
     files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
 
-
     """ End of Merging Step. """
+
+    return annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf
+
+def annotated_snp_matrix():
+    """
+    :return: Annotate core vcf files generated at core_prep steps.
+    Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
+    This dictionary will then be used to insert annotation into SNP/Indel matrix
+    """
+
+    """Annotate all VCF file formats with SNPeff"""
+    # Commented for debugging
+    # variant_annotation()
+    #
+    # indel_annotation()
+
+    locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
+
+    annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
+
+
+
 
 
     """ Extract ANN information from bcftools Final vcf file. (There is a reason why i am using bcftools merged file to extract ANN information) """
@@ -2848,7 +2878,7 @@ def annotated_snp_matrix():
     for variants in VCF("%s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
         snp_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
 
-    # Commented out for legionellsa bug
+    # Commented out for legionella bug
     for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
 
@@ -4904,7 +4934,7 @@ if __name__ == '__main__':
             print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
 
         # Annotate core variants. Generate SNP and Indel matrix.
-        #annotated_snp_matrix()
+        annotated_snp_matrix()
 
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')

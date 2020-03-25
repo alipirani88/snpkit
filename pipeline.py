@@ -502,35 +502,42 @@ def downsample(args, logger):
 
 
     # Run Mash to estimate Genome size
-    keep_logging('Running: /nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw,
-                 'Running: /nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw, logger, 'info')
+    keep_logging('Running: mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw,
+                 'Running: mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw, logger, 'info')
 
     mash_cmd = "/nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout" % args.forward_raw
 
     keep_logging('Running: %s' % mash_cmd,
                  'Running: %s' % mash_cmd, logger, 'info')
 
+    if args.genome_size:
+        gsize = int(args.genome_size)
+        keep_logging('Using Genome Size: %s' % gsize,
+                     'Using Genome Size: %s' % gsize, logger, 'info')
+    else:
+        try:
+            call(mash_cmd, logger)
+        except sp.CalledProcessError:
+            keep_logging('Error running Mash for estimating genome size.', 'Error running Mash for estimating genome size', logger, 'exception')
+            sys.exit(1)
 
-    try:
-        call(mash_cmd, logger)
-    except sp.CalledProcessError:
-        keep_logging('Error running Mash for estimating genome size.', 'Error running Mash for estimating genome size', logger, 'exception')
-        sys.exit(1)
-
-    with open("/tmp/sketch_stdout", 'rU') as file_open:
-        for line in file_open:
-            if line.startswith('Estimated genome size:'):
-                gsize = float(line.split(': ')[1].strip())
-            if line.startswith('Estimated coverage:'):
-                est_cov = float(line.split(': ')[1].strip())
-    file_open.close()
+        with open("/tmp/sketch_stdout", 'rU') as file_open:
+            for line in file_open:
+                if line.startswith('Estimated genome size:'):
+                    gsize = float(line.split(': ')[1].strip())
+                if line.startswith('Estimated coverage:'):
+                    est_cov = float(line.split(': ')[1].strip())
+        file_open.close()
 
 
-    keep_logging('Estimated Genome Size from Mash Sketch: %s' % gsize,
-                 'Estimated Genome Size from Mash Sketch: %s' % gsize, logger, 'info')
+        keep_logging('Estimated Genome Size from Mash Sketch: %s' % gsize,
+                     'Estimated Genome Size from Mash Sketch: %s' % gsize, logger, 'info')
+
+
+
 
     # Extract basic fastq reads stats with seqtk
-    seqtk_check = "/nfs/esnitkin/bin_group/seqtk/seqtk fqchk -q3 %s > /tmp/%s_fastqchk.txt" % (args.forward_raw, os.path.basename(args.forward_raw))
+    seqtk_check = "seqtk fqchk -q3 %s > /tmp/%s_fastqchk.txt" % (args.forward_raw, os.path.basename(args.forward_raw))
 
     keep_logging('Running seqtk to extract Fastq statistics: %s' % seqtk_check,
                  'Running seqtk to extract Fastq statistics: %s' % seqtk_check, logger, 'info')
@@ -572,7 +579,7 @@ def downsample(args, logger):
     (nproc, err) = proc.communicate()
     nproc = nproc.strip()
 
-    if not args.coverage_depth and ori_coverage_depth > 100:
+    if ori_coverage_depth > 100:
         # Downsample to 100
         factor = float(100 / float(ori_coverage_depth))
         print factor
@@ -583,7 +590,7 @@ def downsample(args, logger):
             keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                 args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)),
                          "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
+                             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
             call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                 args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
         except sp.CalledProcessError:
@@ -598,7 +605,7 @@ def downsample(args, logger):
                 keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
                              "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                    args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
+                                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
                 call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
             except sp.CalledProcessError:
@@ -607,43 +614,86 @@ def downsample(args, logger):
                 sys.exit(1)
         else:
             r2_sub = "None"
-    elif not args.coverage_depth and ori_coverage_depth < 100:
-        r1_sub = args.forward_raw
-        r2_sub = args.reverse_raw
     else:
-        factor = float(float(args.coverage_depth) / float(ori_coverage_depth))
-        #print round(factor, 3)
-        r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
-
-        # Downsample using seqtk
-        try:
-            keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)),
-                         "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
-            call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
-        except sp.CalledProcessError:
-            keep_logging('Error running seqtk for downsampling raw fastq reads.',
-                         'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
-            sys.exit(1)
-
+        r1_sub = args.forward_raw
         if args.reverse_raw:
-            r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
-
-            try:
-                keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                    args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
-                             "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                    args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
-                call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                    args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
-            except sp.CalledProcessError:
-                keep_logging('Error running seqtk for downsampling raw fastq reads.',
-                             'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
-                sys.exit(1)
+            r2_sub = args.reverse_raw
         else:
             r2_sub = "None"
+
+
+    # if not args.coverage_depth and ori_coverage_depth > 100:
+    #     # Downsample to 100
+    #     factor = float(100 / float(ori_coverage_depth))
+    #     print factor
+    #     r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
+    #
+    #     # Downsample using seqtk
+    #     try:
+    #         keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)),
+    #                      "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
+    #         call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
+    #     except sp.CalledProcessError:
+    #         keep_logging('Error running seqtk for downsampling raw fastq reads.',
+    #                      'Error running seqtk for downsampling raw fastq reads.', logger, 'info')
+    #         sys.exit(1)
+    #
+    #     if args.reverse_raw:
+    #         r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
+    #
+    #         try:
+    #             keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
+    #                          "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
+    #             call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
+    #         except sp.CalledProcessError:
+    #             keep_logging('Error running seqtk for downsampling raw fastq reads.',
+    #                          'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
+    #             sys.exit(1)
+    #     else:
+    #         r2_sub = "None"
+    # elif not args.coverage_depth and ori_coverage_depth < 100:
+    #     r1_sub = args.forward_raw
+    #     r2_sub = args.reverse_raw
+    # else:
+    #     factor = float(float(args.coverage_depth) / float(ori_coverage_depth))
+    #     #print round(factor, 3)
+    #     r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
+    #
+    #     # Downsample using seqtk
+    #     try:
+    #         keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)),
+    #                      "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
+    #         call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
+    #     except sp.CalledProcessError:
+    #         keep_logging('Error running seqtk for downsampling raw fastq reads.',
+    #                      'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
+    #         sys.exit(1)
+    #
+    #     if args.reverse_raw:
+    #         r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
+    #
+    #         try:
+    #             keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
+    #                          "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
+    #             call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
+    #         except sp.CalledProcessError:
+    #             keep_logging('Error running seqtk for downsampling raw fastq reads.',
+    #                          'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
+    #             sys.exit(1)
+    #     else:
+    #         r2_sub = "None"
 
 
     return r1_sub, r2_sub

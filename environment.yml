@@ -1,55 +1,57 @@
-name: varcall
+name: variantcalling_env
 channels:
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-  - _libgcc_mutex
-  - bcftools
-  - bedtools
-  - bioawk
-  - bowtie2
-  - bwa
-  - bzip2
-  - ca-certificates
-  - capnproto
-  - certifi
-  - curl
-  - gatk
-  - gatk4
-  - gsl
-  - java-jdk
-  - joblib
-  - krb5
-  - libblas
-  - libcblas
-  - libgcc-ng
-  - libgfortran-ng
-  - libopenblas
-  - libssh2
-  - libstdcxx-ng
-  - mash
-  - mummer
-  - ncurses
-  - openjdk
-  - openssl
-  - perl
-  - picard
-  - pilon
-  - pip
-  - python
-  - qualimap
-  - raxml
-  - readline
-  - samtools
-  - setuptools
-  - snpeff
-  - sqlite
-  - subprocess32
-  - tabix
-  - tk
-  - trimmomatic
-  - vcftools
-  - wheel
-  - xz
-  - zlib
+  - _libgcc_mutex=0.1=main
+  - bcftools=1.2=h02bfda8_4
+  - bedtools=2.23.0=hdbcaa40_3
+  - bioawk=1.0=h84994c4_4
+  - bowtie2=2.2.6=py27_0
+  - bwa=0.7.12=1
+  - bzip2=1.0.8=h516909a_1
+  - ca-certificates=2019.9.11=hecc5488_0
+  - capnproto=0.6.1=hfc679d8_1
+  - certifi=2019.9.11=py27_0
+  - curl=7.61.0=h93b3f91_2
+  - gatk=3.8=py27_0
+  - gatk4=4.1.3.0=0
+  - gsl=2.5=h294904e_1
+  - java-jdk=8.0.92=1
+  - joblib=0.14.0=py_0
+  - krb5=1.14.6=0
+  - libblas=3.8.0=13_openblas
+  - libcblas=3.8.0=13_openblas
+  - libgcc-ng=9.1.0=hdf63c60_0
+  - libgfortran-ng=7.3.0=hdf63c60_0
+  - libopenblas=0.3.7=h6e990d7_1
+  - libssh2=1.8.0=h1ad7b7a_1003
+  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - mash=2.2.1=h3d38be6_0
+  - mummer=3.23=pl526_8
+  - ncurses=5.9=10
+  - openjdk=8.0.192=h14c3975_1003
+  - openssl=1.0.2r=h14c3975_0
+  - perl=5.26.2=h516909a_1006
+  - picard=2.5.0=2
+  - pilon=1.22=1
+  - pip=19.2.3=py27_0
+  - python=2.7.12=2
+  - qualimap=2.2.2a=1
+  - raxml=8.2.12=h14c3975_1
+  - readline=6.2=0
+  - samtools=1.2=2
+  - setuptools=41.2.0=py27_0
+  - snpeff=4.3.1t=2
+  - sqlite=3.13.0=1
+  - subprocess32=3.5.4=py27h516909a_0
+  - tabix=0.2.6=ha92aebf_0
+  - tk=8.5.19=2
+  - trimmomatic=0.39=1
+  - vcftools=0.1.16=he860b03_3
+  - wheel=0.33.6=py27_0
+  - xz=5.2.4=h14c3975_1001
+  - zlib=1.2.11=h516909a_1006
+prefix: /home/apirani/.conda/envs/variantcalling_env
+
