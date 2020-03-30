@@ -3364,11 +3364,12 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 if len(tag_list) == 1:
                     tag = tag_list[0]
 
-                elif len(tag_list) == 2:
+                elif len(tag_list) >= 2:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1])
 
-                elif len(tag_list) > 2:
-                    print tag_list
+                elif len(tag_list) >= 3:
+                    print "Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    #exit()
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
             else:
@@ -3377,7 +3378,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     tag = str(i_split[4]).replace('CHR_START-', '')
                     tag = str(tag).replace('-CHR_END', '')
 
-
+            # Generate ann_string variable
             ann_string = ";"
             for i in list(set(ann_array)):
                 i_split = i.split('|')
@@ -3402,7 +3403,12 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                             extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
                         else:
                             extra_tags_prot = extra_tags_prot + "None" + ","
-                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                    #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    ann_string = ann_string + '|'.join(
+                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                         i_split[13], extra_tags, extra_tags_prot]) + ";"
+
                 # Changing SNP type: Date 28/05/2019
                 elif tag == "":
                     print "ERROR: Issues with this locus tag. Check this tag in genbank file"
@@ -3419,11 +3425,14 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                         ann_string = ann_string + '|'.join(
                             [i_split[0], "intergenic_region", i_split[2], "ERROR_OUT_OF_CHROMOSOME_RANGE", i_split[9], i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
+                        # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                        # No changes here
                     else:
-                        ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-                    # Debugging
-                    if i_split[3] == "CD630_00290":
-                        print ann_string
+                        #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                        # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                        ann_string = ann_string + '|'.join(
+                            [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                             i_split[13], extra_tags]) + ";"
                 # Changing SNP type: Date 28/05/2019
                 else:
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
@@ -3432,8 +3441,11 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                         print "tag key not found: %s" % tag
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-
+                    #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    ann_string = ann_string + '|'.join(
+                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                         i_split[13], extra_tags]) + ";"
         # Annotation Bug fix 4
         # Changing SNP type: Date 28/05/2019
         # Working/Testing
@@ -3451,14 +3463,16 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     i_split = i.split('|')
                     if i_split[4] not in tag_list:
                         tag_list.append(i_split[4])
-                if len(tag_list) > 1:
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # Changing >1 to ==2
+                if len(tag_list) == 2:
                     tag =  str(tag_list[0]) + "-" + str(tag_list[1])
+                elif len(tag_list) > 2:
+                    print "More than two Locus Tags were found %s" % tag_list
+                    print set(snp_var_ann_dict[variants.POS].split(','))
+                    #exit()
                 else:
                     tag = tag_list[0]
-
-                # if len(set(snp_var_ann_dict[variants.POS].split(','))) > 2:
-                #     print tag
-                #     print set(snp_var_ann_dict[variants.POS].split(','))
 
             else:
                 ann_string = ";None"
@@ -3482,8 +3496,14 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + tag + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = new_first_allele_ann_string + str(ann_string_split[2])
 
             elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10:
@@ -3492,11 +3512,18 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               tag + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = str(ann_string_split[1]) + new_second_allele_ann_string
             elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10:
 
@@ -3505,21 +3532,34 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + tag + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               tag + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = new_first_allele_ann_string + new_second_allele_ann_string
 
         # Changed from >3 to ==4 Issue #29 26-03-2020
-        if len(ann_string_split) == 3:
+        if len(ann_string_split) > 3:
             first_allele_ann_string_split = ann_string_split[1].split('|')
             second_allele_ann_string_split = ann_string_split[2].split('|')
             third_allele_ann_string_split = ann_string_split[3].split('|')
@@ -3531,8 +3571,14 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + tag + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = new_first_allele_ann_string + str(ann_string_split[2]) + str(ann_string_split[3])
 
             elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10 and len(third_allele_ann_string_split) == 10:
@@ -3541,11 +3587,18 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               tag + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = str(ann_string_split[1]) + new_second_allele_ann_string + str(ann_string_split[3])
 
             elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(third_allele_ann_string_split) > 10:
@@ -3554,11 +3607,18 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
-                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
-                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
-                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[
+                    1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                                              tag + "|" + third_allele_ann_string_split[
+                                                  9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[
+                                                  11] + "|" + \
                                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
                 ann_string = str(ann_string_split[1]) + str(ann_string_split[2]) + new_third_allele_ann_string
 
             elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10 and len(third_allele_ann_string_split) > 10:
@@ -3567,32 +3627,52 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + tag + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               tag + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
-                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
-                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
-                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[
+                    1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                                              tag + "|" + third_allele_ann_string_split[
+                                                  9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[
+                                                  11] + "|" + \
                                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
                 ann_string = new_first_allele_ann_string + new_second_allele_ann_string + new_third_allele_ann_string
 
         # Added this extra check Issue #29 26-03-2020
         if len(ann_string_split) > 4:
-            print ann_string_split
-            print variants.POS
+            # print ann_string_split
+            # print variants.POS
             new_allele_string_array = []
             for i_ann_string_split in ann_string_split[1:]:
                 if len(i_ann_string_split.split('|')) == 10:
@@ -3605,10 +3685,17 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     else:
                         prod = i_ann_string_split_array[14] + i_ann_string_split_array[15]
 
-
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    # new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
+                    #                     i_ann_string_split_array[2] + "|" + \
+                    #                     i_ann_string_split_array[4] + "|" + \
+                    #                     i_ann_string_split_array[9] + "|" + \
+                    #                     i_ann_string_split_array[10] + "|" + \
+                    #                     i_ann_string_split_array[11] + "|" + \
+                    #                     i_ann_string_split_array[13] + "|" + prod + "|" + prod
                     new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
                                         i_ann_string_split_array[2] + "|" + \
-                                        i_ann_string_split_array[4] + "|" + \
+                                        tag + "|" + \
                                         i_ann_string_split_array[9] + "|" + \
                                         i_ann_string_split_array[10] + "|" + \
                                         i_ann_string_split_array[11] + "|" + \
@@ -3915,7 +4002,8 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     tag = str(tag_list[0]) + "-" + str(tag_list[1])
 
                 elif len(tag_list) > 2:
-                    print tag_list
+                    print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    #print tag_list
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
             else:
@@ -3952,11 +4040,14 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                             extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
                         else:
                             extra_tags_prot = extra_tags_prot + "None" + ","
+                    # ann_string = ann_string + '|'.join(
+                    #     [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                    #      i_split[13], extra_tags, extra_tags_prot]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags, extra_tags_prot]) + ";"
-                    if i_split[3] == "CWR55_RS00575-CWR55_RS00580":
-                        print ann_string
+
                 # Changing SNP type: Date 28/05/2019
                 elif tag == "":
                     print "ERROR: Issues with this locus tag. Check this tag in genbank file"
@@ -3975,12 +4066,14 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                              i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
                     else:
+                        # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                        # ann_string = ann_string + '|'.join(
+                        #     [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                        #      i_split[13], extra_tags]) + ";"
                         ann_string = ann_string + '|'.join(
-                            [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                            [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
-                    # Debugging
-                    if i_split[3] == "CD630_00290":
-                        print ann_string
+
                 # Changing SNP type: Date 28/05/2019
                 else:
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
@@ -3989,8 +4082,12 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                         print "tag key not found: %s" % tag
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    # ann_string = ann_string + '|'.join(
+                    #     [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                    #      i_split[13], extra_tags]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags]) + ";"
 
 
@@ -4043,10 +4140,19 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              first_allele_ann_string_split[4] + "|" + \
+                                              tag + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4060,10 +4166,20 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               second_allele_ann_string_split[4] + "|" + \
+                                               tag + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4077,10 +4193,19 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              first_allele_ann_string_split[4] + "|" + \
+                                              tag + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4090,10 +4215,20 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               second_allele_ann_string_split[4] + "|" + \
+                                               tag + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4119,10 +4254,19 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              first_allele_ann_string_split[4] + "|" + \
+                                              tag + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4137,10 +4281,20 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               second_allele_ann_string_split[4] + "|" + \
+                                               tag + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4156,10 +4310,19 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                #                               third_allele_ann_string_split[1] + "|" + \
+                #                               third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + \
+                #                               third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + \
+                #                               third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
                                               third_allele_ann_string_split[1] + "|" + \
                                               third_allele_ann_string_split[2] + "|" + \
-                                              third_allele_ann_string_split[4] + "|" + \
+                                              tag + "|" + \
                                               third_allele_ann_string_split[9] + "|" + \
                                               third_allele_ann_string_split[10] + "|" + \
                                               third_allele_ann_string_split[11] + "|" + \
@@ -4174,10 +4337,19 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              first_allele_ann_string_split[4] + "|" + \
+                                              tag + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4187,10 +4359,20 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               second_allele_ann_string_split[4] + "|" + \
+                                               tag + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4201,10 +4383,19 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                #                               third_allele_ann_string_split[1] + "|" + \
+                #                               third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + \
+                #                               third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + \
+                #                               third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
                                               third_allele_ann_string_split[1] + "|" + \
                                               third_allele_ann_string_split[2] + "|" + \
-                                              third_allele_ann_string_split[4] + "|" + \
+                                              tag + "|" + \
                                               third_allele_ann_string_split[9] + "|" + \
                                               third_allele_ann_string_split[10] + "|" + \
                                               third_allele_ann_string_split[11] + "|" + \
@@ -4226,10 +4417,17 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     else:
                         prod = i_ann_string_split_array[14] + i_ann_string_split_array[15]
 
-
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    # new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
+                    #                     i_ann_string_split_array[2] + "|" + \
+                    #                     i_ann_string_split_array[4] + "|" + \
+                    #                     i_ann_string_split_array[9] + "|" + \
+                    #                     i_ann_string_split_array[10] + "|" + \
+                    #                     i_ann_string_split_array[11] + "|" + \
+                    #                     i_ann_string_split_array[13] + "|" + prod + "|" + prod
                     new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
                                         i_ann_string_split_array[2] + "|" + \
-                                        i_ann_string_split_array[4] + "|" + \
+                                        tag + "|" + \
                                         i_ann_string_split_array[9] + "|" + \
                                         i_ann_string_split_array[10] + "|" + \
                                         i_ann_string_split_array[11] + "|" + \
@@ -4326,14 +4524,14 @@ def annotated_snp_matrix():
 
     """Annotate all VCF file formats with SNPeff"""
     # Commented for debugging
-    variant_annotation()
-
-    indel_annotation()
+    # variant_annotation()
+    #
+    # indel_annotation()
 
     locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
 
     # Commented for debugging
-    annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
+    # annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
 
     snp_var_ann_dict, indel_var_ann_dict = extract_annotations_from_multivcf()
 
@@ -4351,7 +4549,7 @@ def annotated_snp_matrix():
     position_label, position_indel_label = generate_position_label_dict(final_merge_anno_file)
 
     # Commented for debugging
-    mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
+    # mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
 
     generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions, position_label, core_positions, snp_var_ann_dict)
 
