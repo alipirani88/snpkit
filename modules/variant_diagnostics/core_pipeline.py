@@ -66,6 +66,8 @@ required.add_argument('-reference', action='store', dest="reference",
                     help='Path to Reference Fasta file for consensus generation')
 optional.add_argument('-gubbins_env', action='store', dest="gubbins_env",
                     help='Name of the Gubbins Raxml Iqtree environment to load for Phylogenetic analysis')
+optional.add_argument('-mask', action='store_true', dest="mask",
+                    help='Mask Gubbins detected recombinant region in WGA and run Iqtree on masked alignment')
 required.add_argument('-steps', action='store', dest="steps",
                     help='Analysis Steps to be performed. This should be in sequential order.'
                          'Step 1: Run pbs jobs and process all pipeline generated vcf files to generate label files'
@@ -345,7 +347,7 @@ def run_command(i):
     :return:
         done: string variable with completion status of command.
     """
-
+    print "Running: %s" % i
     call("%s" % i, logger)
     # A subprocess exception is raised if the command finish abnormally.
     # An exception is raised in call method.
@@ -918,7 +920,7 @@ def generate_position_label_data_matrix():
 
             else:
                 program_starts = time.time()
-                print "Debugging this method."
+                #print "Debugging this method."
                 with open("%s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
                     csv_reader = csv.reader(csv_file, delimiter='\t')
                     next(csv_reader, None)
@@ -1077,7 +1079,7 @@ def generate_position_label_data_matrix():
             c_reader_2 = csv.reader(
                 open(temp_Only_filtered_positions_for_closely_matrix_exclude_phage, 'r'), delimiter='\t')
             columns_2 = list(zip(*c_reader_2))
-            print len(columns_2)
+            #print len(columns_2)
             keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
             counts = 1
 
@@ -1182,12 +1184,12 @@ def generate_position_label_data_matrix():
 
             # temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt" % args.filter2_only_snp_vcf_dir
             temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir
-            print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
+            #print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
             # c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
             c_reader_2 = csv.reader(
                 open(temp_Only_filtered_positions_for_closely_matrix_exclude_phage, 'r'), delimiter='\t')
             columns_2 = list(zip(*c_reader_2))
-            print len(columns_2)
+            #print len(columns_2)
             keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
             counts = 1
 
@@ -1244,8 +1246,7 @@ def generate_position_label_data_matrix():
                                                                        true_variant, Only_low_FQ, Only_DP, Only_low_MQ,
                                                                        other, Only_QUAL, QUAL_and_others, low_FQ_other_parameters, DP_LowFQ_QUAL)
                     #f_bar_count.write(bar_string)
-                    print os.path.basename(
-                        vcf_filenames_outgroup[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
+                    #print os.path.basename(vcf_filenames_outgroup[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
                 else:
                     bar_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(
                         vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
@@ -1253,8 +1254,7 @@ def generate_position_label_data_matrix():
                                                                        true_variant,
                                                                        Only_low_FQ, Only_DP, Only_low_MQ, other, Only_QUAL, QUAL_and_others, low_FQ_other_parameters, DP_LowFQ_QUAL)
                     #f_bar_count.write(bar_string)
-                    print os.path.basename(
-                        vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
+                    #print os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
 
                 f_bar_count.write(bar_string)
                 """ Bar Count Percentage Statistics: Variant Position Percentage Statistics """
@@ -1362,7 +1362,7 @@ def generate_indel_position_label_data_matrix():
     """
     def generate_indel_position_label_data_matrix_All_label():
         position_label = OrderedDict()
-        print "Generating Only_ref_indel_positions_for_closely"
+        #print "Generating Only_ref_indel_positions_for_closely"
         f1=open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'w+')
         f2=open("%s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f3=open("%s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -1660,7 +1660,7 @@ def generate_indel_position_label_data_matrix():
             end = end - 1
         else:
             end = len(vcf_filenames) + 1
-        print end
+        #print end
 
         f_bar_count = open("%s/bargraph_indel_counts.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f_bar_perc = open("%s/bargraph_indel_percentage.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -1962,9 +1962,9 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             if args.scheduler == "SLURM":
                 proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
                 (out, err) = proc.communicate()
-                num_cores = int(out.strip())
+                num_cores = int(out.strip()) - 1
             elif args.scheduler == "PBS":
-                num_cores = multiprocessing.cpu_count()
+                num_cores = multiprocessing.cpu_count() - 1
 
         print "Number of cores: %s" % num_cores
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
@@ -2081,7 +2081,7 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-        print len(command_array)
+        #print len(command_array)
         if args.numcores:
             num_cores = int(args.numcores)
         else:
@@ -2445,7 +2445,7 @@ def extract_only_ref_variant_fasta_from_reference():
         out = out.strip()
         fasta_string = fasta_string + out
         if not out:
-            print lines
+            #print lines
             keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
             exit()
 
@@ -2471,7 +2471,7 @@ def extract_only_ref_variant_fasta_from_reference_allele_variant():
         out = out.strip()
         fasta_string = fasta_string + out
         if not out:
-            print lines
+            #print lines
             keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
             exit()
 
@@ -2612,7 +2612,7 @@ def variant_annotation():
         raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
         annotate_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
                            (ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
-        print annotate_vcf_cmd
+        #print annotate_vcf_cmd
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
         final_vcf = i
         annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
@@ -2687,30 +2687,17 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
     os.system("bash %s" % merge_gatk_commands_file)
     return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
 
-def annotated_snp_matrix():
-    """
-    :return: Annotate core vcf files generated at core_prep steps.
-    Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
-    This dictionary will then be used to insert annotation into SNP/Indel matrix
-    """
+def extract_locus_tag_from_genbank():
+    """ Start of Extract Annotation information from Genbank file
 
-    """Annotate all VCF file formats with SNPeff"""
-    # Commented for debugging
-    variant_annotation()
+        Extract Annotation information from Genbank file
 
-    indel_annotation()
+        - Check if Reference genome Genbank file exists.
+        - Initiate dictionaries that maps locus tag to gene name and product. This information will be used for annotating SNP/Indel Matrix
+        - Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
 
-
-    """ Start of Extract Annotation information from Genbank file 
-    
-    Extract Annotation information from Genbank file 
-    
-    - Check if Reference genome Genbank file exists.
-    - Initiate dictionaries that maps locus tag to gene name and product. This information will be used for annotating SNP/Indel Matrix
-    - Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
-    
-    """
-
+        """
+    keep_logging('Extracting Locus Tag information from Genbank.', 'Extracting Locus Tag information from Genbank.', logger, 'info')
     reference_basename = (os.path.basename(args.reference)).split(".")
     if os.path.isfile("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0])):
         handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'rU')
@@ -2718,17 +2705,21 @@ def annotated_snp_matrix():
         raise IOError('%s/%s.gbf does not exist.' % (os.path.dirname(args.reference), reference_basename[0]))
         exit()
 
+    global locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand
+
     locus_tag_to_gene_name = {}
     locus_tag_to_product = {}
     locus_tag_to_strand = {}
-    #locus_tag_to_uniprot = {}
-    #locus_tag_to_ec_number = {}
+    # locus_tag_to_uniprot = {}
+    # locus_tag_to_ec_number = {}
 
     keep_logging(
-        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
-        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (os.path.dirname(args.reference), reference_basename[0]),
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
+        os.path.dirname(args.reference), reference_basename[0]),
+        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
+        os.path.dirname(args.reference), reference_basename[0]),
         logger, 'info')
-    for record in SeqIO.parse(handle, 'genbank') :
+    for record in SeqIO.parse(handle, 'genbank'):
         for feature in record.features:
             location = str(feature.location)
             strand = location.split('(')[1].replace(')', '')
@@ -2739,25 +2730,32 @@ def annotated_snp_matrix():
                 else:
                     locus_tag_to_gene_name[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
                 if 'product' in feature.qualifiers:
-                    locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = str(feature.qualifiers['product'][0])
+                    locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = str(
+                        feature.qualifiers['product'][0])
                 else:
                     locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
             else:
                 keep_logging(
-                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
-                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(feature),
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(
+                        feature),
+                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(
+                        feature),
                     logger, 'exception')
 
-    # Annotation Bug fix 1
+    global first_locus_tag, last_element, last_locus_tag
+
     first_locus_tag = record.features[1].qualifiers['locus_tag'][0]
     last_element = len(record.features) - 1
     last_locus_tag = record.features[last_element].qualifiers['locus_tag'][0]
+
+
 
     # #Debugging prints
     # print first_locus_tag
     # print locus_tag_to_gene_name[first_locus_tag]
     # print last_locus_tag
     # print locus_tag_to_gene_name[last_locus_tag]
+
 
     """ End of Extract Annotation information from Genbank file 
 
@@ -2769,18 +2767,22 @@ def annotated_snp_matrix():
 
     """
 
+    return locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag
 
-
+def merge_vcf():
     """ Start of Merging Step:
-    
-    - Merge Individual Annotated raw and filtered vcf files to generate a Final merged vcf file using Gatk combine variants method.
-    - Parse this merged Final_vcf* file and generate a SNP/Indel matrix 
-    
-    """
 
-    keep_logging('Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, 'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir, logger, 'info')
+        - Merge Individual Annotated raw and filtered vcf files to generate a Final merged vcf file using Gatk combine variants method.
+        - Parse this merged Final_vcf* file and generate a SNP/Indel matrix
 
-    #Commented for debugging
+        """
+
+    keep_logging(
+        'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
+        'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
+        logger, 'info')
+
+    # Commented for debugging
     files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
     files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
@@ -2788,21 +2790,25 @@ def annotated_snp_matrix():
 
     files = ' '.join(vcf_filenames)
 
-
     """ bcftools merging is deprecated. Replaced with GATK combinevariants """
     merge_commands_file = "%s/bcftools_merge.sh" % args.filter2_only_snp_vcf_dir
 
     with open(merge_commands_file, 'w+') as fopen:
-        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
-        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], args.filter2_only_snp_vcf_dir,files.replace("_filter2_final.vcf_no_proximate_snp.vcf","_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (
+        ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'],
+        args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf",
+                                                     "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
+        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (
+        ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'],
+        args.filter2_only_snp_vcf_dir,
+        files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
 
     fopen.close()
 
     os.system("bash %s" % merge_commands_file)
 
-
     """ Merge with Gatk combine variants method """
-    # #Commented for debugging
+    #Commented for debugging
     merged_file_suffix = "_no_proximate_snp.vcf"
 
     annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
@@ -2810,37 +2816,49 @@ def annotated_snp_matrix():
 
     with open(annotated_no_proximate_snp_file, 'w+') as fopen:
         for i in vcf_filenames:
-            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
+            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                  '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz') + '\n')
     fopen.close()
 
     with open(annotated_no_proximate_snp_indel_file, 'w+') as fopen:
         for i in vcf_filenames:
-            fopen.write(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
+            fopen.write(
+                i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf_ANN.vcf.gz') + '\n')
     fopen.close()
 
-    #files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
+    # files_gatk = "--variant " + ' --variant '.join(vcf_filenames)
     files_gatk = ""
     for i in vcf_filenames:
         files_gatk = files_gatk + " --variant " + i
-    final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'), args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
-
-    # Test this merge and annotate this merged file - Testing Mode Right now.
-    #merged_file_suffix = "_no_proximate_snp_1.vcf"
-    #final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
-    merged_file_suffix = "_indel.vcf"
-    final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
-                                                                         '_filter2_indel_final.vcf_ANN.vcf.gz'),
+    final_gatk_snp_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                                                         '_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz'),
                                                       args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix,
                                                       logger, Config)
+
+    # Test this merge and annotate this merged file - Testing Mode Right now.
+    # merged_file_suffix = "_no_proximate_snp_1.vcf"
+    # final_gatk_snp_merged_vcf_1 = gatk_combine_variants(files_gatk,args.reference, args.filter2_only_snp_vcf_dir, merged_file_suffix, logger, Config)
+    merged_file_suffix = "_indel.vcf"
+    final_gatk_indel_merged_vcf = gatk_combine_variants(files_gatk.replace('_filter2_final.vcf_no_proximate_snp.vcf',
+                                                                           '_filter2_indel_final.vcf_ANN.vcf.gz'),
+                                                        args.reference, args.filter2_only_snp_vcf_dir,
+                                                        merged_file_suffix,
+                                                        logger, Config)
 
     """ Tabix index the combined GATK Final vcf file """
     files_for_tabix = glob.glob("%s/Final_vcf_*.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
 
-
     """ End of Merging Step. """
 
+    annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
+    annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
+    final_gatk_snp_merged_vcf = "Final_vcf_gatk_no_proximate_snp.vcf"
+    final_gatk_indel_merged_vcf = "Final_vcf_gatk_indel.vcf"
+    print "here"
+    return annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf
 
+def extract_annotations_from_multivcf():
     """ Extract ANN information from bcftools Final vcf file. (There is a reason why i am using bcftools merged file to extract ANN information) """
     snp_var_ann_dict = {}
     indel_var_ann_dict = {}
@@ -2848,21 +2866,14 @@ def annotated_snp_matrix():
     for variants in VCF("%s/Final_vcf_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
         snp_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
 
-    # Commented out for legionellsa bug
+    # Commented out for legionella bug
     for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
-
+    print "here"
     """ End of Extract ANN information from bcftools Final vcf file"""
+    return snp_var_ann_dict, indel_var_ann_dict
 
-
-
-    """ This step is no longer required: Remove this after testing. print_string_header will be the column names of SNP matrix. Column names = Sample names"""
-    print_string_header = "\t"
-    for i in vcf_filenames:
-        print_string_header = print_string_header + os.path.basename(i) + "\t"
-
-
-
+def extract_core_positions():
     """ Generate an array of core positions. Read Only_ref_variant_positions_for_closely* to get final core variant positions into core_positions array"""
     core_positions = []
     if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
@@ -2887,9 +2898,9 @@ def annotated_snp_matrix():
         fp.close()
 
     """ End: Generate an array of core positions. """
+    return core_positions, indel_core_positions
 
-
-
+def extract_functional_class_positions():
     """ Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
     """ Read in functional class filter positions. """
     functional_filter_pos_array = []
@@ -2937,84 +2948,70 @@ def annotated_snp_matrix():
 
     """ End: Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
 
+    return functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions
 
+def generate_position_label_dict(final_merge_anno_file):
+    global position_label, position_indel_label
 
-
-    """ Read and parse final GATK merged vcf file cyvcf library; Generate a header string from the sample lis fo this merged vcf file"""
-
-    final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
-
-    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
-    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
-    for sample in final_merge_anno_file.samples:
-        # header_print_string = header_print_string + "," + sample
-        header_print_string = header_print_string + "\t" + sample
-    header_print_string = header_print_string + "\n"
-
-    """ End """
-
-
-
-
-    """ Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
+    """ Prepare a *final_ordered_sorted.txt file with sorted unique variant positions. """
     paste_label_command = "paste %s/unique_positions_file " % args.filter2_only_snp_vcf_dir
     paste_indel_label_command = "paste %s/unique_indel_positions_file " % args.filter2_only_snp_vcf_dir
     paste_label_command_exclude_outgroup = "paste %s/unique_positions_file " % args.filter2_only_snp_vcf_dir
     paste_indel_label_command_exclude_outgroup = "paste %s/unique_indel_positions_file " % args.filter2_only_snp_vcf_dir
 
     for filename_base in final_merge_anno_file.samples:
-        if "R1_001_final.fastq.gz" in filename_base:
+        if re.search('R1_001_final.fastq.gz', filename_base):
             second_part = filename_base.replace("R1_001_final.fastq.gz", "R2_001_final.fastq.gz")
             first_part_split = filename_base.split('R1_001_final.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "_R1.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('_R1.fastq.gz', filename_base):
             second_part = filename_base.replace("_R1.fastq.gz", "_R2.fastq.gz")
             first_part_split = filename_base.split('_R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
             # Changed on 03/15/2019
-        elif "R1.fastq.gz" in filename_base:
+        elif re.search('R1.fastq.gz', filename_base):
             second_part = filename_base.replace("R1.fastq.gz", "R2.fastq.gz")
             first_part_split = filename_base.split('R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
             first_part = re.sub("_S.*_", "", first_part)
             # Changed on 03/15/2019
-            first_part = re.sub("_S.*", "", first_part)
-        elif "1_combine.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*", "", first_part)
+        elif re.search('1_combine.fastq.gz', filename_base):
             second_part = filename_base.replace("1_combine.fastq.gz", "2_combine.fastq.gz")
             first_part_split = filename_base.split('1_combine.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "1_sequence.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('1_sequence.fastq.gz', filename_base):
             second_part = filename_base.replace("1_sequence.fastq.gz", "2_sequence.fastq.gz")
             first_part_split = filename_base.split('1_sequence.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "_forward.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('_forward.fastq.gz', filename_base):
             second_part = filename_base.replace("_forward.fastq.gz", "_reverse.fastq.gz")
             first_part_split = filename_base.split('_forward.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "R1_001.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('R1_001.fastq.gz', filename_base):
             second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
             first_part_split = filename_base.split('R1_001.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "_1.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('_1.fastq.gz', filename_base):
             second_part = filename_base.replace("_1.fastq.gz", "_2.fastq.gz")
             first_part_split = filename_base.split('_1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif ".1.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('.1.fastq.gz', filename_base):
             second_part = filename_base.replace(".1.fastq.gz", ".2.fastq.gz")
             first_part_split = filename_base.split('.1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
-        args.filter2_only_snp_vcf_dir, first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
+        #print filename_base
+        sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
-        args.filter2_only_snp_vcf_dir, first_part)
+            args.filter2_only_snp_vcf_dir, first_part)
         paste_label_command = paste_label_command + sample_label_file + " "
         paste_indel_label_command = paste_indel_label_command + sample_indel_label_file + " "
         if args.outgroup:
@@ -3036,7 +3033,6 @@ def annotated_snp_matrix():
             args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
         sort_ordered_indel_label_cmd_exclude_outgroup = "sort -n -k1,1 %s/All_indel_label_final_ordered_exclude_outgroup.txt > %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % (
             args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-
 
     with open('%s/All_label_final_ordered.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
         outfile.write(paste_label_command + '\n')
@@ -3061,13 +3057,13 @@ def annotated_snp_matrix():
 
     """ End: Prepare a All_indel_label_final_ordered_sorted.txt file with sorted unique variant positions. """
 
-
     """ Generate a position_label and position_indel_label dictionary that will contain information about each unique variant position that passed variant filters in any sample and reasons for being filtered out in any sample """
     position_label = OrderedDict()
     with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-        keep_logging('Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                     'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                     logger, 'info')
+        keep_logging(
+            'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            logger, 'info')
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
             position_label[row[0]] = ','.join(row[1:])
@@ -3092,13 +3088,16 @@ def annotated_snp_matrix():
 
     """ End: Generate a position_label and position_indel_label dictionary """
 
+    return position_label, position_indel_label
 
+def get_low_fq_mq_positions(position_label):
     """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ """
     mask_fq_mq_positions = []
     mask_fq_mq_positions_outgroup_specific = []
     if args.outgroup:
         position_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
             keep_logging(
                 'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
                 'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -3108,9 +3107,10 @@ def annotated_snp_matrix():
                 position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
         csv_file.close()
 
-        #Commented for debugging
+        # Commented for debugging
         position_indel_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
             keep_logging(
                 'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
                 'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -3165,20 +3165,95 @@ def annotated_snp_matrix():
     print "Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
 
     """ End: Generate mask_fq_mq_positions array """
+    return mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific
+
+def get_low_fq_mq_positions_indel(position_label, position_indel_label):
+    """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
+    mask_fq_mq_positions = []
+    mask_fq_mq_positions_outgroup_specific = []
+
+    if args.outgroup:
+        position_label_exclude_outgroup = OrderedDict()
+        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+        csv_file.close()
+
+        position_indel_label_exclude_outgroup = OrderedDict()
+        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
+                  'rU') as csv_file:
+            keep_logging(
+                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+                logger, 'info')
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                if row[0] not in position_label_exclude_outgroup.keys():
+                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+                else:
+                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
+                    keep_logging('Warning: position %s already present as a SNP' % row[0],
+                                 'Warning: position %s already present as a SNP' % row[0], logger, 'info')
+        csv_file.close()
+        for key in position_label_exclude_outgroup.keys():
+            label_sep_array = position_label_exclude_outgroup[key].split(',')
+            for i in label_sep_array:
+                if "LowFQ" in str(i):
+                    if key not in mask_fq_mq_positions:
+                        if int(key) not in outgroup_specific_positions:
+                            mask_fq_mq_positions.append(key)
+                        elif int(key) in outgroup_specific_positions:
+                            mask_fq_mq_positions_outgroup_specific.append(key)
+                if i == "HighFQ":
+                    if key not in mask_fq_mq_positions:
+                        if int(key) not in outgroup_specific_positions:
+                            mask_fq_mq_positions.append(key)
+                        elif int(key) in outgroup_specific_positions:
+                            mask_fq_mq_positions_outgroup_specific.append(key)
+    else:
+        for key in position_label.keys():
+            label_sep_array = position_label[key].split(',')
+            for i in label_sep_array:
+                if "LowFQ" in str(i):
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+                if i == "HighFQ":
+                    if key not in mask_fq_mq_positions:
+                        mask_fq_mq_positions.append(key)
+
+    print "Length of Indel mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
+    print "Length of Indel mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
+    return mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific
+
+def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions, position_label, core_positions, snp_var_ann_dict):
+
+    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
+
+    header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
+    for sample in final_merge_anno_file.samples:
+        header_print_string = header_print_string + "\t" + sample
+    header_print_string = header_print_string + "\n"
+
 
     """ Main: Generate SNP Matrix """
 
     """ Open Matrix files to write strings """
-    fp_code = open("%s/SNP_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele = open("%s/SNP_matrix_allele_outdated.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele_new = open("%s/SNP_matrix_allele_new.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele_new_phage = open("%s/SNP_matrix_allele_unmasked.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code = open("%s/SNP_matrix_code.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele = open("%s/SNP_matrix_allele_outdated.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_new = open("%s/SNP_matrix_allele_new.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_new_phage = open("%s/SNP_matrix_allele_unmasked.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
     fp_allele_new.write(header_print_string)
     fp_allele_new_phage.write(header_print_string)
 
-    """ Parse variant positions from the loaded cyvcf VCF object and generate the matrix row information """
+    """ Parse variant positions from the loaded cyvcf VCF object/ merged gatk multivcf file and generate matrix row information """
     for variants in VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
         # Initiate print_string variable to add matrix row information.
         # print_string generator no. 1
@@ -3200,8 +3275,11 @@ def annotated_snp_matrix():
             functional_field = functional_field + "NULL"
 
         # Initiate variant code string where the code means:
-        # REF allele = 0, core = 1, Filtered = 2, unmapped = -1, True but non-core = 3
-        # This will be used as row information for SNP_matrix_code file
+        # REF allele = 0,
+        # core = 1,
+        # Filtered = 2,
+        # unmapped = -1,
+        # True but non-core = 3
 
         code_string = position_label[str(variants.POS)]
         code_string = code_string.replace('reference_allele', '0')
@@ -3239,8 +3317,6 @@ def annotated_snp_matrix():
         else:
             code_string = code_string.replace('VARIANT', '3')
 
-
-
         # Annotation Bug fix 2
         # Changing SNP type: Date 28/05/2019
         if variants.POS in snp_var_ann_dict.keys():
@@ -3254,20 +3330,18 @@ def annotated_snp_matrix():
                 elif "protein_coding" not in set(snp_var_ann_dict[variants.POS].split('|')) and "intragenic_variant" in set(snp_var_ann_dict[variants.POS].split('|')):
                     snp_type = "Non-Coding SNP"
                 else:
-                    print set((snp_var_ann_dict[variants.POS].split('|')))
+                    #print set((snp_var_ann_dict[variants.POS].split('|')))
                     snp_type = "No_protein_coding/intergenic_region_field_in_ANN SNP"
             #print snp_type
         else:
             keep_logging('Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, 'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, logger, 'info')
-            print set((snp_var_ann_dict[variants.POS].split('|')))
+            #print set((snp_var_ann_dict[variants.POS].split('|')))
             snp_type = "Not Found in Annotated VCF file"
-
-            #print snp_type
 
         # print_string generator no. 2
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
 
-        # Annotation Bug fix 3
+
         # Get ANN field from variant INFO column and save it as an array. Split and Go through each elements, add bells and whistles
         if variants.INFO.get('ANN'):
 
@@ -3281,9 +3355,6 @@ def annotated_snp_matrix():
 
                 for i_again in set(snp_var_ann_dict[variants.POS].split(',')):
                     i_split_again = i_again.split('|')
-
-
-
 
                     if "-" not in i_split_again[4]:
                         if i_split_again[4] not in tag_list:
@@ -3301,8 +3372,13 @@ def annotated_snp_matrix():
                 elif len(tag_list) == 2:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1])
 
-                elif len(tag_list) > 2:
-                    print tag_list
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
+                    print "Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    #exit()
+                elif len(tag_list) > 3:
+                    print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    exit()
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
             else:
@@ -3311,7 +3387,7 @@ def annotated_snp_matrix():
                     tag = str(i_split[4]).replace('CHR_START-', '')
                     tag = str(tag).replace('-CHR_END', '')
 
-
+            # Generate ann_string variable
             ann_string = ";"
             for i in list(set(ann_array)):
                 i_split = i.split('|')
@@ -3336,7 +3412,12 @@ def annotated_snp_matrix():
                             extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
                         else:
                             extra_tags_prot = extra_tags_prot + "None" + ","
-                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                    #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    ann_string = ann_string + '|'.join(
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
+                         i_split[13], extra_tags, extra_tags_prot]) + ";"
+
                 # Changing SNP type: Date 28/05/2019
                 elif tag == "":
                     print "ERROR: Issues with this locus tag. Check this tag in genbank file"
@@ -3353,11 +3434,14 @@ def annotated_snp_matrix():
                         ann_string = ann_string + '|'.join(
                             [i_split[0], "intergenic_region", i_split[2], "ERROR_OUT_OF_CHROMOSOME_RANGE", i_split[9], i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
+                        # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                        # No changes here
                     else:
-                        ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-                    # Debugging
-                    if i_split[3] == "CD630_00290":
-                        print ann_string
+                        #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                        # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                        ann_string = ann_string + '|'.join(
+                            [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
+                             i_split[13], extra_tags]) + ";"
                 # Changing SNP type: Date 28/05/2019
                 else:
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
@@ -3366,8 +3450,11 @@ def annotated_snp_matrix():
                         print "tag key not found: %s" % tag
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-                    ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
-
+                    #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    ann_string = ann_string + '|'.join(
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
+                         i_split[13], extra_tags]) + ";"
         # Annotation Bug fix 4
         # Changing SNP type: Date 28/05/2019
         # Working/Testing
@@ -3385,14 +3472,19 @@ def annotated_snp_matrix():
                     i_split = i.split('|')
                     if i_split[4] not in tag_list:
                         tag_list.append(i_split[4])
-                if len(tag_list) > 1:
-                    tag =  str(tag_list[0]) + "-" + str(tag_list[1])
-                else:
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # Changing >1 to ==2
+                if len(tag_list) == 1:
                     tag = tag_list[0]
-
-                # if len(set(snp_var_ann_dict[variants.POS].split(','))) > 2:
-                #     print tag
-                #     print set(snp_var_ann_dict[variants.POS].split(','))
+                elif len(tag_list) == 2:
+                    tag =  str(tag_list[0]) + "-" + str(tag_list[1])
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
+                    print "Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    #exit()
+                elif len(tag_list) > 3:
+                    print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    exit()
 
             else:
                 ann_string = ";None"
@@ -3416,8 +3508,14 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = new_first_allele_ann_string + str(ann_string_split[2])
 
             elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10:
@@ -3426,11 +3524,18 @@ def annotated_snp_matrix():
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = str(ann_string_split[1]) + new_second_allele_ann_string
             elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10:
 
@@ -3439,20 +3544,33 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = new_first_allele_ann_string + new_second_allele_ann_string
 
-
+        # Changed from >3 to ==4 Issue #29 26-03-2020
         if len(ann_string_split) > 3:
             first_allele_ann_string_split = ann_string_split[1].split('|')
             second_allele_ann_string_split = ann_string_split[2].split('|')
@@ -3465,8 +3583,14 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = new_first_allele_ann_string + str(ann_string_split[2]) + str(ann_string_split[3])
 
             elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) > 10 and len(third_allele_ann_string_split) == 10:
@@ -3475,11 +3599,18 @@ def annotated_snp_matrix():
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 ann_string = str(ann_string_split[1]) + new_second_allele_ann_string + str(ann_string_split[3])
 
             elif len(first_allele_ann_string_split) == 10 and len(second_allele_ann_string_split) == 10 and len(third_allele_ann_string_split) > 10:
@@ -3488,11 +3619,18 @@ def annotated_snp_matrix():
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
-                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
-                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
-                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[
+                    1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[
+                                                  9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[
+                                                  11] + "|" + \
                                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
                 ann_string = str(ann_string_split[1]) + str(ann_string_split[2]) + new_third_allele_ann_string
 
             elif len(first_allele_ann_string_split) > 10 and len(second_allele_ann_string_split) > 10 and len(third_allele_ann_string_split) > 10:
@@ -3501,28 +3639,82 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + "|" + first_allele_ann_string_split[15]
-                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[2] + "|" + first_allele_ann_string_split[4] + "|" + first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[10] + "|" + first_allele_ann_string_split[11] + "|" + first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                                              first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
+                                              first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
+                                                  10] + "|" + first_allele_ann_string_split[11] + "|" + \
+                                              first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 if second_allele_ann_string_split[14] == "" and second_allele_ann_string_split[15] == "":
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + "|" + second_allele_ann_string_split[15]
-                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
-                second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
-                second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                # second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[9] + "|" + \
+                # second_allele_ann_string_split[10] + "|" + second_allele_ann_string_split[11] + "|" + \
+                # second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
+                    1] + "|" + second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
+                                                   9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + "|" + third_allele_ann_string_split[15]
-                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
-                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
-                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[
+                    1] + "|" + third_allele_ann_string_split[2] + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[
+                                                  9] + "|" + \
+                                              third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[
+                                                  11] + "|" + \
                                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
-
                 ann_string = new_first_allele_ann_string + new_second_allele_ann_string + new_third_allele_ann_string
 
+        # Added this extra check Issue #29 26-03-2020
+        if len(ann_string_split) > 4:
+            # print ann_string_split
+            # print variants.POS
+            new_allele_string_array = []
+            for i_ann_string_split in ann_string_split[1:]:
+                if len(i_ann_string_split.split('|')) == 10:
+                    ann_string = ann_string
+                elif len(i_ann_string_split.split('|')) > 10:
+                    ann_string = ";"
+                    i_ann_string_split_array = i_ann_string_split.split('|')
+                    if i_ann_string_split_array[14] == "" and i_ann_string_split_array[15] == "":
+                        prod = i_ann_string_split_array[3] + i_ann_string_split_array[15]
+                    else:
+                        prod = i_ann_string_split_array[14] + i_ann_string_split_array[15]
+
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    # new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
+                    #                     i_ann_string_split_array[2] + "|" + \
+                    #                     i_ann_string_split_array[4] + "|" + \
+                    #                     i_ann_string_split_array[9] + "|" + \
+                    #                     i_ann_string_split_array[10] + "|" + \
+                    #                     i_ann_string_split_array[11] + "|" + \
+                    #                     i_ann_string_split_array[13] + "|" + prod + "|" + prod
+                    new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
+                                        i_ann_string_split_array[2] + "|" + \
+                                        i_ann_string_split_array[4] + "|" + \
+                                        i_ann_string_split_array[9] + "|" + \
+                                        i_ann_string_split_array[10] + "|" + \
+                                        i_ann_string_split_array[11] + "|" + \
+                                        i_ann_string_split_array[13] + "|" + prod + "|" + prod
+                    new_allele_string_array.append(new_allele_string)
+
+                    ann_string = ann_string + ";".join(new_allele_string_array)
 
         # print_string generator no. 3
 
@@ -3566,6 +3758,20 @@ def annotated_snp_matrix():
         if tag == "" or tag == "None":
             tag = "NULL"
 
+        ann_string_old = ann_string
+        # Test No. of Fields
+        ann_string_split = ann_string.split(';')
+        for i in ann_string_split:
+            ann_string_array_split_columns = i.split('|')
+            if len(ann_string_array_split_columns) > 10:
+                print variants.POS
+                #ann_string = ann_string.replace('||WARNING_TRANSCRIPT_NO_START_CODON||WARNING_TRANSCRIPT_NO_START_CODON', '|WARNING_TRANSCRIPT_NO_START_CODON|WARNING_TRANSCRIPT_NO_START_CODON')
+                ann_string = ";" + str('|'.join(ann_string_array_split_columns[: -2 or None])) + ";"
+                print ann_string
+            else:
+                ann_string = ann_string_old
+                #print ann_string
+        ann_string = ann_string.replace(';;', ';')
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
         print_string_phage = print_string
 
@@ -3661,7 +3867,7 @@ def annotated_snp_matrix():
             count += 1
 
         # Annotation Bug fix 8
-        """ Mask Phage positions in SNP_matrix_allele_new.csv. This is the default matrix. """
+        """ Mask Phage positions in SNP_matrix_allele_new.tsv. This is the default matrix. """
         if str(variants.POS) in functional_filter_pos_array:
             ntd_string_array = ntd_string.split('\t')
             #print ntd_string_array
@@ -3673,7 +3879,7 @@ def annotated_snp_matrix():
 
 
 
-        """ Generate a print_string for each of the matrix - SNP_matrix_allele_new.csv and SNP_matrix_allele_phage.csv """
+        """ Generate a print_string for each of the matrix - SNP_matrix_allele_new.tsv and SNP_matrix_allele_phage.tsv """
         print_string = print_string + ntd_string + "\n"
 
         print_string_phage = print_string_phage + ntd_string_phage + "\n"
@@ -3692,100 +3898,19 @@ def annotated_snp_matrix():
     fp_allele_new.close()
     fp_allele_new_phage.close()
 
-######################################
-    """ Indel matrix """
-    """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
+def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict):
+
+    """ Prepare Indel Matrix header print strings and add matrix row information subsequently """
     header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
-    final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
     for sample in final_merge_anno_file.samples:
         # header_print_string = header_print_string + "," + sample
         header_print_string = header_print_string + "\t" + sample
     header_print_string = header_print_string + "\n"
-    #header_print_string = header_print_string.replace(':::,', ':::')
-    #header_print_string = header_print_string.replace(':::,', '\t')
-    fp_code = open("%s/Indel_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele = open("%s/Indel_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+
+    fp_code = open("%s/Indel_matrix_code.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele = open("%s/Indel_matrix_allele.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
-
-    # """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
-    # mask_fq_mq_positions = []
-    # for key in position_indel_label.keys():
-    #     label_sep_array = position_indel_label[key].split(',')
-    #     for i in label_sep_array:
-    #         if "LowAF" in i:
-    #             if key not in mask_fq_mq_positions:
-    #                 mask_fq_mq_positions.append(key)
-    #         if i == "HighAF":
-    #             if key not in mask_fq_mq_positions:
-    #                 mask_fq_mq_positions.append(key)
-    #
-    # print "Length of indel mask_fq_mq_positions array:%s" % len(mask_fq_mq_positions)
-
-    """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
-    mask_fq_mq_positions = []
-    mask_fq_mq_positions_outgroup_specific = []
-
-    if args.outgroup:
-        position_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            for row in csv_reader:
-                position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
-        csv_file.close()
-
-        position_indel_label_exclude_outgroup = OrderedDict()
-        with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            for row in csv_reader:
-                if row[0] not in position_label_exclude_outgroup.keys():
-                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
-                else:
-                    position_indel_label_exclude_outgroup[row[0]] = ','.join(row[1:])
-                    keep_logging('Warning: position %s already present as a SNP' % row[0],
-                                 'Warning: position %s already present as a SNP' % row[0], logger, 'info')
-        csv_file.close()
-        for key in position_label_exclude_outgroup.keys():
-            label_sep_array = position_label_exclude_outgroup[key].split(',')
-            for i in label_sep_array:
-                if "LowFQ" in str(i):
-                    if key not in mask_fq_mq_positions:
-                        if int(key) not in outgroup_specific_positions:
-                            mask_fq_mq_positions.append(key)
-                        elif int(key) in outgroup_specific_positions:
-                            mask_fq_mq_positions_outgroup_specific.append(key)
-                if i == "HighFQ":
-                    if key not in mask_fq_mq_positions:
-                        if int(key) not in outgroup_specific_positions:
-                            mask_fq_mq_positions.append(key)
-                        elif int(key) in outgroup_specific_positions:
-                            mask_fq_mq_positions_outgroup_specific.append(key)
-    else:
-        for key in position_label.keys():
-            label_sep_array = position_label[key].split(',')
-            for i in label_sep_array:
-                if "LowFQ" in str(i):
-                    if key not in mask_fq_mq_positions:
-                        mask_fq_mq_positions.append(key)
-                if i == "HighFQ":
-                    if key not in mask_fq_mq_positions:
-                        mask_fq_mq_positions.append(key)
-
-
-
-    print "Length of Indel mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
-    print "Length of Indel mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
-
 
     for variants in VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         print_string = ""
@@ -3837,34 +3962,40 @@ def annotated_snp_matrix():
         else:
             code_string = code_string.replace('VARIANT', '3')
 
-
-
-
         # Changing SNP type: Date 28/05/2019
         # Assign type of snp: coding / non-coding
         if variants.POS in indel_var_ann_dict.keys():
             if indel_var_ann_dict[variants.POS] is not None:
-                if "protein_coding" in set(indel_var_ann_dict[variants.POS].split('|')) and "intergenic_region" not in set(indel_var_ann_dict[variants.POS].split('|')):
+                if "protein_coding" in set(
+                        indel_var_ann_dict[variants.POS].split('|')) and "intergenic_region" not in set(
+                        indel_var_ann_dict[variants.POS].split('|')):
                     snp_type = "Coding Indel"
-                elif "protein_coding" in set(indel_var_ann_dict[variants.POS].split('|')) and "intergenic_region" in set(indel_var_ann_dict[variants.POS].split('|')):
+                elif "protein_coding" in set(
+                        indel_var_ann_dict[variants.POS].split('|')) and "intergenic_region" in set(
+                        indel_var_ann_dict[variants.POS].split('|')):
                     snp_type = "Coding and Non-coding Indel"
-                elif "protein_coding" not in set(indel_var_ann_dict[variants.POS].split('|')) and "intergenic_region" in set(indel_var_ann_dict[variants.POS].split('|')):
+                elif "protein_coding" not in set(
+                        indel_var_ann_dict[variants.POS].split('|')) and "intergenic_region" in set(
+                        indel_var_ann_dict[variants.POS].split('|')):
                     snp_type = "Non-Coding Indel"
-                elif "protein_coding" not in set(indel_var_ann_dict[variants.POS].split('|')) and "intragenic_variant" in set(indel_var_ann_dict[variants.POS].split('|')):
+                elif "protein_coding" not in set(
+                        indel_var_ann_dict[variants.POS].split('|')) and "intragenic_variant" in set(
+                        indel_var_ann_dict[variants.POS].split('|')):
                     snp_type = "Non-Coding Indel"
                 else:
-                    print set((indel_var_ann_dict[variants.POS].split('|')))
+                    #print set((indel_var_ann_dict[variants.POS].split('|')))
                     snp_type = "No_protein_coding/intergenic_region_field_in_ANN SNP"
-            #print snp_type
+            # print snp_type
         else:
-            keep_logging('Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, 'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, logger, 'info')
-            print set((indel_var_ann_dict[variants.POS].split('|')))
+            keep_logging(
+                'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS,
+                'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS,
+                logger, 'info')
+            #print set((indel_var_ann_dict[variants.POS].split('|')))
             snp_type = "Not Found in Annotated VCF file"
 
-
-
-
-        print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(",".join(variants.ALT)) + " functional=%s" % functional_field
+        print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(
+            ",".join(variants.ALT)) + " functional=%s" % functional_field
 
         # Get ANN field from variant INFO column and save it as an array. Split and Go through each elements, add bells and whistles
         if variants.INFO.get('ANN'):
@@ -3896,8 +4027,14 @@ def annotated_snp_matrix():
                 elif len(tag_list) == 2:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1])
 
-                elif len(tag_list) > 2:
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
+                    print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
                     print tag_list
+                elif len(tag_list) > 3:
+                    print "Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print tag_list
+                    exit()
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
             else:
@@ -3906,9 +4043,13 @@ def annotated_snp_matrix():
                     tag = str(i_split[4]).replace('CHR_START-', '')
                     tag = str(tag).replace('-CHR_END', '')
 
+
+            # Generating Annotation string
             ann_string = ";"
             for i in list(set(ann_array)):
                 i_split = i.split('|')
+
+
                 # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13]]) + ";"
 
                 # MOve this tag before this for loop because of multiple tags associated.
@@ -3930,9 +4071,14 @@ def annotated_snp_matrix():
                             extra_tags_prot = extra_tags_prot + locus_tag_to_product[i] + ","
                         else:
                             extra_tags_prot = extra_tags_prot + "None" + ","
+                    # ann_string = ann_string + '|'.join(
+                    #     [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                    #      i_split[13], extra_tags, extra_tags_prot]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags, extra_tags_prot]) + ";"
+
                 # Changing SNP type: Date 28/05/2019
                 elif tag == "":
                     print "ERROR: Issues with this locus tag. Check this tag in genbank file"
@@ -3951,12 +4097,14 @@ def annotated_snp_matrix():
                              i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
                     else:
+                        # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                        # ann_string = ann_string + '|'.join(
+                        #     [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                        #      i_split[13], extra_tags]) + ";"
                         ann_string = ann_string + '|'.join(
-                            [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                            [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
-                    # Debugging
-                    if i_split[3] == "CD630_00290":
-                        print ann_string
+
                 # Changing SNP type: Date 28/05/2019
                 else:
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
@@ -3965,15 +4113,21 @@ def annotated_snp_matrix():
                         print "tag key not found: %s" % tag
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
+                    # ann_string = ann_string + '|'.join(
+                    #     [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                    #      i_split[13], extra_tags]) + ";"
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags]) + ";"
 
 
         # Changing SNP type: Date 28/05/2019
         # Working/Testing
         else:
+
             if len(variants.ALT) > 1 and indel_var_ann_dict[variants.POS]:
+
                 # print variants.ALT
                 # print ';'.join(set(snp_var_ann_dict[variants.POS].split(',')))
 
@@ -3985,10 +4139,21 @@ def annotated_snp_matrix():
                     i_split = i.split('|')
                     if i_split[4] not in tag_list:
                         tag_list.append(i_split[4])
-                if len(tag_list) > 1:
-                    tag = str(tag_list[0]) + "-" + str(tag_list[1])
-                else:
+
+                if len(tag_list) == 1:
                     tag = tag_list[0]
+
+                elif len(tag_list) == 2:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1])
+
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
+                    print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print tag_list
+                elif len(tag_list) > 3:
+                    print "Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print tag_list
+                    exit()
 
                 # if len(set(snp_var_ann_dict[variants.POS].split(','))) > 2:
                 #     print tag
@@ -3998,10 +4163,12 @@ def annotated_snp_matrix():
                 ann_string = ";None"
 
 
-        # Changing SNP type: Date 28/05/2019
-        ann_string = ann_string.replace('ERROR_OUT_OF_CHROMOSOME_RANGE', '%s-%s' % (locus_tag_to_gene_name[last_locus_tag], locus_tag_to_gene_name[first_locus_tag]))
-        ann_string = ann_string.replace('CHR_END', '%s' % locus_tag_to_gene_name[first_locus_tag])
 
+
+        # Changing SNP type: Date 28/05/2019
+        ann_string = ann_string.replace('ERROR_OUT_OF_CHROMOSOME_RANGE', '%s-%s' % (
+        locus_tag_to_gene_name[last_locus_tag], locus_tag_to_gene_name[first_locus_tag]))
+        ann_string = ann_string.replace('CHR_END', '%s' % locus_tag_to_gene_name[first_locus_tag])
 
         # SNP Matrix Bug
         ann_string_split = ann_string.split(';')
@@ -4015,6 +4182,15 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
@@ -4032,6 +4208,16 @@ def annotated_snp_matrix():
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
@@ -4049,6 +4235,15 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
@@ -4062,6 +4257,16 @@ def annotated_snp_matrix():
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
@@ -4074,8 +4279,8 @@ def annotated_snp_matrix():
 
                 ann_string = new_first_allele_ann_string + new_second_allele_ann_string
 
-
-        if len(ann_string_split) > 3:
+        # Changed >3 to ==4 Issue #29 26-03-2020
+        if len(ann_string_split) == 4:
 
             first_allele_ann_string_split = ann_string_split[1].split('|')
             second_allele_ann_string_split = ann_string_split[2].split('|')
@@ -4091,6 +4296,15 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
@@ -4109,6 +4323,16 @@ def annotated_snp_matrix():
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
@@ -4128,6 +4352,15 @@ def annotated_snp_matrix():
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                #                               third_allele_ann_string_split[1] + "|" + \
+                #                               third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + \
+                #                               third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + \
+                #                               third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
                                               third_allele_ann_string_split[1] + "|" + \
                                               third_allele_ann_string_split[2] + "|" + \
@@ -4146,6 +4379,15 @@ def annotated_snp_matrix():
                     prod = first_allele_ann_string_split[3] + first_allele_ann_string_split[15]
                 else:
                     prod = first_allele_ann_string_split[14] + first_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
+                #                               first_allele_ann_string_split[1] + "|" + \
+                #                               first_allele_ann_string_split[2] + "|" + \
+                #                               first_allele_ann_string_split[4] + "|" + \
+                #                               first_allele_ann_string_split[9] + "|" + \
+                #                               first_allele_ann_string_split[10] + "|" + \
+                #                               first_allele_ann_string_split[11] + "|" + \
+                #                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
@@ -4159,20 +4401,39 @@ def annotated_snp_matrix():
                     prod = second_allele_ann_string_split[3] + second_allele_ann_string_split[15]
                 else:
                     prod = second_allele_ann_string_split[14] + second_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
+                #                                second_allele_ann_string_split[1] + "|" + \
+                #                                second_allele_ann_string_split[2] + "|" + \
+                #                                second_allele_ann_string_split[4] + "|" + \
+                #                                second_allele_ann_string_split[9] + "|" + \
+                #                                second_allele_ann_string_split[10] + "|" + \
+                #                                second_allele_ann_string_split[11] + "|" + \
+                #                                second_allele_ann_string_split[
+                #                                    13] + "|" + prod + "|" + prod + ";"
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
-                                           second_allele_ann_string_split[1] + "|" + \
-                                           second_allele_ann_string_split[2] + "|" + \
-                                           second_allele_ann_string_split[4] + "|" + \
-                                           second_allele_ann_string_split[9] + "|" + \
-                                           second_allele_ann_string_split[10] + "|" + \
-                                           second_allele_ann_string_split[11] + "|" + \
-                                           second_allele_ann_string_split[
-                                               13] + "|" + prod + "|" + prod + ";"
+                                               second_allele_ann_string_split[1] + "|" + \
+                                               second_allele_ann_string_split[2] + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
+                                               second_allele_ann_string_split[9] + "|" + \
+                                               second_allele_ann_string_split[10] + "|" + \
+                                               second_allele_ann_string_split[11] + "|" + \
+                                               second_allele_ann_string_split[
+                                                   13] + "|" + prod + "|" + prod + ";"
 
                 if third_allele_ann_string_split[14] == "" and third_allele_ann_string_split[15] == "":
                     prod = third_allele_ann_string_split[3] + third_allele_ann_string_split[15]
                 else:
                     prod = third_allele_ann_string_split[14] + third_allele_ann_string_split[15]
+                # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                # new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
+                #                               third_allele_ann_string_split[1] + "|" + \
+                #                               third_allele_ann_string_split[2] + "|" + \
+                #                               third_allele_ann_string_split[4] + "|" + \
+                #                               third_allele_ann_string_split[9] + "|" + \
+                #                               third_allele_ann_string_split[10] + "|" + \
+                #                               third_allele_ann_string_split[11] + "|" + \
+                #                               third_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
                                               third_allele_ann_string_split[1] + "|" + \
                                               third_allele_ann_string_split[2] + "|" + \
@@ -4184,8 +4445,38 @@ def annotated_snp_matrix():
 
                 ann_string = new_first_allele_ann_string + new_second_allele_ann_string + new_third_allele_ann_string
 
-                # print ann_string
+        # Added this extra check Issue #29 26-03-2020
+        if len(ann_string_split) > 4:
+            new_allele_string_array = []
+            for i_ann_string_split in ann_string_split[1:]:
+                if len(i_ann_string_split.split('|')) == 10:
+                    ann_string = ann_string
+                elif len(i_ann_string_split.split('|')) > 10:
+                    ann_string = ";"
+                    i_ann_string_split_array = i_ann_string_split.split('|')
+                    if i_ann_string_split_array[14] == "" and i_ann_string_split_array[15] == "":
+                        prod = i_ann_string_split_array[3] + i_ann_string_split_array[15]
+                    else:
+                        prod = i_ann_string_split_array[14] + i_ann_string_split_array[15]
 
+                    # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
+                    # new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
+                    #                     i_ann_string_split_array[2] + "|" + \
+                    #                     i_ann_string_split_array[4] + "|" + \
+                    #                     i_ann_string_split_array[9] + "|" + \
+                    #                     i_ann_string_split_array[10] + "|" + \
+                    #                     i_ann_string_split_array[11] + "|" + \
+                    #                     i_ann_string_split_array[13] + "|" + prod + "|" + prod
+                    new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
+                                        i_ann_string_split_array[2] + "|" + \
+                                        i_ann_string_split_array[4] + "|" + \
+                                        i_ann_string_split_array[9] + "|" + \
+                                        i_ann_string_split_array[10] + "|" + \
+                                        i_ann_string_split_array[11] + "|" + \
+                                        i_ann_string_split_array[13] + "|" + prod + "|" + prod
+                    new_allele_string_array.append(new_allele_string)
+
+                    ann_string = ann_string + ";".join(new_allele_string_array)
         # # JUST FOR THE SAKE OF DEBUGGING
         # ann_string_split = ann_string.split(';')
         # for i in ann_string_split:
@@ -4225,11 +4516,21 @@ def annotated_snp_matrix():
                 else:
                     strandness = strandness + tag + "=" + "No Strand Information found"
 
-
         # Changing tag equals NULL: Date 30/05/2019
         if tag == "" or tag == "None":
             tag = "NULL"
 
+        # # Test No. of Fields
+        ann_string_split = ann_string.split(';')
+        #ann_string = ";"
+        for i in ann_string_split:
+            ann_string_array_split_columns = i.split('|')
+            if len(ann_string_array_split_columns) > 10:
+                print "Warning: More than 10 field - %s %s" % (variants.POS, i)
+                #print variants.POS
+                # ann_string = ann_string.replace('||WARNING_TRANSCRIPT_NO_START_CODON||WARNING_TRANSCRIPT_NO_START_CODON', '|WARNING_TRANSCRIPT_NO_START_CODON|WARNING_TRANSCRIPT_NO_START_CODON')
+                # ann_string = ann_string + str('|'.join(ann_string_array_split_columns[: -2 or None])) + ";"
+                #print ann_string
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
 
         gt_string = ""
@@ -4267,11 +4568,59 @@ def annotated_snp_matrix():
     fp_code.close()
     fp_allele.close()
 
+def annotated_snp_matrix():
+    """
+    :return: Annotate core vcf files generated at core_prep steps.
+    Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
+    This dictionary will then be used to insert annotation into SNP/Indel matrix
+    """
+
+    """Annotate all VCF file formats with SNPeff"""
+    # Commented for debugging
+    variant_annotation()
+
+    indel_annotation()
+
+    locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
+
+    # Commented for debugging
+    annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
+
+    snp_var_ann_dict, indel_var_ann_dict = extract_annotations_from_multivcf()
+
+    core_positions,indel_core_positions = extract_core_positions()
+
+    functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions = extract_functional_class_positions()
+
+
+    """ Read and parse final GATK merged vcf file cyvcf library; Generate a header string from the sample list of this merged vcf file"""
+
+    final_merge_anno_file = VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir)
+
+    """ End """
+
+    position_label, position_indel_label = generate_position_label_dict(final_merge_anno_file)
+
+    # Commented for debugging
+    mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
+
+    generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions, position_label, core_positions, snp_var_ann_dict)
+
+
+    mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions_indel(position_label, position_indel_label)
+
+    final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
+
+    print "Generating Indel Matrix"
+
+    generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict)
+
+
 """ Report methods """
 def alignment_report(data_matrix_dir):
     keep_logging('Generating Alignment report...', 'Generating Alignment report...', logger, 'info')
     varcall_dir = os.path.dirname(args.results_dir)
-    print varcall_dir
+    #print varcall_dir
     report_string = ""
     header = "Sample,QC-passed reads,Mapped reads,% mapped reads,mean depth,%_bases_above_5,%_bases_above_10,%_bases_above_15,unmapped_positions,READ_PAIR_DUPLICATES,READ_PAIR_OPTICAL_DUPLICATES,unmapped reads,% unmapped reads"
     fp = open("%s/Report_alignment.txt" % (data_matrix_dir), 'w+')
@@ -4458,8 +4807,8 @@ if __name__ == '__main__':
         unique_indel_position_file = create_indel_positions_filestep(vcf_filenames, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
 
         # bgzip and tabix all the vcf files in core_temp_dir.
-        files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
-        tabix(files_for_tabix, "vcf", logger, Config)
+        # files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
+        # tabix(files_for_tabix, "vcf", logger, Config)
 
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
@@ -4831,29 +5180,53 @@ if __name__ == '__main__':
 
         if args.scheduler == "SLURM":
             job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
-        else:
+        elif args.scheduler == "PBS":
             job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.pbs'))
-
+        else:
+            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
         load_conda = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '_conda.sh'))
 
-        gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores, prepare_ref_allele_unmapped_consensus_input)
-        iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (os.path.dirname(prepare_ref_allele_unmapped_consensus_input), os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir, os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
-        with open(job_file_name, 'w') as out:
-            job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
-            out.write("#!/bin/sh" + '\n')
-            out.write(job_title + '\n')
-            out.write(scheduler_directives + '\n')
-            out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
-            #out.write("conda deactivate\n")
-            #out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
-            out.write(gubbins_command + '\n')
-            out.write(iqtree_command + '\n')
-        out.close()
 
-        with open(load_conda, 'w') as out:
-            out.write('conda deactivate' + '\n')
-            out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
-        out.close()
+        if args.mask:
+            gubbins_iqtree_script = "python %s/scripts/gubbins_iqtree.py -w %s" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
+            print gubbins_iqtree_script
+            with open(job_file_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
+                # out.write("conda deactivate\n")
+                # out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
+                out.write(gubbins_iqtree_script + '\n')
+            out.close()
+
+            with open(load_conda, 'w') as out:
+                out.write('conda deactivate' + '\n')
+                out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
+            out.close()
+        else:
+            gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores, prepare_ref_allele_unmapped_consensus_input)
+            iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (os.path.dirname(prepare_ref_allele_unmapped_consensus_input), os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir, os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
+
+
+
+            with open(job_file_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
+                #out.write("conda deactivate\n")
+                #out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
+                out.write(gubbins_command + '\n')
+                out.write(iqtree_command + '\n')
+            out.close()
+
+            with open(load_conda, 'w') as out:
+                out.write('conda deactivate' + '\n')
+                out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
+            out.close()
 
         keep_logging('Run following code on login terminal:\n', 'Run following code on login terminal:\n', logger, 'info')
         keep_logging('conda deactivate', 'conda deactivate', logger, 'info')
@@ -4904,7 +5277,7 @@ if __name__ == '__main__':
             print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
 
         # Annotate core variants. Generate SNP and Indel matrix.
-        #annotated_snp_matrix()
+        annotated_snp_matrix()
 
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger, 'info')
