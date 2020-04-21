@@ -13,6 +13,7 @@ import glob
 import readline
 import pandas as pd
 import errno
+import itertools
 from pyfasta import Fasta
 from datetime import datetime
 import threading
@@ -58,8 +59,8 @@ def extract_only_ref_variant_fasta_unique_positions():
         ref_id = get_reference.keys()
 
 
-    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
-    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     ncol = len(next(c_reader_2))
 
@@ -171,12 +172,19 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
     get_reference = Fasta(args.reference)
     if len(get_reference.keys()) == 1:
         ref_id = get_reference.keys()
+    print "The reference genome ID from reference genome - %s" % ref_id
 
     # Read in the SNP Matrix file and seperate the columns.
-    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
-    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
-    columns = list(zip(*c_reader))
+    print "Read in the SNP Matrix file and extract the number of columns"
+    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     ncol = len(next(c_reader_2))
+    del c_reader_2
+    print "Number of columns - %s" % ncol
+    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    columns = list(zip(*c_reader))
+    #columns = list(itertools.izip(*c_reader))
+    del c_reader
+    print "Ending reading columns"
 
     # Generate an array of all the unique variant positions that were called in all the samples
     unique_position_array = []
@@ -186,8 +194,6 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
             unique_position_array.append(int(replace_string[3]))
         else:
             unique_position_array.append(int(replace_string[2]))
-
-
 
 
     counts = 1

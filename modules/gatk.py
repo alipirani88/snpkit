@@ -216,7 +216,11 @@ def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Conf
 
 def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, logger, Config):
     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
-    cmd = "java -Xmx8G -jar %s/GenomeAnalysisTK.jar -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites" % (os.path.dirname(os.path.dirname(os.path.abspath(__file__))), reference, out_path, analysis_name, out_sorted_bam)
+    # cmd = "java -Xmx8G -jar %s/GenomeAnalysisTK.jar -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites --fix_misencoded_quality_scores" % (os.path.dirname(os.path.dirname(os.path.abspath(__file__))), reference, out_path, analysis_name, out_sorted_bam)
+
+    cmd = "java -Xmx8G -jar %s/GenomeAnalysisTK.jar -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites" % (
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), reference, out_path, analysis_name, out_sorted_bam)
+
     keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)

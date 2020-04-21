@@ -66,6 +66,10 @@ required.add_argument('-reference', action='store', dest="reference",
                     help='Path to Reference Fasta file for consensus generation')
 optional.add_argument('-gubbins_env', action='store', dest="gubbins_env",
                     help='Name of the Gubbins Raxml Iqtree environment to load for Phylogenetic analysis')
+optional.add_argument('-mask', action='store_true', dest="mask",
+                    help='Mask Gubbins detected recombinant region in WGA and run Iqtree on masked alignment')
+optional.add_argument('-readme', action='store', dest="readme",
+                    help='Generate a README file describing this run. Fill up the form /variant_calling_pipeline/readme_metadata_form.txt residing under the code directory or provide it with this argument. DEFAULT - /variant_calling_pipeline/readme_metadata_form.txt')
 required.add_argument('-steps', action='store', dest="steps",
                     help='Analysis Steps to be performed. This should be in sequential order.'
                          'Step 1: Run pbs jobs and process all pipeline generated vcf files to generate label files'
@@ -345,7 +349,7 @@ def run_command(i):
     :return:
         done: string variable with completion status of command.
     """
-
+    print "Running: %s" % i
     call("%s" % i, logger)
     # A subprocess exception is raised if the command finish abnormally.
     # An exception is raised in call method.
@@ -918,7 +922,7 @@ def generate_position_label_data_matrix():
 
             else:
                 program_starts = time.time()
-                print "Debugging this method."
+                #print "Debugging this method."
                 with open("%s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
                     csv_reader = csv.reader(csv_file, delimiter='\t')
                     next(csv_reader, None)
@@ -1077,7 +1081,7 @@ def generate_position_label_data_matrix():
             c_reader_2 = csv.reader(
                 open(temp_Only_filtered_positions_for_closely_matrix_exclude_phage, 'r'), delimiter='\t')
             columns_2 = list(zip(*c_reader_2))
-            print len(columns_2)
+            #print len(columns_2)
             keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
             counts = 1
 
@@ -1182,12 +1186,12 @@ def generate_position_label_data_matrix():
 
             # temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt" % args.filter2_only_snp_vcf_dir
             temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir
-            print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
+            #print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
             # c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
             c_reader_2 = csv.reader(
                 open(temp_Only_filtered_positions_for_closely_matrix_exclude_phage, 'r'), delimiter='\t')
             columns_2 = list(zip(*c_reader_2))
-            print len(columns_2)
+            #print len(columns_2)
             keep_logging('Finished reading columns...', 'Finished reading columns...', logger, 'info')
             counts = 1
 
@@ -1244,8 +1248,7 @@ def generate_position_label_data_matrix():
                                                                        true_variant, Only_low_FQ, Only_DP, Only_low_MQ,
                                                                        other, Only_QUAL, QUAL_and_others, low_FQ_other_parameters, DP_LowFQ_QUAL)
                     #f_bar_count.write(bar_string)
-                    print os.path.basename(
-                        vcf_filenames_outgroup[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
+                    #print os.path.basename(vcf_filenames_outgroup[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
                 else:
                     bar_string = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (os.path.basename(
                         vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
@@ -1253,8 +1256,7 @@ def generate_position_label_data_matrix():
                                                                        true_variant,
                                                                        Only_low_FQ, Only_DP, Only_low_MQ, other, Only_QUAL, QUAL_and_others, low_FQ_other_parameters, DP_LowFQ_QUAL)
                     #f_bar_count.write(bar_string)
-                    print os.path.basename(
-                        vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
+                    #print os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
 
                 f_bar_count.write(bar_string)
                 """ Bar Count Percentage Statistics: Variant Position Percentage Statistics """
@@ -1362,7 +1364,7 @@ def generate_indel_position_label_data_matrix():
     """
     def generate_indel_position_label_data_matrix_All_label():
         position_label = OrderedDict()
-        print "Generating Only_ref_indel_positions_for_closely"
+        #print "Generating Only_ref_indel_positions_for_closely"
         f1=open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'w+')
         f2=open("%s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f3=open("%s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -1660,7 +1662,7 @@ def generate_indel_position_label_data_matrix():
             end = end - 1
         else:
             end = len(vcf_filenames) + 1
-        print end
+        #print end
 
         f_bar_count = open("%s/bargraph_indel_counts.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f_bar_perc = open("%s/bargraph_indel_percentage.txt" % args.filter2_only_snp_vcf_dir, 'w+')
@@ -1962,9 +1964,9 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             if args.scheduler == "SLURM":
                 proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
                 (out, err) = proc.communicate()
-                num_cores = int(out.strip())
+                num_cores = int(out.strip()) - 1
             elif args.scheduler == "PBS":
-                num_cores = multiprocessing.cpu_count()
+                num_cores = multiprocessing.cpu_count() - 1
 
         print "Number of cores: %s" % num_cores
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
@@ -2081,7 +2083,7 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-        print len(command_array)
+        #print len(command_array)
         if args.numcores:
             num_cores = int(args.numcores)
         else:
@@ -2445,7 +2447,7 @@ def extract_only_ref_variant_fasta_from_reference():
         out = out.strip()
         fasta_string = fasta_string + out
         if not out:
-            print lines
+            #print lines
             keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
             exit()
 
@@ -2471,7 +2473,7 @@ def extract_only_ref_variant_fasta_from_reference_allele_variant():
         out = out.strip()
         fasta_string = fasta_string + out
         if not out:
-            print lines
+            #print lines
             keep_logging('Error extracting reference allele', 'Error extracting reference allele', logger, 'info')
             exit()
 
@@ -2612,7 +2614,7 @@ def variant_annotation():
         raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
         annotate_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
                            (ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
-        print annotate_vcf_cmd
+        #print annotate_vcf_cmd
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
         final_vcf = i
         annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
@@ -2808,7 +2810,7 @@ def merge_vcf():
     os.system("bash %s" % merge_commands_file)
 
     """ Merge with Gatk combine variants method """
-    # #Commented for debugging
+    #Commented for debugging
     merged_file_suffix = "_no_proximate_snp.vcf"
 
     annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
@@ -2851,6 +2853,11 @@ def merge_vcf():
 
     """ End of Merging Step. """
 
+    annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
+    annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
+    final_gatk_snp_merged_vcf = "Final_vcf_gatk_no_proximate_snp.vcf"
+    final_gatk_indel_merged_vcf = "Final_vcf_gatk_indel.vcf"
+    print "here"
     return annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf
 
 def extract_annotations_from_multivcf():
@@ -2864,7 +2871,7 @@ def extract_annotations_from_multivcf():
     # Commented out for legionella bug
     for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
-
+    print "here"
     """ End of Extract ANN information from bcftools Final vcf file"""
     return snp_var_ann_dict, indel_var_ann_dict
 
@@ -2955,56 +2962,56 @@ def generate_position_label_dict(final_merge_anno_file):
     paste_indel_label_command_exclude_outgroup = "paste %s/unique_indel_positions_file " % args.filter2_only_snp_vcf_dir
 
     for filename_base in final_merge_anno_file.samples:
-        if "R1_001_final.fastq.gz" in filename_base:
+        if re.search('R1_001_final.fastq.gz', filename_base):
             second_part = filename_base.replace("R1_001_final.fastq.gz", "R2_001_final.fastq.gz")
             first_part_split = filename_base.split('R1_001_final.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "_R1.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('_R1.fastq.gz', filename_base):
             second_part = filename_base.replace("_R1.fastq.gz", "_R2.fastq.gz")
             first_part_split = filename_base.split('_R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
             # Changed on 03/15/2019
-        elif "R1.fastq.gz" in filename_base:
+        elif re.search('R1.fastq.gz', filename_base):
             second_part = filename_base.replace("R1.fastq.gz", "R2.fastq.gz")
             first_part_split = filename_base.split('R1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
             first_part = re.sub("_S.*_", "", first_part)
             # Changed on 03/15/2019
-            first_part = re.sub("_S.*", "", first_part)
-        elif "1_combine.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*", "", first_part)
+        elif re.search('1_combine.fastq.gz', filename_base):
             second_part = filename_base.replace("1_combine.fastq.gz", "2_combine.fastq.gz")
             first_part_split = filename_base.split('1_combine.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "1_sequence.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('1_sequence.fastq.gz', filename_base):
             second_part = filename_base.replace("1_sequence.fastq.gz", "2_sequence.fastq.gz")
             first_part_split = filename_base.split('1_sequence.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "_forward.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('_forward.fastq.gz', filename_base):
             second_part = filename_base.replace("_forward.fastq.gz", "_reverse.fastq.gz")
             first_part_split = filename_base.split('_forward.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "R1_001.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('R1_001.fastq.gz', filename_base):
             second_part = filename_base.replace("R1_001.fastq.gz", "R2_001.fastq.gz")
             first_part_split = filename_base.split('R1_001.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif "_1.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('_1.fastq.gz', filename_base):
             second_part = filename_base.replace("_1.fastq.gz", "_2.fastq.gz")
             first_part_split = filename_base.split('_1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        elif ".1.fastq.gz" in filename_base:
+            #first_part = re.sub("_S.*_", "", first_part)
+        elif re.search('.1.fastq.gz', filename_base):
             second_part = filename_base.replace(".1.fastq.gz", ".2.fastq.gz")
             first_part_split = filename_base.split('.1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
-            first_part = re.sub("_S.*_", "", first_part)
-        sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
-            args.filter2_only_snp_vcf_dir, first_part)
+            #first_part = re.sub("_S.*_", "", first_part)
+        #print filename_base
+        sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
             args.filter2_only_snp_vcf_dir, first_part)
         paste_label_command = paste_label_command + sample_label_file + " "
@@ -3239,10 +3246,10 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
     """ Main: Generate SNP Matrix """
 
     """ Open Matrix files to write strings """
-    fp_code = open("%s/SNP_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele = open("%s/SNP_matrix_allele_outdated.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele_new = open("%s/SNP_matrix_allele_new.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele_new_phage = open("%s/SNP_matrix_allele_unmasked.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code = open("%s/SNP_matrix_code.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele = open("%s/SNP_matrix_allele_outdated.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_new = open("%s/SNP_matrix_allele_new.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_new_phage = open("%s/SNP_matrix_allele_unmasked.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
     fp_allele_new.write(header_print_string)
@@ -3325,12 +3332,12 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 elif "protein_coding" not in set(snp_var_ann_dict[variants.POS].split('|')) and "intragenic_variant" in set(snp_var_ann_dict[variants.POS].split('|')):
                     snp_type = "Non-Coding SNP"
                 else:
-                    print set((snp_var_ann_dict[variants.POS].split('|')))
+                    #print set((snp_var_ann_dict[variants.POS].split('|')))
                     snp_type = "No_protein_coding/intergenic_region_field_in_ANN SNP"
             #print snp_type
         else:
             keep_logging('Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, 'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS, logger, 'info')
-            print set((snp_var_ann_dict[variants.POS].split('|')))
+            #print set((snp_var_ann_dict[variants.POS].split('|')))
             snp_type = "Not Found in Annotated VCF file"
 
         # print_string generator no. 2
@@ -3364,12 +3371,16 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 if len(tag_list) == 1:
                     tag = tag_list[0]
 
-                elif len(tag_list) >= 2:
+                elif len(tag_list) == 2:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1])
 
-                elif len(tag_list) >= 3:
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
                     print "Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
                     #exit()
+                elif len(tag_list) > 3:
+                    print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    exit()
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
             else:
@@ -3406,7 +3417,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags, extra_tags_prot]) + ";"
                     # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags, extra_tags_prot]) + ";"
 
                 # Changing SNP type: Date 28/05/2019
@@ -3431,7 +3442,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                         #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
                         # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                         ann_string = ann_string + '|'.join(
-                            [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                            [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
                 # Changing SNP type: Date 28/05/2019
                 else:
@@ -3444,7 +3455,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     #ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
                     # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags]) + ";"
         # Annotation Bug fix 4
         # Changing SNP type: Date 28/05/2019
@@ -3465,14 +3476,17 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                         tag_list.append(i_split[4])
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 # Changing >1 to ==2
-                if len(tag_list) == 2:
-                    tag =  str(tag_list[0]) + "-" + str(tag_list[1])
-                elif len(tag_list) > 2:
-                    print "More than two Locus Tags were found %s" % tag_list
-                    print set(snp_var_ann_dict[variants.POS].split(','))
-                    #exit()
-                else:
+                if len(tag_list) == 1:
                     tag = tag_list[0]
+                elif len(tag_list) == 2:
+                    tag =  str(tag_list[0]) + "-" + str(tag_list[1])
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
+                    print "Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    #exit()
+                elif len(tag_list) > 3:
+                    print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    exit()
 
             else:
                 ann_string = ";None"
@@ -3500,7 +3514,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
-                                                  2] + "|" + tag + "|" + \
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
                                                   10] + "|" + first_allele_ann_string_split[11] + "|" + \
                                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
@@ -3519,7 +3533,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
                     1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + second_allele_ann_string_split[
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
                                                    9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -3536,7 +3550,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
-                                                  2] + "|" + tag + "|" + \
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
                                                   10] + "|" + first_allele_ann_string_split[11] + "|" + \
                                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
@@ -3551,7 +3565,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
                     1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + second_allele_ann_string_split[
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
                                                    9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -3575,7 +3589,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
-                                                  2] + "|" + tag + "|" + \
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
                                                   10] + "|" + first_allele_ann_string_split[11] + "|" + \
                                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
@@ -3594,7 +3608,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
                     1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + second_allele_ann_string_split[
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
                                                    9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -3614,7 +3628,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[
                     1] + "|" + third_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + third_allele_ann_string_split[
+                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[
                                                   9] + "|" + \
                                               third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[
                                                   11] + "|" + \
@@ -3631,7 +3645,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + first_allele_ann_string_split[
-                                                  2] + "|" + tag + "|" + \
+                                                  2] + "|" + first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + first_allele_ann_string_split[
                                                   10] + "|" + first_allele_ann_string_split[11] + "|" + \
                                               first_allele_ann_string_split[13] + "|" + prod + "|" + prod + ";"
@@ -3646,7 +3660,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + second_allele_ann_string_split[
                     1] + "|" + second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + second_allele_ann_string_split[
+                                               second_allele_ann_string_split[4] + "|" + second_allele_ann_string_split[
                                                    9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -3662,7 +3676,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                 # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + third_allele_ann_string_split[
                     1] + "|" + third_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + third_allele_ann_string_split[
+                                              third_allele_ann_string_split[4] + "|" + third_allele_ann_string_split[
                                                   9] + "|" + \
                                               third_allele_ann_string_split[10] + "|" + third_allele_ann_string_split[
                                                   11] + "|" + \
@@ -3695,7 +3709,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     #                     i_ann_string_split_array[13] + "|" + prod + "|" + prod
                     new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
                                         i_ann_string_split_array[2] + "|" + \
-                                        tag + "|" + \
+                                        i_ann_string_split_array[4] + "|" + \
                                         i_ann_string_split_array[9] + "|" + \
                                         i_ann_string_split_array[10] + "|" + \
                                         i_ann_string_split_array[11] + "|" + \
@@ -3746,6 +3760,20 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         if tag == "" or tag == "None":
             tag = "NULL"
 
+        ann_string_old = ann_string
+        # Test No. of Fields
+        ann_string_split = ann_string.split(';')
+        for i in ann_string_split:
+            ann_string_array_split_columns = i.split('|')
+            if len(ann_string_array_split_columns) > 10:
+                print variants.POS
+                #ann_string = ann_string.replace('||WARNING_TRANSCRIPT_NO_START_CODON||WARNING_TRANSCRIPT_NO_START_CODON', '|WARNING_TRANSCRIPT_NO_START_CODON|WARNING_TRANSCRIPT_NO_START_CODON')
+                ann_string = ";" + str('|'.join(ann_string_array_split_columns[: -2 or None])) + ";"
+                print ann_string
+            else:
+                ann_string = ann_string_old
+                #print ann_string
+        ann_string = ann_string.replace(';;', ';')
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
         print_string_phage = print_string
 
@@ -3841,7 +3869,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
             count += 1
 
         # Annotation Bug fix 8
-        """ Mask Phage positions in SNP_matrix_allele_new.csv. This is the default matrix. """
+        """ Mask Phage positions in SNP_matrix_allele_new.tsv. This is the default matrix. """
         if str(variants.POS) in functional_filter_pos_array:
             ntd_string_array = ntd_string.split('\t')
             #print ntd_string_array
@@ -3853,7 +3881,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
 
 
 
-        """ Generate a print_string for each of the matrix - SNP_matrix_allele_new.csv and SNP_matrix_allele_phage.csv """
+        """ Generate a print_string for each of the matrix - SNP_matrix_allele_new.tsv and SNP_matrix_allele_phage.tsv """
         print_string = print_string + ntd_string + "\n"
 
         print_string_phage = print_string_phage + ntd_string_phage + "\n"
@@ -3881,8 +3909,8 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
         header_print_string = header_print_string + "\t" + sample
     header_print_string = header_print_string + "\n"
 
-    fp_code = open("%s/Indel_matrix_code.csv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele = open("%s/Indel_matrix_allele.csv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code = open("%s/Indel_matrix_code.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele = open("%s/Indel_matrix_allele.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
     fp_allele.write(header_print_string)
 
@@ -3957,7 +3985,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                         indel_var_ann_dict[variants.POS].split('|')):
                     snp_type = "Non-Coding Indel"
                 else:
-                    print set((indel_var_ann_dict[variants.POS].split('|')))
+                    #print set((indel_var_ann_dict[variants.POS].split('|')))
                     snp_type = "No_protein_coding/intergenic_region_field_in_ANN SNP"
             # print snp_type
         else:
@@ -3965,7 +3993,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS,
                 'Warning: position %s not found in snp_var_ann_dict dictionary. Assigning Not found as SNP type.' % variants.POS,
                 logger, 'info')
-            print set((indel_var_ann_dict[variants.POS].split('|')))
+            #print set((indel_var_ann_dict[variants.POS].split('|')))
             snp_type = "Not Found in Annotated VCF file"
 
         print_string = print_string + snp_type + " at %s > " % str(variants.POS) + str(
@@ -4001,9 +4029,14 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 elif len(tag_list) == 2:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1])
 
-                elif len(tag_list) > 2:
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
                     print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
-                    #print tag_list
+                    print tag_list
+                elif len(tag_list) > 3:
+                    print "Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print tag_list
+                    exit()
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
             else:
@@ -4045,7 +4078,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     #      i_split[13], extra_tags, extra_tags_prot]) + ";"
                     # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags, extra_tags_prot]) + ";"
 
                 # Changing SNP type: Date 28/05/2019
@@ -4071,7 +4104,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                         #     [i_split[0], i_split[1], i_split[2], i_split[3], i_split[9], i_split[10], i_split[11],
                         #      i_split[13], extra_tags]) + ";"
                         ann_string = ann_string + '|'.join(
-                            [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                            [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                              i_split[13], extra_tags]) + ";"
 
                 # Changing SNP type: Date 28/05/2019
@@ -4087,7 +4120,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     #      i_split[13], extra_tags]) + ";"
                     # Remove gene symbol and insert Locus Tag in field 4 #30 - 2020-03-27
                     ann_string = ann_string + '|'.join(
-                        [i_split[0], i_split[1], i_split[2], tag, i_split[9], i_split[10], i_split[11],
+                        [i_split[0], i_split[1], i_split[2], i_split[4], i_split[9], i_split[10], i_split[11],
                          i_split[13], extra_tags]) + ";"
 
 
@@ -4108,10 +4141,21 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     i_split = i.split('|')
                     if i_split[4] not in tag_list:
                         tag_list.append(i_split[4])
-                if len(tag_list) > 1:
-                    tag = str(tag_list[0]) + "-" + str(tag_list[1])
-                else:
+
+                if len(tag_list) == 1:
                     tag = tag_list[0]
+
+                elif len(tag_list) == 2:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1])
+
+                elif len(tag_list) == 3:
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
+                    print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print tag_list
+                elif len(tag_list) > 3:
+                    print "Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print tag_list
+                    exit()
 
                 # if len(set(snp_var_ann_dict[variants.POS].split(','))) > 2:
                 #     print tag
@@ -4152,7 +4196,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4179,7 +4223,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4205,7 +4249,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4228,7 +4272,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4266,7 +4310,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4294,7 +4338,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4322,7 +4366,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
                                               third_allele_ann_string_split[1] + "|" + \
                                               third_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + \
                                               third_allele_ann_string_split[9] + "|" + \
                                               third_allele_ann_string_split[10] + "|" + \
                                               third_allele_ann_string_split[11] + "|" + \
@@ -4349,7 +4393,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_first_allele_ann_string = ";" + first_allele_ann_string_split[0] + "|" + \
                                               first_allele_ann_string_split[1] + "|" + \
                                               first_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + \
+                                              first_allele_ann_string_split[4] + "|" + \
                                               first_allele_ann_string_split[9] + "|" + \
                                               first_allele_ann_string_split[10] + "|" + \
                                               first_allele_ann_string_split[11] + "|" + \
@@ -4372,7 +4416,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_second_allele_ann_string = second_allele_ann_string_split[0] + "|" + \
                                                second_allele_ann_string_split[1] + "|" + \
                                                second_allele_ann_string_split[2] + "|" + \
-                                               tag + "|" + \
+                                               second_allele_ann_string_split[4] + "|" + \
                                                second_allele_ann_string_split[9] + "|" + \
                                                second_allele_ann_string_split[10] + "|" + \
                                                second_allele_ann_string_split[11] + "|" + \
@@ -4395,7 +4439,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 new_third_allele_ann_string = third_allele_ann_string_split[0] + "|" + \
                                               third_allele_ann_string_split[1] + "|" + \
                                               third_allele_ann_string_split[2] + "|" + \
-                                              tag + "|" + \
+                                              third_allele_ann_string_split[4] + "|" + \
                                               third_allele_ann_string_split[9] + "|" + \
                                               third_allele_ann_string_split[10] + "|" + \
                                               third_allele_ann_string_split[11] + "|" + \
@@ -4427,7 +4471,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     #                     i_ann_string_split_array[13] + "|" + prod + "|" + prod
                     new_allele_string = i_ann_string_split_array[0] + "|" + i_ann_string_split_array[1] + "|" + \
                                         i_ann_string_split_array[2] + "|" + \
-                                        tag + "|" + \
+                                        i_ann_string_split_array[4] + "|" + \
                                         i_ann_string_split_array[9] + "|" + \
                                         i_ann_string_split_array[10] + "|" + \
                                         i_ann_string_split_array[11] + "|" + \
@@ -4478,6 +4522,17 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
         if tag == "" or tag == "None":
             tag = "NULL"
 
+        # # Test No. of Fields
+        ann_string_split = ann_string.split(';')
+        #ann_string = ";"
+        for i in ann_string_split:
+            ann_string_array_split_columns = i.split('|')
+            if len(ann_string_array_split_columns) > 10:
+                print "Warning: More than 10 field - %s %s" % (variants.POS, i)
+                #print variants.POS
+                # ann_string = ann_string.replace('||WARNING_TRANSCRIPT_NO_START_CODON||WARNING_TRANSCRIPT_NO_START_CODON', '|WARNING_TRANSCRIPT_NO_START_CODON|WARNING_TRANSCRIPT_NO_START_CODON')
+                # ann_string = ann_string + str('|'.join(ann_string_array_split_columns[: -2 or None])) + ";"
+                #print ann_string
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
 
         gt_string = ""
@@ -4524,14 +4579,14 @@ def annotated_snp_matrix():
 
     """Annotate all VCF file formats with SNPeff"""
     # Commented for debugging
-    # variant_annotation()
-    #
-    # indel_annotation()
+    variant_annotation()
+
+    indel_annotation()
 
     locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
 
     # Commented for debugging
-    # annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
+    annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf =  merge_vcf()
 
     snp_var_ann_dict, indel_var_ann_dict = extract_annotations_from_multivcf()
 
@@ -4549,7 +4604,7 @@ def annotated_snp_matrix():
     position_label, position_indel_label = generate_position_label_dict(final_merge_anno_file)
 
     # Commented for debugging
-    # mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
+    mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
 
     generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions, position_label, core_positions, snp_var_ann_dict)
 
@@ -4567,7 +4622,7 @@ def annotated_snp_matrix():
 def alignment_report(data_matrix_dir):
     keep_logging('Generating Alignment report...', 'Generating Alignment report...', logger, 'info')
     varcall_dir = os.path.dirname(args.results_dir)
-    print varcall_dir
+    #print varcall_dir
     report_string = ""
     header = "Sample,QC-passed reads,Mapped reads,% mapped reads,mean depth,%_bases_above_5,%_bases_above_10,%_bases_above_15,unmapped_positions,READ_PAIR_DUPLICATES,READ_PAIR_OPTICAL_DUPLICATES,unmapped reads,% unmapped reads"
     fp = open("%s/Report_alignment.txt" % (data_matrix_dir), 'w+')
@@ -5043,7 +5098,10 @@ if __name__ == '__main__':
 
 
         # Generate Readme file for these results
-        readme_metedata_form = "%s/readme_metadata_form.txt" % args.filter2_only_snp_vcf_dir
+        if args.readme:
+            readme_metedata_form = args.readme
+        else:
+            readme_metedata_form = "%s/readme_metadata_form.txt" % os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         Config_readme = ConfigParser.ConfigParser()
         Config_readme.read(readme_metedata_form)
         out_readme = "%s/README" % args.results_dir
@@ -5127,29 +5185,53 @@ if __name__ == '__main__':
 
         if args.scheduler == "SLURM":
             job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
-        else:
+        elif args.scheduler == "PBS":
             job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.pbs'))
-
+        else:
+            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
         load_conda = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '_conda.sh'))
 
-        gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores, prepare_ref_allele_unmapped_consensus_input)
-        iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (os.path.dirname(prepare_ref_allele_unmapped_consensus_input), os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir, os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
-        with open(job_file_name, 'w') as out:
-            job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
-            out.write("#!/bin/sh" + '\n')
-            out.write(job_title + '\n')
-            out.write(scheduler_directives + '\n')
-            out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
-            #out.write("conda deactivate\n")
-            #out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
-            out.write(gubbins_command + '\n')
-            out.write(iqtree_command + '\n')
-        out.close()
 
-        with open(load_conda, 'w') as out:
-            out.write('conda deactivate' + '\n')
-            out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
-        out.close()
+        if args.mask:
+            gubbins_iqtree_script = "python %s/scripts/gubbins_iqtree.py -w %s" % (os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
+            print gubbins_iqtree_script
+            with open(job_file_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
+                # out.write("conda deactivate\n")
+                # out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
+                out.write(gubbins_iqtree_script + '\n')
+            out.close()
+
+            with open(load_conda, 'w') as out:
+                out.write('conda deactivate' + '\n')
+                out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
+            out.close()
+        else:
+            gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores, prepare_ref_allele_unmapped_consensus_input)
+            iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (os.path.dirname(prepare_ref_allele_unmapped_consensus_input), os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir, os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
+
+
+
+            with open(job_file_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
+                #out.write("conda deactivate\n")
+                #out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
+                out.write(gubbins_command + '\n')
+                out.write(iqtree_command + '\n')
+            out.close()
+
+            with open(load_conda, 'w') as out:
+                out.write('conda deactivate' + '\n')
+                out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
+            out.close()
 
         keep_logging('Run following code on login terminal:\n', 'Run following code on login terminal:\n', logger, 'info')
         keep_logging('conda deactivate', 'conda deactivate', logger, 'info')

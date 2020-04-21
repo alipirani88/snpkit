@@ -1,12 +1,10 @@
 # Functions to manipulate fasta files
+# Written in python3
 
 # Functions:
 #    subset_fasta
-#    get_fasta_subsets
-#    rm_invar_sites
 #    mask_positions
 #    count_invar_sites
-#    
 
 # Import modules
 from subprocess import call
@@ -20,29 +18,23 @@ from collections import Counter
 import re
 import os
 
-def subset_fasta(ids, fastain, fastaout, keep=True):
+def subset_fasta(ids, fastain, fastaout):
     """Creates a new fasta file with a subset of original sequences.
 
     Args:
-        ids: List of sequence names to be extracted (default) or removed (change keep to False).
+        idnames: List of sequence names to be extracted.
         fastain: Path to fasta file containing all sequences of interest.
         fastaout: Name of output fasta file containing only the sequences of interest.
-        keep: If ids is a list of sequences to keep (True) or remove (False).
 
     Output:
         Fasta file containing only the sequences of interest.
-    """    
+    """
 
     with open(fastaout, 'w') as f:
         for rec in SeqIO.parse(fastain, 'fasta'):
-            if keep:
-                if str(rec.id) in ids:
-                    f.write('>' + ids[ids.index(rec.id)] + '\n')
-                    f.write(str(rec.seq) + '\n')
-            else:
-                if str(rec.id) not in ids:
-                    f.write('>' + ids[ids.index(rec.id)] + '\n')
-                    f.write(str(rec.seq) + '\n')
+            if str(rec.id) in ids:
+                f.write('>' + ids[ids.index(rec.id)] + '\n')
+                f.write(str(rec.seq) + '\n')
 
 
 def get_fasta_subsets(csv, fasta):
@@ -73,7 +65,7 @@ def get_fasta_subsets(csv, fasta):
     return(fas)
 
 
-def rm_invar_sites(fasta, outfile=None, outfmt=['fasta','vcf'], outdir='.', 
+def rm_invar_sites(fasta, outfile=None, outfmt=['fasta','vcf'], outdir='.',
                    path={'snpsites':'/nfs/esnitkin/bin_group/anaconda3/bin/snp-sites'}):
     """Removes invariant sites from a multifasta file using snp-sites.
 
@@ -115,20 +107,25 @@ def rm_invar_sites(fasta, outfile=None, outfmt=['fasta','vcf'], outdir='.',
     return(outfile)
 
 
-def mask_positions(fasta, gff, outdir='.', masked_sites_file=False):
+def mask_positions(fasta, gff, outdir='.', masked_sites_file=False,
+                   mask_all=None):
     """Masks positions in GFF file in alignment file in fasta format.
 
-    If fasta is the whole genome alignment fasta used in gubbins 
-    and gff is the gubbins output GFF file, then recombinant 
+    If fasta is the whole genome alignment fasta used in gubbins
+    and gff is the gubbins output GFF file, then recombinant
     regions identified by gubbins are masked (on a per-genome basis).
-    Optionally returns a text file with list of masked positions in each genome.
+    Optionally returns text file with list of masked positions in each genome.
 
     Args:
-        fasta: Alignment fasta file in which sites will be masked.
+        fasta: Alignment fasta file in which sites will be masked
+               (ex. whole genome alignment that was input to gubbins).
         gff: GFF file containing sites that will be masked in certain genomes
-            (ex. gubbins output GFF).
+             (ex. gubbins output GFF).
         outdir: Output file directory (default: current working directory).
-        masked_sites_file: If true, generates a text file with a list of masked positions in each genome.
+        masked_sites_file: If true, generates a text file with a list of masked
+                           positions in each genome.
+        mask_all: list of taxa for which to mask positions that are recombinant 
+                  in any genome (ex. outgroup(s))
 
     Output:
         Masked whole genome alignment file in FASTA format.
@@ -147,11 +144,12 @@ def mask_positions(fasta, gff, outdir='.', masked_sites_file=False):
     # Get indices/positions of recombinant regions identified by gubbins
     print('Getting recombinant positions.')
     recomb_regions = defaultdict(list)
+    all_recomb_regions = set()
 
     for row in gff.iterrows():
         start = row[1][3]
         end = row[1][4]
-        region = list(range(start, end))
+        region = list(range(start, end+1))
         taxa = row[1][8].split(';')[2]
         taxa = taxa.replace('taxa=\"', '')
         taxa = taxa.replace('\"', '')
@@ -159,6 +157,7 @@ def mask_positions(fasta, gff, outdir='.', masked_sites_file=False):
         for isolate in taxa:
             for position in region:
                 recomb_regions[isolate].append(position)
+                all_recomb_regions.add(position)
 
     # Mask indices/positions of recombinant regions identified by gubbins
     print('Masking recombinant positions in whole genome alignment.')
@@ -167,9 +166,15 @@ def mask_positions(fasta, gff, outdir='.', masked_sites_file=False):
 
     for record in aln:
         seq_str = list(str(record.seq))
-        masked_indices = recomb_regions.get(record.id, [])
+        if mask_all is None:
+            masked_indices = recomb_regions.get(record.id, [])
+        elif record.id in mask_all:  # mask all recombinant positions
+            print('Masking all positions in ' + record.id)
+            masked_indices = all_recomb_regions  # mask only recomb pos in tax
+        else:
+            masked_indices = recomb_regions.get(record.id, [])
         for index in masked_indices:
-            seq_str[index] = 'N'
+            seq_str[index-1] = 'N'
         seq_str = ''.join(seq_str)
         new_record = SeqRecord(Seq(seq_str), id=record.id, description='')
         sample_masked_indices[record.id] = masked_indices
@@ -177,11 +182,12 @@ def mask_positions(fasta, gff, outdir='.', masked_sites_file=False):
 
     # Write new FASTA file with recombinant regions masked
     fasta_outfile = outdir + '/' + re.split('/|\.', fasta)[-2] + \
-                    '_gubbins_masked.fa'
+        '_gubbins_masked.fa'
 
     print('Writing', fasta_outfile)
     with open(fasta_outfile, 'w') as handle:
         SeqIO.write(new_aln, handle, 'fasta')
+    handle.close()
 
     if masked_sites_file:
         # Write text file with list of recombinant sites for each genome
@@ -190,21 +196,23 @@ def mask_positions(fasta, gff, outdir='.', masked_sites_file=False):
         print('Writing', text_outfile)
         with open(text_outfile, 'w') as handle:
             for sample, positions in sample_masked_indices.items():
-                line = str(sample) + '\t' + ','.join(map(str, positions)) + '\n'
+                line = str(sample) + '\t' + ','.join(map(str, positions)) + \
+                       '\n'
                 handle.write(line)
 
     return(fasta_outfile)
 
+
 def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/bin_group/anaconda3/bin/snp-sites'}):
     """Counts invariant sites in an alignment file (fasta format).
-    
-    Gets invariant site count for As, Cs, Gs, and Ts from an alignment file. 
-    If gff is not None, positions in the GFF file will be masked before 
+
+    Gets invariant site count for As, Cs, Gs, and Ts from an alignment file.
+    If gff is not None, positions in the GFF file will be masked before
     invariant sites are counted.
 
     Args:
         fasta: Path to alignment file in fasta format.
-        gff: [Optional] GFF file of sections of genomes to mask (ex. gubbins output GFF). 
+        gff: [Optional] GFF file of sections of genomes to mask (ex. gubbins output GFF).
         outdir: Output file directory (default: current working directory).
         path: Dictionary of paths including the path to snp-sites (key: snpsites, value: path)
 
@@ -212,7 +220,7 @@ def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/
         Text file (*_invar_site_counts.txt) with invariant site counts in the following order: A,C,G,T.
         VCF file of variants (created by snp-sites)
         If GFF path given, masked fasta file (*_gubbins_masked.fa).
-    
+
     Returns:
         Name of text file with invariant site counts (*_invar_site_counts.txt).
 
@@ -251,9 +259,8 @@ def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/
     for record in aln:
         seq_str = list(str(record.seq))
         for index in positions:
-            index = int(index)
+            index = int(index)-1
             seq_str[index] = ''
-        #tmp = ''.join(seq_str)
         if len(invar_sites) == 0:
             invar_sites = seq_str
         else:
@@ -276,9 +283,9 @@ def count_invar_sites(fasta,gff=None,outdir='.',path={'snpsites':'/nfs/esnitkin/
     print('Writing ', invar_counts_file, ' (order: A C G T).', sep='')
     with open(invar_counts_file, 'w') as f:
         for base, count in sorted(invar_counts.items()):
-            if base in ['A','a','C','c','G','g','T','t']:
-                print(base + ' ' + str(count))
-                f.write('%s ' % (count))
+            #if base in ['A','a','C','c','G','g','T','t']:
+            print(base + ' ' + str(count))
+            f.write('%s ' % (count))
             #else:
             #    print(base + ' ' + str(count))
     return(invar_counts_file)

@@ -58,8 +58,8 @@ def extract_only_ref_variant_fasta_alternate():
         ref_id = get_reference.keys()
 
 
-    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
-    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     ncol = len(next(c_reader_2))
 
@@ -118,8 +118,8 @@ def extract_only_ref_variant_fasta_unique_positions():
         ref_id = get_reference.keys()
 
 
-    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
-    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.csv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     ncol = len(next(c_reader_2))
 

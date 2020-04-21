@@ -1086,3 +1086,9 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Legionella_SG6_T
 Ref_Name: MNCRE9.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MNCRE9/
+
+[PABL048]
+# Name of reference genome fasta file.
+Ref_Name: PABL048.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Project_PA_bGWAS/PABL048/

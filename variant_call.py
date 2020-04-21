@@ -53,6 +53,11 @@ def parser():
                           help='Genome size to calculate raw coverage')
     optional.add_argument('-scheduler', action='store', dest="scheduler",
                           help='Type of Scheduler for generating cluster jobs: PBS, SLURM, LOCAL')
+    optional.add_argument('-dryrun', '--dryrun', action='store_true', dest="dryrun",
+                          help='Perform a trial run without submitting cluster jobs',
+                          required=False)
+    optional.add_argument('-mask', action='store_true', dest="mask",
+                          help='Mask Gubbins detected recombinant region in WGA and run Iqtree on masked alignment')
     return parser
 
 
@@ -356,7 +361,7 @@ def run_command(job):
     return done
 
 def run_command_list(command):
-    keep_logging('Running command: %s' % command, 'Running command: %s' % command, logger, 'info')
+    keep_logging('Running command: %s' % command, 'Running command: %s' % command, logger, 'debug')
     call("%s" % command, logger)
     done = "Command Run completed: %s" % command
     return done
@@ -376,19 +381,21 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
             if args.scheduler == "SLURM":
                 #call("sbatch %s" % job, logger)
                 keep_logging("sbatch %s" % job, "sbatch %s" % job, logger, 'info')
-                #proc = subprocess.Popen(["sbatch %s" % job], stdout=subprocess.PIPE, shell=True)
-                #(out, err) = proc.communicate()
-                #job_id_array.append(out.split(' ')[3].strip())
-                # job_id_array.append('123xx')
-                # break
+                if not args.dryrun:
+                    proc = subprocess.Popen(["sbatch %s" % job], stdout=subprocess.PIPE, shell=True)
+                    (out, err) = proc.communicate()
+                    # job_id_array.append(out.split(' ')[3].strip())
+                    # job_id_array.append('123xx')
+                    # break
             elif args.scheduler == "PBS":
                 #call("qsub %s" % job, logger)
                 keep_logging("qsub %s" % job, "qsub %s" % job, logger, 'info')
-                #proc = subprocess.Popen(["qsub %s" % job], stdout=subprocess.PIPE, shell=True)
-                #(out, err) = proc.communicate()
-                #job_id_array.append(out.split('.')[0].strip())
-                # job_id_array.append('123xx')
-                # break
+                if not args.dryrun:
+                    proc = subprocess.Popen(["qsub %s" % job], stdout=subprocess.PIPE, shell=True)
+                    (out, err) = proc.communicate()
+                    # job_id_array.append(out.split('.')[0].strip())
+                    # job_id_array.append('123xx')
+                    # break
 
     elif cluster == "parallel-local":
         keep_logging('Running Jobs in parallel-local mode', 'Running Jobs in parallel-local mode', logger, 'info')
@@ -484,9 +491,10 @@ def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         call("bash %s" % job_name, logger)
     elif cluster == "cluster":
         #call("qsub %s" % job_name, logger)
-        keep_logging('Generating Core Step command: \n%s\n' % core_pipeline, 'Generating Core Step command: \n%s\n' % core_pipeline, logger, 'info')
+        #keep_logging('Generating Core Step command: \n%s\n' % core_pipeline, 'Generating Core Step command: \n%s\n' % core_pipeline, logger, 'debug')
         #qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         #print qid.split('.')[0]
+        pass
     elif cluster == "parallel-cluster":
         #call("qsub %s" % job_name, logger)
         with open(job_name, 'w') as out:
@@ -518,9 +526,10 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
         call("bash %s" % job_name, logger)
     elif cluster == "cluster":
         #call("qsub %s" % job_name, logger)
-        keep_logging('Generating Report Step command: \n%s\n' % core_pipeline, 'Generating Report Step command: \n%s\n' % core_pipeline, logger, 'info')
+        #keep_logging('Generating Report Step command: \n%s\n' % core_pipeline, 'Generating Report Step command: \n%s\n' % core_pipeline, logger, 'debug')
         #qid = subprocess.check_output("bash %s" % job_name, shell=True)
         #print qid.split('.')[0]
+        pass
     elif cluster == "parallel-cluster":
         #call("qsub %s" % job_name, logger)
         with open(job_name, 'w') as out:
@@ -553,8 +562,8 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
             core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
         if args.outgroup:
             core_pipeline = core_pipeline + " -outgroup %s" % args.outgroup
-
-
+        if args.mask:
+            core_pipeline = core_pipeline + " -mask"
 
 
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
@@ -568,9 +577,10 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         call("bash %s" % job_name, logger)
     elif cluster == "cluster":
         #call("qsub %s" % job_name, logger)
-        keep_logging('Generating Tree Step command: \n%s\n' % core_pipeline, 'Generating Tree Step command: \n%s\n' % core_pipeline, logger, 'info')
+        #keep_logging('Generating Tree Step command: \n%s\n' % core_pipeline, 'Generating Tree Step command: \n%s\n' % core_pipeline, logger, 'debug')
         #qid = subprocess.check_output("qsub %s" % job_name, shell=True)
         #print qid.split('.')[0]
+        pass
     elif cluster == "parallel-cluster":
         #call("qsub %s" % job_name, logger)
         with open(job_name, 'w') as out:
@@ -642,7 +652,7 @@ if __name__ == '__main__':
         list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
         list_of_jobs = create_varcall_jobs(list_of_files, args.type, args.output_folder, args.index, args.steps, config_file, logger)
         job_submitted = run_varcall_jobs(list_of_jobs, cluster_mode, log_unique_time, args.analysis_name, args.output_folder, logger)
-        print job_submitted
+
         time_taken = datetime.now() - start_time_2
         keep_logging('Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, logger, 'info')
         keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
@@ -665,7 +675,36 @@ if __name__ == '__main__':
         keep_logging('\nCopying vcf files to %s\n' % core_temp_dir, '\nCopying vcf files to %s\n' % core_temp_dir, logger, 'info')
         cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s/*/*_vcf_results/*_indel_gatk.vcf %s/*/*_stats_results/*_depth_* %s/*/*_stats_results/*_markduplicates_metrics %s/*/*_stats_results/*_markduplicates_metrics %s" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
 
-        call(cp_command, logger)
+        cp_command_1 = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf* %s" % (args.output_folder, core_temp_dir)
+        cp_command_2 = "cp %s/*/*_vcf_results/*_aln_mpileup_raw.vcf* %s" % (args.output_folder, core_temp_dir)
+        cp_command_3 = "cp %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s" % (args.output_folder, core_temp_dir)
+        cp_command_4 = "cp %s/*/*_vcf_results/*filter2_final.vcf* %s" % (args.output_folder, core_temp_dir)
+        cp_command_5 = "cp %s/*/*_vcf_results/*array %s" % (args.output_folder, core_temp_dir)
+        cp_command_6 = "cp %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s" % (args.output_folder, core_temp_dir)
+        cp_command_7 = "cp %s/*/*unmapped.bed_positions %s" % (args.output_folder, core_temp_dir)
+        cp_command_8 = "cp %s/*/*_vcf_results/*_indel_gatk.vcf* %s" % (args.output_folder, core_temp_dir)
+        cp_command_9 = "cp %s/*/*_stats_results/*_depth_* %s/*/*_stats_results/*_markduplicates_metrics %s/*/*_stats_results/*_markduplicates_metrics %s" % (args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
+
+        # keep_logging(cp_command_1, cp_command_1, logger, 'info')
+        # keep_logging(cp_command_2, cp_command_2, logger, 'info')
+        # keep_logging(cp_command_3, cp_command_3, logger, 'info')
+        # keep_logging(cp_command_4, cp_command_4, logger, 'info')
+        # keep_logging(cp_command_5, cp_command_5, logger, 'info')
+        # keep_logging(cp_command_6, cp_command_6, logger, 'info')
+        # keep_logging(cp_command_7, cp_command_7, logger, 'info')
+        # keep_logging(cp_command_8, cp_command_8, logger, 'info')
+        # keep_logging(cp_command_9, cp_command_9, logger, 'info')
+
+        #call(cp_command, logger)
+        call(cp_command_1, logger)
+        call(cp_command_2, logger)
+        call(cp_command_3, logger)
+        call(cp_command_4, logger)
+        call(cp_command_5, logger)
+        call(cp_command_6, logger)
+        call(cp_command_7, logger)
+        call(cp_command_8, logger)
+        call(cp_command_9, logger)
 
         """ Decompress zipped files in core temp folder"""
         list_of_gzipped_files = glob.glob("%s/*.gz" % core_temp_dir)
@@ -693,7 +732,7 @@ if __name__ == '__main__':
                     #print depth
                     proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
                     (out2, err2) = proc.communicate()
-                    print file
+                    #print file
                     # Bug found on 24th july
                     cov_depth = int(float(out2.strip()))
                     if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
@@ -713,7 +752,7 @@ if __name__ == '__main__':
                         depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'"
                         proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
                         (out2, err2) = proc.communicate()
-                        print file
+                        #print file
                         cov_depth = int(float(out2.strip()))
                         if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
                             out_fp.write(os.path.basename(file)+'\n')
@@ -807,8 +846,8 @@ if __name__ == '__main__':
                           core_results_dir, config_file)
         core_All_cmds.append(core_pipeline_cmd)
         time_taken = datetime.now() - start_time_2
-        keep_logging('Core Step Logs will be recorded in file with extension log.txt in %s\n' % core_logs_folder,
-                     'Core Step Logs will be recorded in file with extension log.txt in %s\n' % core_logs_folder, logger, 'info')
+        keep_logging('\nCore Step Logs will be recorded in file with extension log.txt in %s\n' % core_logs_folder,
+                     '\nCore Step Logs will be recorded in file with extension log.txt in %s\n' % core_logs_folder, logger, 'info')
 
 
         """ Generate Reports and organize core results folder """
@@ -862,7 +901,7 @@ if __name__ == '__main__':
         (out2, err2) = proc.communicate()
         core_results_dir = out2.strip()
 
-        print core_results_dir
+        #print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
         with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
@@ -884,29 +923,62 @@ if __name__ == '__main__':
 
         # Add tree environments here
         core_All_cmds.append("conda deactivate")
-        core_All_cmds.append("conda activate gubbins")
+        if args.gubbins_env:
+            core_All_cmds.append("conda activate %s" % args.gubbins_env)
+        else:
+            core_All_cmds.append("conda activate gubbins")
         core_All_cmds.append(run_tree_analysis_cmd)
 
         if args.scheduler == "SLURM":
             combine_job_name = core_temp_dir + "/" + log_unique_time + "_" + args.analysis_name + "_core_All.sbat"
+            keep_logging("sbatch %s" % combine_job_name, "sbatch %s" % combine_job_name, logger, 'info')
+            scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
+            with open(combine_job_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(combine_job_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s/" % core_temp_dir + '\n')
+                for cmds in core_All_cmds:
+                    out.write(cmds + '\n')
+            out.close()
+            if not args.dryrun:
+                proc = subprocess.Popen(["sbatch %s" % combine_job_name], stdout=subprocess.PIPE, shell=True)
+                (out, err) = proc.communicate()
         else:
             combine_job_name = core_temp_dir + "/" + log_unique_time + "_" + args.analysis_name + "_core_All.pbs"
+            keep_logging("qsub %s" % combine_job_name, "qsub %s" % combine_job_name, logger, 'info')
+            scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
+            with open(combine_job_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(combine_job_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s/" % core_temp_dir + '\n')
+                for cmds in core_All_cmds:
+                    out.write(cmds + '\n')
+            out.close()
+            if not args.dryrun:
+                proc = subprocess.Popen(["qsub %s" % combine_job_name], stdout=subprocess.PIPE, shell=True)
+                (out, err) = proc.communicate()
 
-        scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
+        # scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
+        #
+        # with open(combine_job_name, 'w') as out:
+        #     job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(combine_job_name))
+        #     out.write("#!/bin/sh" + '\n')
+        #     out.write(job_title + '\n')
+        #     out.write(scheduler_directives + '\n')
+        #     out.write("cd %s/" % core_temp_dir + '\n')
+        #     for cmds in core_All_cmds:
+        #         out.write(cmds + '\n')
+        # out.close()
 
-        with open(combine_job_name, 'w') as out:
-            job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(combine_job_name))
-            out.write("#!/bin/sh" + '\n')
-            out.write(job_title + '\n')
-            out.write(scheduler_directives + '\n')
-            out.write("cd %s/" % core_temp_dir + '\n')
-            for cmds in core_All_cmds:
-                out.write(cmds + '\n')
-        out.close()
+        # keep_logging('Running: %s\n' % combine_job_name,
+        #              'Running: %s\n' % combine_job_name,
+        #              logger, 'info')
 
-        keep_logging('Running: %s\n' % combine_job_name,
-                     'Running: %s\n' % combine_job_name,
-                     logger, 'info')
+
 
         #call("qsub %s" % combine_job_name, logger)
 
@@ -1121,7 +1193,7 @@ if __name__ == '__main__':
         core_results_dir = out2.strip()
         keep_logging('Generating RaxML and fasttree trees in %s/trees' % core_results_dir,
                      'Generating RaxML and fasttree trees in %s/trees' % core_results_dir, logger, 'info')
-        print core_results_dir
+        #print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
         with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
