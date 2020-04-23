@@ -26,7 +26,7 @@ git clone https://github.com/alipirani88/variant_calling_pipeline.git
 Create two new environments - varcall and varcall_gubbins
 ```
 conda env create -f variant_calling_pipeline/environment.yml -n varcall
-conda env create -f variant_calling_pipeline/environment_gubbins.yml -n varcall_gubbins
+conda env create -f variant_calling_pipeline/environment_gubbins.yml -n gubbins
 ```
 
 Check installation
