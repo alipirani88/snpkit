@@ -1,4 +1,3 @@
-name: variantcalling_env
 channels:
   - bioconda
   - conda-forge
@@ -55,5 +54,3 @@ dependencies:
   - wheel=0.33.6=py27_0
   - xz=5.2.4=h14c3975_1001
   - zlib=1.2.11=h516909a_1006
-prefix: /home/apirani/.conda/envs/variantcalling_env
-
