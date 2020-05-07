@@ -842,10 +842,10 @@ if __name__ == '__main__':
         """ Generate a custom vcf file list to process for core prep step. If file is not provided, it will consider all the samples in output folder"""
         """ Perform Sanity check to confirm that variant calling results are present in core temp folder """
         if args.filenames:
-            # fix this bug
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
             list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
             keep_logging('\nNumber of final variant call vcf files: %s\n' % len(list_of_vcf_files), '\nNumber of final variant call vcf files: %s\n' % len(list_of_vcf_files), logger, 'info')
+            empty_files = []
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_files:
                     #print file
@@ -856,9 +856,23 @@ if __name__ == '__main__':
                     #print file
                     # Bug found on 24th july
                     cov_depth = int(float(out2.strip()))
-                    if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
-                        out_fp.write(os.path.basename(file) + '\n')
+                    out_fp.write(os.path.basename(file) + '\n')
+                    if float(out2.strip()) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                        keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (os.path.basename(file), float(out2.strip())), 'The coverage depth for Sample %s - %s is lower than the threshold' % (os.path.basename(file), float(out2.strip())), logger, 'info')
+                    # Check if the vcf files are empty
+                    if os.stat(file).st_size == 0:
+                        empty_files.append(file)
+                    # if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                    #     out_fp.write(os.path.basename(file) + '\n')
             out_fp.close()
+
+            # Check if the vcf files are empty
+            if len(empty_files) > 0:
+                keep_logging(
+                    'These vcf files doesnt contain any data - \n%s. please rerun variant call jobs for these samples' % empty_files,
+                    'These vcf files doesnt contain any data - \n%s. please rerun variant call jobs for these samples' % empty_files,
+                    logger, 'exception')
+                exit()
         else:
             keep_logging('\nChecking if all the variant calling results exists in %s\n' % core_temp_dir, '\nChecking if all the variant calling results exists in %s\n' % core_temp_dir, logger, 'info')
             #call("ls -1a %s/*.vcf_no_proximate_snp.vcf > %s/vcf_filenames" % (core_temp_dir, core_temp_dir), logger)
@@ -868,6 +882,7 @@ if __name__ == '__main__':
 
                 keep_logging('Number of final variant call vcf files: %s\n' % len(list_of_files.splitlines()), 'Number of final variant call vcf files: %s\n' % len(list_of_files.splitlines()), logger, 'info')
 
+                empty_files = []
                 with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                     for file in list_of_files.splitlines():
                         depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'"
@@ -875,9 +890,27 @@ if __name__ == '__main__':
                         (out2, err2) = proc.communicate()
                         #print file
                         cov_depth = int(float(out2.strip()))
-                        if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
-                            out_fp.write(os.path.basename(file)+'\n')
+                        out_fp.write(os.path.basename(file) + '\n')
+                        if float(out2.strip()) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                            keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (
+                            os.path.basename(file), float(out2.strip())),
+                                         'The coverage depth for Sample %s - %s is lower than the threshold' % (
+                                         os.path.basename(file), float(out2.strip())), logger, 'info')
+                        # Check if the vcf files are empty
+                        if os.stat(file).st_size == 0:
+                            empty_files.append(file)
+                        # if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                        #     out_fp.write(os.path.basename(file)+'\n')
                 out_fp.close()
+
+                # Check if the vcf files are empty
+                if len(empty_files) > 0:
+                    keep_logging(
+                        'These vcf files doesnt contain any data - \n%s. please rerun variant call jobs for these samples'  % empty_files,
+                        'These vcf files doesnt contain any data - \n%s. please rerun variant call jobs for these samples'  % empty_files,
+                        logger, 'exception')
+
+                    exit()
             except:
                 keep_logging('Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
                              'This can be done by checking if all the variant call results folder contains final variant call vcf file: *.vcf_no_proximate_snp.vcf file' % core_temp_dir, 'Error: The variant calling results were not found in %s. Please check if variant calling step finished properly without any errors. '
