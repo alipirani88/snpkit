@@ -598,6 +598,119 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
         print qid.split('.')[0]
     return core_pipeline
 
+def create_fai_index(reference, ref_fai_index):
+    keep_logging('Creating FAI Index using Samtools.', 'Creating FAI Index using Samtools.', logger, 'info')
+    cmd = "%s %s %s" % (ConfigSectionMap("samtools", Config)['base_cmd'], ConfigSectionMap("samtools", Config)['faiindex'], reference)
+    keep_logging(cmd, cmd, logger, 'debug')
+    try:
+        call(cmd, logger)
+    except sp.CalledProcessError:
+        keep_logging('Error in Samtools FAI Indexing step. Exiting.', 'Error in Samtools FAI Indexing step. Exiting.', logger, 'exception')
+        sys.exit(1)
+
+
+    if not os.path.isfile(ref_fai_index):
+        keep_logging('The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), 'The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), logger, 'exception')
+    else:
+        keep_logging('Samtools Fai Index file created.', 'Samtools Fai Index file created.', logger, 'info')
+
+def picard_seqdict(dict_name, reference):
+    #dict_name = os.path.splitext(os.path.basename(reference_filename))[0] + ".dict"
+    keep_logging('Creating Sequence Dictionary using Picard.', 'Creating Sequence Dictionary using Picard.', logger, 'info')
+    cmd = "%s CreateSequenceDictionary R=%s O=%s/%s" % (ConfigSectionMap("picard", Config)['base_cmd'], reference, ConfigSectionMap(args.index, Config)['ref_path'], dict_name)
+    keep_logging(cmd, cmd, logger, 'debug')
+    try:
+        call(cmd, logger)
+    except sp.CalledProcessError:
+        keep_logging('Error in Picard Sequence Dictionary creation step. Exiting.', 'Error in Picard Sequence Dictionary creation step. Exiting.', logger, 'exception')
+        sys.exit(1)
+
+def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4, ref_index_suffix5):
+    aligner = ConfigSectionMap("pipeline", Config)['aligner']
+    keep_logging('Creating Index of reference fasta file for {} aligner.'.format(aligner), 'Creating Index of reference fasta file for {} aligner'.format(aligner), logger, 'info')
+    if aligner == "bwa":
+        cmd = "%s %s %s" % (ConfigSectionMap("bwa", Config)['base_cmd'], ConfigSectionMap("bwa", Config)['index'], reference)
+        keep_logging(cmd, cmd, logger, 'debug')
+        try:
+            call(cmd, logger)
+        except sp.CalledProcessError:
+                keep_logging('Error in {} Indexer. Exiting.'.format(aligner), 'Error in {} Indexer. Exiting.'.format(aligner), logger, 'exception')
+                sys.exit(1)
+        if not os.path.isfile(ref_index_suffix1):
+            keep_logging('The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), 'The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), logger, 'exception')
+    elif aligner == "bowtie":
+        cmd = "%s %s %s" % ( ConfigSectionMap("bowtie", Config)['build_cmd'], reference, reference)
+        keep_logging(cmd, cmd, logger, 'debug')
+        try:
+            call(cmd, logger)
+        except sp.CalledProcessError:
+                keep_logging('Error in {} Indexer. Exiting.'.format(aligner), 'Error in {} Indexer. Exiting.'.format(aligner), logger, 'exception')
+                sys.exit(1)
+        if not os.path.isfile(ref_index_suffix1):
+            keep_logging('The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), 'The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), logger, 'exception')
+
+    else:
+        print "Different Aligner in config file"
+
+def generate_index(reference):
+    if not os.path.isfile(reference):
+        file_basename = os.path.basename(reference)
+        keep_logging(
+            'The reference fasta file {} does not exists. Please provide another with full path file with full path or check the files path.\n'.format(
+                file_basename),
+            'The reference fasta file {} does not exists. Please provide another file or check the files path.\n'.format(
+                file_basename), logger, 'exception')
+        exit()
+    if ConfigSectionMap("pipeline", Config)['aligner'] == "bwa":
+        ref_index_suffix1 = reference + ".bwt"
+        ref_index_suffix2 = reference + ".amb"
+        ref_index_suffix3 = reference + ".ann"
+        ref_index_suffix4 = reference + ".sa"
+        ref_index_suffix5 = reference + ".pac"
+    elif ConfigSectionMap("pipeline", Config)['aligner'] == "bowtie":
+        ref_index_suffix1 = reference + ".1.bt2"
+        ref_index_suffix2 = reference + ".2.bt2"
+        ref_index_suffix3 = reference + ".3.bt2"
+        ref_index_suffix4 = reference + ".4.ebwt"
+        ref_index_suffix5 = reference + ".rev.1.bt2"
+        ref_index_suffix6 = reference + ".rev.2.bt2"
+    if not os.path.isfile(ref_index_suffix1):
+        keep_logging(
+            'The reference index files given below does not exists:\n {}\n {}\n {}\n {}\n {}'.format(ref_index_suffix1,
+                                                                                                     ref_index_suffix2,
+                                                                                                     ref_index_suffix3,
+                                                                                                     ref_index_suffix4,
+                                                                                                     ref_index_suffix5),
+            'The reference index files given below does not exists:\n {}\n {}\n {}\n {}\n {}'.format(ref_index_suffix1,
+                                                                                                     ref_index_suffix2,
+                                                                                                     ref_index_suffix3,
+                                                                                                     ref_index_suffix4,
+                                                                                                     ref_index_suffix5),
+            logger, 'warning')
+        create_index(reference, ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4,
+                     ref_index_suffix5)
+    else:
+        keep_logging('Index file already exists.', 'Index file already exists.', logger, 'info')
+
+    ref_fai_index = reference + ".fai"
+    if not os.path.isfile(ref_fai_index):
+        keep_logging('The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index),
+                     'The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index), logger,
+                     'warning')
+        create_fai_index(reference, ref_fai_index)
+    else:
+        keep_logging('Samtools fai Index file already exists.', 'Samtools fai Index file already exists.', logger, 'info')
+
+    dict_name = os.path.splitext(os.path.basename(reference))[0] + ".dict"
+    if not os.path.isfile(ConfigSectionMap(args.index, Config)['ref_path'] + "/" + dict_name):
+        keep_logging('The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name),
+                     'The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name),
+                     logger, 'warning')
+        picard_seqdict(dict_name, reference)
+    else:
+        keep_logging('The reference seq dict file required for GATK and PICARD exists.',
+                     'The reference seq dict file required for GATK and PICARD exists.', logger, 'info')
+
 """ Start of Main Method/Pipeline """
 if __name__ == '__main__':
 
@@ -648,6 +761,14 @@ if __name__ == '__main__':
 
         keep_logging('START: Variant Calling Pipeline', 'START: Variant Calling Pipeline', logger, 'info')
 
+        """ Generate Reference Genome Index """
+        # Reference Genome file name
+        reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
+        keep_logging('Getting Reference Genome name from config file: {}'.format(reference),
+                     'Getting Reference Genome name from config file: {}'.format(reference), logger, 'info')
+
+        generate_index(reference)
+
         """ Main Variant calling Methods: Generate and Run the jobs"""
         list_of_files = get_filenames(args.dir, args.type, args.filenames, args.analysis_name, args.suffix)
         list_of_jobs = create_varcall_jobs(list_of_files, args.type, args.output_folder, args.index, args.steps, config_file, logger)
@@ -685,15 +806,15 @@ if __name__ == '__main__':
         cp_command_8 = "cp %s/*/*_vcf_results/*_indel_gatk.vcf* %s" % (args.output_folder, core_temp_dir)
         cp_command_9 = "cp %s/*/*_stats_results/*_depth_* %s/*/*_stats_results/*_markduplicates_metrics %s/*/*_stats_results/*_markduplicates_metrics %s" % (args.output_folder, args.output_folder, args.output_folder, core_temp_dir)
 
-        # keep_logging(cp_command_1, cp_command_1, logger, 'info')
-        # keep_logging(cp_command_2, cp_command_2, logger, 'info')
-        # keep_logging(cp_command_3, cp_command_3, logger, 'info')
-        # keep_logging(cp_command_4, cp_command_4, logger, 'info')
-        # keep_logging(cp_command_5, cp_command_5, logger, 'info')
-        # keep_logging(cp_command_6, cp_command_6, logger, 'info')
-        # keep_logging(cp_command_7, cp_command_7, logger, 'info')
-        # keep_logging(cp_command_8, cp_command_8, logger, 'info')
-        # keep_logging(cp_command_9, cp_command_9, logger, 'info')
+        keep_logging(cp_command_1, cp_command_1, logger, 'info')
+        keep_logging(cp_command_2, cp_command_2, logger, 'info')
+        keep_logging(cp_command_3, cp_command_3, logger, 'info')
+        keep_logging(cp_command_4, cp_command_4, logger, 'info')
+        keep_logging(cp_command_5, cp_command_5, logger, 'info')
+        keep_logging(cp_command_6, cp_command_6, logger, 'info')
+        keep_logging(cp_command_7, cp_command_7, logger, 'info')
+        keep_logging(cp_command_8, cp_command_8, logger, 'info')
+        keep_logging(cp_command_9, cp_command_9, logger, 'info')
 
         #call(cp_command, logger)
         call(cp_command_1, logger)
