@@ -433,7 +433,7 @@ def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffi
     aligner = ConfigSectionMap("pipeline", Config)['aligner']
     keep_logging('Creating Index of reference fasta file for {} aligner.'.format(aligner), 'Creating Index of reference fasta file for {} aligner'.format(aligner), logger, 'info')
     if aligner == "bwa":
-        cmd = "%s/%s/%s %s %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bwa", Config)['bwa_bin'], ConfigSectionMap("bwa", Config)['base_cmd'], ConfigSectionMap("bwa", Config)['index'], reference)
+        cmd = "%s %s %s" % (ConfigSectionMap("bwa", Config)['base_cmd'], ConfigSectionMap("bwa", Config)['index'], reference)
         keep_logging(cmd, cmd, logger, 'debug')
         try:
             call(cmd, logger)
@@ -443,7 +443,7 @@ def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffi
         if not os.path.isfile(ref_index_suffix1):
             keep_logging('The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), 'The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), logger, 'exception')
     elif aligner == "bowtie":
-        cmd = "%s/%s/%s %s %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bowtie", Config)['bowtie_bin'], ConfigSectionMap("bowtie", Config)['build_cmd'], reference, reference)
+        cmd = "%s %s %s" % ( ConfigSectionMap("bowtie", Config)['build_cmd'], reference, reference)
         keep_logging(cmd, cmd, logger, 'debug')
         try:
             call(cmd, logger)
@@ -458,7 +458,7 @@ def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffi
 
 def create_fai_index(reference, ref_fai_index):
     keep_logging('Creating FAI Index using Samtools.', 'Creating FAI Index using Samtools.', logger, 'info')
-    cmd = "%s/%s/%s %s %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("samtools", Config)['samtools_bin'], ConfigSectionMap("samtools", Config)['base_cmd'], ConfigSectionMap("samtools", Config)['faiindex'], reference)
+    cmd = "%s %s %s" % (ConfigSectionMap("samtools", Config)['base_cmd'], ConfigSectionMap("samtools", Config)['faiindex'], reference)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
@@ -475,7 +475,7 @@ def create_fai_index(reference, ref_fai_index):
 def picard_seqdict(dict_name, reference):
     #dict_name = os.path.splitext(os.path.basename(reference_filename))[0] + ".dict"
     keep_logging('Creating Sequence Dictionary using Picard.', 'Creating Sequence Dictionary using Picard.', logger, 'info')
-    cmd = "java -jar %s/%s/%s CreateSequenceDictionary REFERENCE=%s OUTPUT=%s/%s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("picard", Config)['picard_bin'], ConfigSectionMap("picard", Config)['base_cmd'], reference, ConfigSectionMap(args.index, Config)['ref_path'], dict_name)
+    cmd = "%s CreateSequenceDictionary R=%s O=%s/%s" % (ConfigSectionMap("picard", Config)['base_cmd'], reference, ConfigSectionMap(args.index, Config)['ref_path'], dict_name)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
@@ -505,7 +505,7 @@ def downsample(args, logger):
     keep_logging('Running: mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw,
                  'Running: mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw, logger, 'info')
 
-    mash_cmd = "/nfs/esnitkin/bin_group/variant_calling_bin/mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout" % args.forward_raw
+    mash_cmd = "mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout" % args.forward_raw
 
     keep_logging('Running: %s' % mash_cmd,
                  'Running: %s' % mash_cmd, logger, 'info')
@@ -587,11 +587,11 @@ def downsample(args, logger):
 
         # Downsample using seqtk
         try:
-            keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+            keep_logging("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                 args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)),
                          "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                              args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
-            call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+            call("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                 args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
         except sp.CalledProcessError:
             keep_logging('Error running seqtk for downsampling raw fastq reads.',
@@ -602,11 +602,11 @@ def downsample(args, logger):
             r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
 
             try:
-                keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                keep_logging("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
-                             "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                             "seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                                  args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
-                call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                call("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
             except sp.CalledProcessError:
                 keep_logging('Error running seqtk for downsampling raw fastq reads.',

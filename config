@@ -8,7 +8,7 @@ variant_caller: samtools
 # Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
 # Updated for Great Lakes and Conda Integration
 [bin_path]
-binbase: /home/apirani/.conda/envs/variantcalling_env_test/bin/
+binbase: 
 #binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
 
 

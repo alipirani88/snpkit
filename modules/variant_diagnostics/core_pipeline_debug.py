@@ -191,19 +191,13 @@ def mask_fq_mq_positions_specific_to_outgroup():
             print_string = '\t'.join(print_string_array)
             fp.write(print_string + '\n')
         fp.close()
-        base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + \
-                            ConfigSectionMap("vcftools", Config)[
-                                'vcftools_bin']
-        bgzip_cmd = "%s/%s/bgzip -f %s\n" % (
-            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-            vcf_filename_unmapped)
 
-        tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (
-            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-            vcf_filename_unmapped)
+        bgzip_cmd = "bgzip -f %s\n" % (vcf_filename_unmapped)
 
-        fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
-        args.reference, base_vcftools_bin, vcf_filename_unmapped, outgroup)
+        tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename_unmapped)
+
+        fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
+        args.reference, vcf_filename_unmapped, outgroup)
 
         # print bgzip_cmd
         # print tabix_cmd
@@ -2213,7 +2207,7 @@ def generate_vcf_files():
         f_file.write(pos + '\n')
     f_file.close()
 
-    base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
+
     filter2_files_array = []
     for i in vcf_filenames:
         filter2_file = i.replace('_no_proximate_snp.vcf', '')
@@ -2247,13 +2241,13 @@ def generate_vcf_files():
     keep_logging('Generating Consensus...', 'Generating Consensus...', logger, 'info')
     for file in filtered_out_vcf_files:
         f1 = open(filename, 'a+')
-        bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
+        bgzip_cmd = "bgzip -f %s\n" % (file)
         f1.write(bgzip_cmd)
         subprocess.call([bgzip_cmd], shell=True)
-        tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], file)
+        tabix_cmd = "tabix -f -p vcf %s.gz\n" % (file)
         f1.write(tabix_cmd)
         subprocess.call([tabix_cmd], shell=True)
-        fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s.fa\n" % (args.reference, base_vcftools_bin, file, file.replace('_filter2_final.vcf_core.vcf', ''))
+        fasta_cmd = "cat %s | vcf-consensus %s.gz > %s.fa\n" % (args.reference, file, file.replace('_filter2_final.vcf_core.vcf', ''))
         f1.write(fasta_cmd)
         subprocess.call([fasta_cmd], shell=True)
         base = os.path.basename(file)
@@ -2526,43 +2520,37 @@ def prepare_snpEff_db(reference_basename):
 
 
 
-    if os.path.isfile("%s/%s/snpEff.config" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'])):
+    if os.path.isfile("%s/snpEff.config" % bin_dir):
         #os.system("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir))
-        keep_logging("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), "cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger, 'debug')
-        call("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir), logger)
+        keep_logging("cp %s/snpEff.config %s" % (bin_dir, args.filter2_only_snp_vcf_dir), "cp %s/snpEff.config %s" % (bin_dir, args.filter2_only_snp_vcf_dir), logger, 'debug')
+        call("cp %s/snpEff.config %s" % (bin_dir, args.filter2_only_snp_vcf_dir), logger)
     else:
-        keep_logging("Error: %s/%s/snpEff.config doesn't exists.\nExiting..." % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']),"Error: %s/%s/snpEff.config doesn't exists.\nExiting..." % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'exception')
+        keep_logging("Error: %s/snpEff.config doesn't exists.\nExiting..." % bin_dir,"Error: %s/snpEff.config doesn't exists.\nExiting..." % bin_dir, logger, 'exception')
         exit()
-    make_sure_path_exists("%s/%s/data/%s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]))
-    make_sure_path_exists("%s/%s/data/genomes/" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
+    make_sure_path_exists("%s/data/%s" % (bin_dir, reference_basename[0]))
+    make_sure_path_exists("%s/data/genomes/" % bin_dir)
     #os.system("cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']))
-    keep_logging("cp %s %s/%s/data/genomes/%s.fa" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), "cp %s %s/%s/data/genomes/" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
-    call("cp %s %s/%s/data/genomes/%s.fa" % (args.reference, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
+    keep_logging("cp %s %s/data/genomes/%s.fa" % (args.reference, bin_dir, reference_basename[0]), "cp %s %s/data/genomes/" % (args.reference, bin_dir), logger, 'debug')
+    call("cp %s %s/data/genomes/%s.fa" % (args.reference, bin_dir, reference_basename[0]), logger)
     with open("%s/snpEff.config" % args.filter2_only_snp_vcf_dir, "a") as conf_file:
         conf_file.write("\n\n##Building Custom Database###\n%s.genome\t: %s\n\n" % (reference_basename[0], reference_basename[0]))
     conf_file.close()
     #get the gff name from config file
     if os.path.isfile("%s/%s.gff" % (os.path.dirname(args.reference), reference_basename[0])):
-        keep_logging("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (
-        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
-        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]),
-                     "cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
-                                                               ConfigSectionMap("bin_path", Config)['binbase'],
-                                                               ConfigSectionMap("snpeff", Config)['snpeff_bin'],
+        keep_logging("cp %s/%s.gff %s/data/%s/genes.gff" % (
+        os.path.dirname(args.reference), reference_basename[0], bin_dir, reference_basename[0]),
+                     "cp %s/%s.gff %s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
+                                                               bin_dir,
                                                                reference_basename[0]), logger, 'debug')
-        keep_logging("cp %s/%s.gb* %s/%s/data/%s/genes.gbk" % (
-        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
-        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]),
-                     "cp %s/%s.gff %s/%s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
-                                                               ConfigSectionMap("bin_path", Config)['binbase'],
-                                                               ConfigSectionMap("snpeff", Config)['snpeff_bin'],
+        keep_logging("cp %s/%s.gb* %s/data/%s/genes.gbk" % (
+        os.path.dirname(args.reference), reference_basename[0], bin_dir, reference_basename[0]),
+                     "cp %s/%s.gff %s/data/%s/genes.gff" % (os.path.dirname(args.reference), reference_basename[0],
+                                                               bin_dir,
                                                                reference_basename[0]), logger, 'debug')
-        call("cp %s/%s.gff %s/%s/data/%s/genes.gff" % (
-        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
-        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
-        call("cp %s/%s.gb* %s/%s/data/%s/genes.gbk" % (
-        os.path.dirname(args.reference), reference_basename[0], ConfigSectionMap("bin_path", Config)['binbase'],
-        ConfigSectionMap("snpeff", Config)['snpeff_bin'], reference_basename[0]), logger)
+        call("cp %s/%s.gff %s/data/%s/genes.gff" % (
+        os.path.dirname(args.reference), reference_basename[0], bin_dir, reference_basename[0]), logger)
+        call("cp %s/%s.gb* %s/data/%s/genes.gbk" % (
+        os.path.dirname(args.reference), reference_basename[0], bin_dir, reference_basename[0]), logger)
     else:
         keep_logging("Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]),
                          "Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (os.path.dirname(args.reference), reference_basename[0]), logger, 'exception')
@@ -2570,19 +2558,11 @@ def prepare_snpEff_db(reference_basename):
     #keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     # keep_logging("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     ## Great Lakes Changes
-    keep_logging("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir,
-    ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']),
-                 "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (
-                 ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'],
-                 ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir,
-                 ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']),
-                 logger, 'debug')
-
-
+    keep_logging("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir,bin_dir), "%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/data" % (ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, bin_dir), logger, 'debug')
 
     #call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
     ## Great Lakes Changes
-    call("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
+    call("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, bin_dir), logger)
     keep_logging('Finished Preparing snpEff database requirements.', 'Finished Preparing snpEff database requirements.', logger, 'info')
 
 def variant_annotation():
@@ -2612,13 +2592,13 @@ def variant_annotation():
     annotate_final_vcf_cmd_array = []
     for i in vcf_filenames:
         raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
-        annotate_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
+        annotate_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
+                           (ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, bin_dir, ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
         #print annotate_vcf_cmd
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
         final_vcf = i
-        annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
+        annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
+                           (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, bin_dir, ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
         annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
 
     #print annotate_vcf_cmd_array
@@ -2652,12 +2632,12 @@ def indel_annotation():
     annotate_final_vcf_cmd_array = []
     for i in vcf_filenames:
         raw_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')
-        annotate_vcf_cmd = "java -Xmx4g -jar %s/%s/%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
+        annotate_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
+                           (ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, bin_dir, ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, raw_vcf, raw_vcf)
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
         final_vcf = i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_filter2_indel_final.vcf')
-        annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/%s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
-                           (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
+        annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
+                           (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, bin_dir, ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
         annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
     if args.numcores:
         num_cores = int(args.numcores)
@@ -2796,13 +2776,9 @@ def merge_vcf():
     merge_commands_file = "%s/bcftools_merge.sh" % args.filter2_only_snp_vcf_dir
 
     with open(merge_commands_file, 'w+') as fopen:
-        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (
-        ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'],
-        args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf",
+        fopen.write("bcftools merge -i ANN:join -m both -o %s/Final_vcf_no_proximate_snp.vcf -O v %s" % (args.filter2_only_snp_vcf_dir, files.replace("_filter2_final.vcf_no_proximate_snp.vcf",
                                                      "_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf.gz")) + '\n')
-        fopen.write("%s/%s/bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (
-        ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'],
-        args.filter2_only_snp_vcf_dir,
+        fopen.write("bcftools merge -i ANN:join -m both -o %s/Final_vcf_indel.vcf -O v %s" % (args.filter2_only_snp_vcf_dir,
         files.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_indel_final.vcf_ANN.vcf.gz")) + '\n')
 
     fopen.close()
@@ -3010,7 +2986,8 @@ def generate_position_label_dict(final_merge_anno_file):
             first_part_split = filename_base.split('.1.fastq.gz')
             first_part = first_part_split[0].replace('_L001', '')
             #first_part = re.sub("_S.*_", "", first_part)
-        #print filename_base
+        # print filename_base
+        # first_part = re.sub("_S.*_", "", first_part)
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
             args.filter2_only_snp_vcf_dir, first_part)
@@ -3380,7 +3357,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     #exit()
                 elif len(tag_list) > 3:
                     print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
-                    exit()
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2]) + "-" + str(tag_list[3])
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
             else:
@@ -3486,7 +3463,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     #exit()
                 elif len(tag_list) > 3:
                     print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
-                    exit()
+                    tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2]) + "-" + str(tag_list[3])
 
             else:
                 ann_string = ";None"
@@ -4794,6 +4771,12 @@ if __name__ == '__main__':
 
     scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
 
+    global bin_dir
+    proc = subprocess.Popen(["which gatk"], stdout=subprocess.PIPE, shell=True)
+    (out, err) = proc.communicate()
+    bin_dir = os.path.dirname(out)
+
+
     # Start Variant Calling Core Pipeline steps based on steps argument supplied.
     if "1" in args.steps:
         """ 
@@ -4998,8 +4981,7 @@ if __name__ == '__main__':
             ref_variants = count - 1
         variant_consensus_files = glob.glob("%s/*_variants.fa" % core_vcf_fasta_dir)
         for f in variant_consensus_files:
-            cmd2 = "%s/%s/bioawk -c fastx '{ print length($seq) }' < %s" % (
-                ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'], f)
+            cmd2 = "bioawk -c fastx '{ print length($seq) }' < %s" % (f)
             proc = subprocess.Popen([cmd2], stdout=subprocess.PIPE, shell=True)
             (out2, err2) = proc.communicate()
 

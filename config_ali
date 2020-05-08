@@ -6,8 +6,11 @@ aligner: bwa
 variant_caller: samtools
 
 # Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
+# Updated for Great Lakes and Conda Integration
 [bin_path]
-binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
+binbase: /home/apirani/.conda/envs/variantcalling_env_test/bin/
+#binbase: /nfs/esnitkin/bin_group/variant_calling_bin/
+
 
 #resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 [scheduler]
@@ -18,27 +21,28 @@ queue: flux
 flux_account: esnitkin_flux
 notification: a
 
-[flux]
+[pbs]
 resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
 large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
 queue: flux
-flux_account: esnitkin_flux
+flux_account: esnitkin
 notification: a
 
 [slurm]
-resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
-large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+resources: --nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
+large_resources: --nodes=1 --ntasks-per-node=12 --mem=47000mb --time=250:00:00
 email: apirani@med.umich.edu
-queue: flux
-flux_account: esnitkin_flux
-notification: a
+partition: standard
+flux_account: esnitkin1
+notification: BEGIN,END,NONE,FAIL,REQUEUE
 
 # Set Parameters for individual tools. Set the binbase of each tool: This should be the folder name of respective tools where the executables for each resp. tool resides.
 # Set parameter for Trimmomatic
+# Updated for Great Lakes and Conda Integration
 [Trimmomatic]
-trimmomatic_bin: /Trimmomatic/
-adaptor_filepath: adapters/TruSeq3-Nextera_PE_combined.fa
+trimmomatic_bin: //
+adaptor_filepath: /home/apirani/.conda/envs/variantcalling_env_test/share/trimmomatic-0.39-1/adapters/NexteraPE-PE.fa
 seed_mismatches: 2
 palindrome_clipthreshold: 30
 simple_clipthreshold: 10
@@ -58,7 +62,7 @@ r_p: reverse_paired.fq.gz
 r_up: reverse_unpaired.fq.gz
 
 [bwa]
-bwa_bin: /bwa-0.7.12/
+bwa_bin: //
 cores: 8
 base_cmd: bwa
 algorithm: mem
@@ -67,14 +71,14 @@ RG_header: -R
 Mark_splithits: -M
 
 [bowtie]
-bowtie_bin: /bowtie2-2.2.6/
+bowtie_bin: //
 cores: 8
 build_cmd: bowtie2-build
 align_cmd: bowtie2
 parameters: -k 1 --non-deterministic --end-to-end
 
 [samtools]
-samtools_bin: /samtools-1.2/
+samtools_bin: //
 base_cmd: samtools
 #minimum mapping quality
 #change parameter S to -t SP and D to -t DP
@@ -83,18 +87,18 @@ faiindex: faidx
 #-q30 -B -E -C50
 
 [bcftools]
-bcftools_bin: /bcftools-1.2/
+bcftools_bin: //
 base_cmd: bcftools
 call_parameters: -vg
 
 [picard]
-picard_bin: /picard-tools-2.5.0/
-base_cmd: picard.jar
+picard_bin: //
+base_cmd: picard
 
 [gatk]
-gatk_bin: /GenomeAnalysisTK-3.3-0/
-base_cmd: GenomeAnalysisTK.jar
-haplotype_parameters: -T HaplotypeCaller --genotyping_mode DISCOVERY
+gatk_bin: //
+base_cmd: gatk
+haplotype_parameters: HaplotypeCaller
 #changes: 12th August
 gatk_filter1_parameter_expression: FQ < 40.00 && MQ > 20 && QUAL > 50 && DP > 15
 gatk_filter2_parameter_expression: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 15
@@ -104,48 +108,48 @@ gatk_filter2_parameter_expression: FQ < 0.025 && MQ > 50 && QUAL > 100 && DP > 1
 
 [vcftools]
 #vcftools_perl_bin: /vcftools_0.1.12b/perl/
-vcftools_bin: /vcftools_0.1.12b/bin/
-tabix_bin: /tabix-0.2.6/
+vcftools_bin: //
+tabix_bin: //
 #vcftools_bin: /vcftools_0.1.12b/bin/
 vcftools_perl_bin: /vcftools_0.1.12b/perl/
 
 [qualimap]
-qualimap_bin: /qualimap_v2.1/
+qualimap_bin: //
 base_cmd: qualimap
 
 [bedtools]
-bedtools_bin: /bedtools2-master/bin/
+bedtools_bin: //
 base_cmd: bedtools
 version_for_coverage: /version_for_coverage/
 
 [bioawk]
-bioawk_bin: /bioawk-master/
+bioawk_bin: //
 base_cmd: bioawk
 
 [fasttree]
-fasttree_bin: /Fasttree_2.1.10/
+fasttree_bin: //
 #For Multithread fasttree; use FastTreeMP executable file
 base_cmd: FastTree
 
 [raxml]
-raxml_bin: /raxml/
-openmpi_bin: /openmpi/bin/
+raxml_bin: //
+openmpi_bin: //
 # Other raxml executable available to use: raxmlHPC-PTHREADS,raxmlHPC-PTHREADS-SSE3,raxmlHPC-SSE3
 base_cmd: raxmlHPC-HYBRID-SSE3
 parameters: -f a -x 12345 -p 12345 -N autoMRE -m GTRCAT -T 20
 
 [iqtree]
-iqtree_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
+iqtree_bin: //
 base_cmd: iqtree
 parameters: -nt AUTO -bb 1000 -m GTR+G+ASC
 
 [gubbins]
 # Change this path to wherever gubbins is located/installed. Right now, installed using conda from anaconda3 package installed in bin_group.
-gubbins_bin: /nfs/esnitkin/bin_group/anaconda3/bin/
+gubbins_bin: //
 base_cmd: run_gubbins.py
 
 [mummer]
-mummer_bin: /MUMmer3.23/
+mummer_bin: //
 nucmer_base_cmd: nucmer
 min_tandem_repeat_length: 20
 percent_id: 95
@@ -258,8 +262,8 @@ apply_to_calls: yes
 
 ##SNP annotations
 [snpeff]
-snpeff_bin: /snpEff/
-base_cmd: snpEff.jar
+snpeff_bin: //
+base_cmd: snpEff
 snpeff_parameters: -d -no-downstream -no-upstream
 prebuild: no
 db: Staphylococcus_aureus_subsp_aureus_usa300_tch1516
@@ -277,7 +281,7 @@ dataDir: /data/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1.fasta
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+Ref_Path: /scratch/esnitkin_root/esnitkin/apirani/Testing_pipelines/reference/KPNIH1/
 
 # Name of the reference genome. Provide this value with -index_name argument.
 [aus]

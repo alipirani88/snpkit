@@ -46,7 +46,7 @@ def remove_5_bp_snp_indel(raw_vcf_file, out_path, analysis, reference, logger, C
         print "GATK Haplotype caller: Removing SNPs proximate to Indel by 5bp"
         remove_snps_5_bp_snp_indel_file_name = raw_vcf_file + "_5bp_indel_removed.vcf"
         indel_file_name = raw_vcf_file + "_indel.vcf"
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+        base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
         cmd = "%s SelectVariants -R %s -V %s -select-type INDEL -O %s" % (
         base_cmd, reference, raw_vcf_file, indel_file_name)
         call(cmd, logger)
@@ -104,7 +104,7 @@ def prepare_indel(raw_vcf_file, out_path, analysis, reference, logger, Config):
     elif ConfigSectionMap("pipeline", Config)['variant_caller'] == "gatkhaplotypecaller":
         print "GATK Haplotype caller: Extracting indels from raw vcf files"
         indel_file_name = raw_vcf_file + "_indel.vcf"
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+        base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
         cmd = "%s SelectVariants -R %s -V %s -select-type INDEL -O %s" % (
             base_cmd, reference, raw_vcf_file, indel_file_name)
         call(cmd, logger)
@@ -121,7 +121,7 @@ def prepare_indel_gatk(out_finalbam, out_path, analysis, reference, logger, Conf
     else:
         print "GATK Haplotype caller: Extracting indels from raw vcf files"
         indel_file_name = final_raw_vcf + "_indel.vcf"
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
+        base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
         cmd = "%s SelectVariants -R %s -V %s -select-type INDEL -O %s" % (
             base_cmd, reference_filename, final_raw_vcf, indel_file_name)
         call(cmd, logger)

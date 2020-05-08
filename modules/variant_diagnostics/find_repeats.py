@@ -10,14 +10,14 @@ def nucmer_repeat(reference, outdir, logger, Config):
     keep_logging('\nFinding repeat region in reference genome: %s\n' % reference, '\nFinding repeat region in reference genome: %s\n' % reference, logger,
                  'info')
     prefix = str(reference.split('.')[0]) + "_repeat"
-    nucmer_repeat_cmd = "%s/%s/%s --maxmatch --nosimplify --prefix=%s %s %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("mummer", Config)['mummer_bin'], ConfigSectionMap("mummer", Config)['nucmer_base_cmd'], prefix, reference, reference)
+    nucmer_repeat_cmd = "%s --maxmatch --nosimplify --prefix=%s %s %s" % (ConfigSectionMap("mummer", Config)['nucmer_base_cmd'], prefix, reference, reference)
     keep_logging('Running: %s' % nucmer_repeat_cmd, 'Running: %s' % nucmer_repeat_cmd, logger, 'debug')
     call(nucmer_repeat_cmd, logger)
-    showcoords_cmd = "%s/%s/show-coords -I %s -r %s.delta > %s.coords" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("mummer", Config)['mummer_bin'], ConfigSectionMap("mummer", Config)['percent_id'], prefix, prefix)
+    showcoords_cmd = "show-coords -I %s -r %s.delta > %s.coords" % (ConfigSectionMap("mummer", Config)['percent_id'], prefix, prefix)
     keep_logging('Running: %s' % showcoords_cmd, 'Running: %s' % showcoords_cmd, logger, 'debug')
     call(showcoords_cmd, logger)
-    repeat_match_cmd = "%s/%s/repeat-match %s > %s.repeat_match" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("mummer", Config)['mummer_bin'], reference, prefix)
-    tandem_repeats_cmd = "%s/%s/exact-tandems %s %s > %s_tandem_repeats_file" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("mummer", Config)['mummer_bin'], reference, ConfigSectionMap("mummer", Config)['min_tandem_repeat_length'], prefix)
+    repeat_match_cmd = "repeat-match %s > %s.repeat_match" % (reference, prefix)
+    tandem_repeats_cmd = "exact-tandems %s %s > %s_tandem_repeats_file" % (reference, ConfigSectionMap("mummer", Config)['min_tandem_repeat_length'], prefix)
     keep_logging('Running: %s' % tandem_repeats_cmd, 'Running: %s' % tandem_repeats_cmd, logger, 'debug')
     keep_logging('Running: %s' % repeat_match_cmd, 'Running: %s' % repeat_match_cmd, logger, 'debug')
     call(tandem_repeats_cmd, logger)

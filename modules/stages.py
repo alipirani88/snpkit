@@ -83,7 +83,7 @@ def align(out_path, ref_index, split_field, analysis, files_to_delete, logger, C
 
     aligner = ConfigSectionMap("pipeline", Config)['aligner']
     if aligner == "bwa":
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bwa", Config)['bwa_bin'] + "/" + ConfigSectionMap("bwa", Config)['base_cmd']
+        base_cmd = ConfigSectionMap("bwa", Config)['base_cmd']
         out_file = align_bwa(base_cmd,forward_clean, reverse_clean, out_path, reference, split_field, analysis, files_to_delete, logger, Config, type)
         return out_file
     elif aligner == "smalt":
@@ -92,7 +92,7 @@ def align(out_path, ref_index, split_field, analysis, files_to_delete, logger, C
         usage()
     elif aligner == "bowtie":
         parameters = ConfigSectionMap("bowtie", Config)['parameters']
-        base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bowtie", Config)['bowtie_bin'] + "/" + ConfigSectionMap("bowtie", Config)['align_cmd']
+        base_cmd = ConfigSectionMap("bowtie", Config)['align_cmd']
         out_file = align_bowtie(base_cmd,forward_clean, reverse_clean, forward_unpaired, reverse_unpaired, out_path, reference, split_field, analysis, files_to_delete, logger, Config, type, parameters)
         return out_file
         exit()

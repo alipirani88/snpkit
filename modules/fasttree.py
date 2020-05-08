@@ -6,7 +6,7 @@ from log_modules import *
 
 def fasttree(tree_dir, input_fasta, cluster, logger, Config):
     keep_logging('Running Fasttree on input: %s' % input_fasta, 'Running Fasttree on input: %s' % input_fasta, logger, 'info')
-    fasttree_cmd = "%s/%s/%s -nt %s > %s/%s_FastTree.tree" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("fasttree", Config)['fasttree_bin'], ConfigSectionMap("fasttree", Config)['base_cmd'], input_fasta, tree_dir, (os.path.basename(input_fasta)).replace('.fa', ''))
+    fasttree_cmd = "%s -nt %s > %s/%s_FastTree.tree" % (ConfigSectionMap("fasttree", Config)['base_cmd'], input_fasta, tree_dir, (os.path.basename(input_fasta)).replace('.fa', ''))
     keep_logging('%s' % fasttree_cmd, '%s' % fasttree_cmd, logger, 'info')
     if cluster == "parallel-local" or cluster == "local":
         call("cd %s" % tree_dir, logger)

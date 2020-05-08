@@ -142,14 +142,14 @@ def extract_only_ref_variant_fasta_unique_positions():
 
             vcf_filename = "%s/%s_ref_allele_variants.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
             f1 = open(filename, 'a+')
-            bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], vcf_filename)
+            bgzip_cmd = "bgzip -f %s\n" % (vcf_filename)
             f1.write(bgzip_cmd)
             subprocess.call([bgzip_cmd], shell=True)
-            tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], vcf_filename)
+            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename)
             f1.write(tabix_cmd)
             subprocess.call([tabix_cmd], shell=True)
             base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
-            fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, base_vcftools_bin, vcf_filename, sample_name_re)
+            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, vcf_filename, sample_name_re)
             f1.write(fasta_cmd)
             subprocess.call([fasta_cmd], shell=True)
 
@@ -276,14 +276,14 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
 
             vcf_filename = "%s/%s_ref_allele_variants.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
             f1 = open(filename, 'a+')
-            bgzip_cmd = "%s/%s/bgzip -f %s\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], vcf_filename)
+            bgzip_cmd = "bgzip -f %s\n" % (vcf_filename)
             f1.write(bgzip_cmd)
             subprocess.call([bgzip_cmd], shell=True)
-            tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'], vcf_filename)
+            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename)
             f1.write(tabix_cmd)
             subprocess.call([tabix_cmd], shell=True)
             base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
-            fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, base_vcftools_bin, vcf_filename, sample_name_re)
+            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, vcf_filename, sample_name_re)
             f1.write(fasta_cmd)
             subprocess.call([fasta_cmd], shell=True)
 
@@ -312,33 +312,25 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
                     unmapped_vcf.write(generate_vcf_string_unmapped)
             unmapped_vcf.close()
 
-            bgzip_cmd = "%s/%s/bgzip -f %s\n" % (
-            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-            unmapped_vcf_file)
+            bgzip_cmd = "bgzip -f %s\n" % (unmapped_vcf_file)
             print bgzip_cmd
-            tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (
-            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-            unmapped_vcf_file)
+            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (unmapped_vcf_file)
             print tabix_cmd
             subprocess.call([bgzip_cmd], shell=True)
             subprocess.call([tabix_cmd], shell=True)
             #allele_ref_variant_unmapped_vcf = open("%s/%s_ref_allele_variants_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
 
             vcf_filename_unmapped = "%s/%s_ref_allele_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
-            bcftools_merge_cmd =  "%s/%s/bcftools merge --merge snps --force-samples %s.gz %s.gz -O v -o %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bcftools", Config)['bcftools_bin'], unmapped_vcf_file, vcf_filename, vcf_filename_unmapped)
+            bcftools_merge_cmd =  "bcftools merge --merge snps --force-samples %s.gz %s.gz -O v -o %s" % (unmapped_vcf_file, vcf_filename, vcf_filename_unmapped)
 
-            bgzip_cmd = "%s/%s/bgzip -f %s\n" % (
-            ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-            vcf_filename_unmapped)
+            bgzip_cmd = "bgzip -f %s\n" % (vcf_filename_unmapped)
 
             subprocess.call([bcftools_merge_cmd], shell=True)
 
-            tabix_cmd = "%s/%s/tabix -f -p vcf %s.gz\n" % (
-                ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("vcftools", Config)['tabix_bin'],
-                vcf_filename_unmapped)
+            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename_unmapped)
 
-            fasta_cmd = "cat %s | %s/vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
-                args.reference, base_vcftools_bin, vcf_filename_unmapped, sample_name_re)
+            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
+                args.reference, vcf_filename_unmapped, sample_name_re)
 
             #filename = "%s/consensus_ref_allele_unmapped_variant.sh" % args.filter2_only_snp_vcf_dir
             filename = "%s/%s_consensus_ref_allele_unmapped_variant.sh" % (args.filter2_only_snp_vcf_dir, sample_name_re)

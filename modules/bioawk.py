@@ -6,7 +6,7 @@ from modules.logging_subprocess import *
 from modules.log_modules import *
 
 def bioawk_make_reference_size(reference, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bioawk", Config)['bioawk_bin'] + "/" + ConfigSectionMap("bioawk", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("bioawk", Config)['base_cmd']
     command = base_cmd + " -c fastx '{ print $name, length($seq) }' < %s > %s.size" % (reference, reference)    
     try:
         call(command, logger)

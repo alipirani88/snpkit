@@ -5,7 +5,7 @@ from modules.logging_subprocess import *
 from config_settings import ConfigSectionMap
 
 def samtobam(out_sam, out_path, analysis, files_to_delete, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("samtools", Config)['samtools_bin'] + "/" + ConfigSectionMap("samtools", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("samtools", Config)['base_cmd']
     cmd = "%s view -Sb %s > %s/%s_aln.bam" % (base_cmd, out_sam, out_path, analysis)
     keep_logging('SAM to BAM Conversion', 'SAM to BAM Conversion', logger, 'info')
     keep_logging(cmd, cmd, logger, 'debug')
@@ -23,7 +23,7 @@ def samtobam(out_sam, out_path, analysis, files_to_delete, logger, Config):
         return out_bam
 
 def sort_bam(out_bam, out_path, analysis, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("samtools", Config)['samtools_bin'] + "/" + ConfigSectionMap("samtools", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("samtools", Config)['base_cmd']
     #cmd = "%s sort %s %s/%s_aln_sort" % (base_cmd, out_bam, out_path, analysis)
     cmd = "%s sort %s -m 500M -@ 0 -o %s/%s_aln_sort.bam -T %s/%s_aln_sort_temp" % (base_cmd, out_bam, out_path, analysis, out_path, analysis)
     keep_logging('Sorting BAM file', 'Sorting BAM file', logger, 'info')
@@ -42,7 +42,7 @@ def sort_bam(out_bam, out_path, analysis, logger, Config):
         return sort_bam
 
 def index_bam(out_sort_bam, out_path, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("samtools", Config)['samtools_bin'] + "/" + ConfigSectionMap("samtools", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("samtools", Config)['base_cmd']
     cmd = "%s index %s" % (base_cmd, out_sort_bam)
     keep_logging(cmd, cmd, logger, 'info')
     try:
@@ -60,10 +60,10 @@ def samtoolswithpostalignbam(out_finalbam, out_path, reference_filename, analysi
     return final_raw_vcf
 
 def samtools(out_finalbam, out_path, reference_filename, analysis, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("samtools", Config)['samtools_bin'] + "/" + ConfigSectionMap("samtools", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("samtools", Config)['base_cmd']
     mpileup_parameters = ConfigSectionMap("samtools", Config)['mpileup_parameters']
     reference = ConfigSectionMap(reference_filename, Config)['ref_path'] + "/" + ConfigSectionMap(reference_filename, Config)['ref_name']
-    bcf_base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("bcftools", Config)['bcftools_bin'] + ConfigSectionMap("bcftools", Config)['base_cmd']
+    bcf_base_cmd = ConfigSectionMap("bcftools", Config)['base_cmd']
     cmd = "%s mpileup %s %s %s | %s call -O v -v -c -o %s/%s_aln_mpileup_raw.vcf" % (base_cmd, mpileup_parameters, reference, out_finalbam, bcf_base_cmd, out_path, analysis)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
@@ -75,7 +75,7 @@ def samtools(out_finalbam, out_path, reference_filename, analysis, logger, Confi
     return final_raw_vcf
 
 def flagstat(out_sorted_bam, out_path, analysis, logger, Config):
-    base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("samtools", Config)['samtools_bin'] + "/" + ConfigSectionMap("samtools", Config)['base_cmd']
+    base_cmd = ConfigSectionMap("samtools", Config)['base_cmd']
     cmd = "%s flagstat %s > %s/%s_alignment_stats" % (base_cmd, out_sorted_bam, out_path, analysis)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
