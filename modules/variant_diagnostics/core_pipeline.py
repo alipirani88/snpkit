@@ -2511,13 +2511,13 @@ def prepare_snpEff_db(reference_basename):
     proc = subprocess.Popen(["find $CONDA_PREFIX/share/ -name snpEff.config"], stdout=subprocess.PIPE, shell=True)
     (out2, err2) = proc.communicate()
     if out2:
-        snpeff_config = str(out2)
+        snpeff_config = (str(out2)).strip()
     else:
         print "Unable to find snpEff config file in conda Environment share directory"
         exit()
 
-    os.system("cp %s $CONDA_PREFIX/bin/" % snpeff_config)
-
+    #os.system("cp %s $CONDA_PREFIX/bin/" % snpeff_config)
+    os.system("cp %s %s" % (snpeff_config, bin_dir))
 
 
     if os.path.isfile("%s/snpEff.config" % bin_dir):

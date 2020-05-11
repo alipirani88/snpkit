@@ -7,6 +7,7 @@ dependencies:
   - bcftools=1.2=h02bfda8_4
   - bedtools=2.23.0=hdbcaa40_3
   - bioawk=1.0=h84994c4_4
+  - biopython=1.76
   - bowtie2=2.2.6=py27_0
   - bwa=0.7.12=1
   - bzip2=1.0.8=h516909a_1
@@ -30,6 +31,7 @@ dependencies:
   - libstdcxx-ng=9.1.0=hdf63c60_0
   - mash=2.2.1=h3d38be6_0
   - mummer=3.23=pl526_8
+  - memory_profiler=0.57.0
   - ncurses=5.9=10
   - openjdk=8.0.192=h14c3975_1003
   - openssl=1.0.2r=h14c3975_0
@@ -52,6 +54,7 @@ dependencies:
   - tk=8.5.19=2
   - trimmomatic=0.39=1
   - vcftools=0.1.16=he860b03_3
+  - perl-vcftools-vcf=0.1.16
   - wheel=0.33.6=py27_0
   - xz=5.2.4=h14c3975_1001
   - zlib=1.2.11=h516909a_1006
