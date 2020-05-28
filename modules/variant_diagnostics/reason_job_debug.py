@@ -58,6 +58,7 @@ ori_unmapped_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vc
 ori_proximate_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "filter2_final.vcf_no_proximate_snp.vcf_positions_array")
 ori_variant_position_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "filter2_final.vcf_no_proximate_snp.vcf")
 ori_mpileup_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "aln_mpileup_raw.vcf_5bp_indel_removed.vcf")
+ori_raw_vcf_file = out_file_name.replace("filter2_final.vcf_no_proximate_snp.vcf_positions_label", "aln_mpileup_raw.vcf")
 
 current_unmapped_file = args.tmp_dir + "/%s" % (os.path.basename(ori_unmapped_file))
 current_proximate_file = args.tmp_dir + "/%s" % (os.path.basename(ori_proximate_file))
@@ -68,7 +69,7 @@ os.system("cp -f %s %s/" % (ori_unmapped_file, args.tmp_dir))
 os.system("cp -f %s %s/" % (ori_proximate_file, args.tmp_dir))
 os.system("cp -f %s %s/" % (ori_variant_position_file, args.tmp_dir))
 os.system("cp -f %s %s/" % (ori_mpileup_file, args.tmp_dir))
-
+os.system("cp -f %s %s/" % (ori_raw_vcf_file, args.tmp_dir))
 
 # Optimization changes
 # #variant position array
@@ -133,9 +134,49 @@ def generate_dicts():
     now = time.time()
     print "Time taken to load raw vcf data array - {0} seconds".format(now - program_starts)
 
+# Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
+def extract_indel_proximates():
+    indel_proximate_variants = []
+    print "Reading vcf file - %s" % file
+    before_indel_proximate_variants = []
+    after_indel_proximate_variants = []
+
+    for variants in VCF(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf')):
+        if variants.POS not in before_indel_proximate_variants and variants.INFO.get('INDEL') != True:
+            # print variants.INFO.get('INDEL')
+            # print variants.POS
+            before_indel_proximate_variants.append(variants.POS)
+        # else:
+        #     print variants.POS
+        #     print variants.INFO.get('INDEL')
+    for variants in VCF(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf_5bp_indel_removed.vcf')):
+        if variants.POS not in after_indel_proximate_variants and variants.INFO.get('INDEL') != True:
+            # print variants.INFO.get('INDEL')
+            # print variants.POS
+            after_indel_proximate_variants.append(variants.POS)
+        # else:
+        #     print variants.POS
+        #     print variants.INFO.get('INDEL')
+    print "Raw pre-filtered variants - %s" % len(before_indel_proximate_variants)
+    print "After Indel proximate filter - %s" % len(after_indel_proximate_variants)
+
+    set_difference = set(before_indel_proximate_variants) - set(after_indel_proximate_variants)
+    #indel_proximate_variants = list(set_difference)
+    indel_proximate_variants.extend(list(set_difference))
+    print "Number of positions filtered with 5 bp Indel proximate filter - %s" % len(indel_proximate_variants)
+    with open(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_proximate_indel_filtered_positions.txt'), 'w+') as fopen:
+        for i in list(set_difference):
+            fopen.write(str(i) + "\n")
+    fopen.close()
+    #print len(indel_proximate_variants)
+    #print indel_proximate_variants
+    return indel_proximate_variants
+
 # @profile
 def get_reason():
     generate_dicts()
+    # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
+    indel_proximate_variants = extract_indel_proximates()
     #print "Time taken to generate dictionaries: %s" % (timeit.timeit(generate_dicts, number=1))
     #program_starts = time.time()
     f1=open(out_file_name, 'w+')
@@ -179,13 +220,19 @@ def get_reason():
     # Newer chunk of code -faster
     for j in position_array_sort:
         """ Check if the unique position is present in the final no_proximate_snp.vcf file """
+
+
         if not positions_final_vcf.has_key(int(j)):
             if not positions_mpileup_vcf.has_key(int(j)):
                 if unmapped_array.has_key(j):
                     st = "reference_unmapped_position\n"
                     f1.write(st)
                 else:
-                    st = "reference_allele\n"
+                    # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
+                    if int(j) in indel_proximate_variants:
+                        st = "reference_allele_indel_proximate\n"
+                    else:
+                        st = "reference_allele\n"
                     f1.write(st)
             else:
                 if proximate_array.has_key(j):
