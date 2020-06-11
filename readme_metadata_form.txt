@@ -1,16 +1,16 @@
 [Main]
 # Request to run pipeline on these samples were submitted by:
-submitter: Ali
+submitter: SUBMITTER-NAME
 # Samples belongs to which project.
-project_name: Pipeline Demo
+project_name: ProjectName
 # Date when the pipeline was run on this samples.
-date: 2020-04-18
+date: 2020-MM-DD
 # Version of pipeline used
 version: 1.2.7
 
 [Description]
 # Describe in few words why these variant sets are being generated; Why is this work being requested?
-comments: Fill up this form to refelct these details in a README file.
+comments: Fill up this form to reflect these details in a README file.
 # Any special request of changing the variant calling/filtering/other parameters. Also describe why these parameters were changed.
 parameters: No changes to the default parameters. The parameters mentioned below in snitkin_filters were used for this run.
 # Name of the filters applied
@@ -43,6 +43,6 @@ prox: 0
 
 # Reference Genome Path
 [reference_genome]
-name: KPNIH1
-path: /scratch/esnitkin_root/esnitkin/apirani/Testing_pipelines/reference/KPNIH1/KPNIH1.fasta
+name: REFERENCE
+path: /PATH-to-REFERENCE/REFERENCE.fasta
 
