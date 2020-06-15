@@ -54,7 +54,6 @@ dependencies:
   - tabix=0.2.6=ha92aebf_0
   - tk=8.5.19=2
   - trimmomatic=0.39=1
-  - vcftools=0.1.16=he860b03_3
   - perl-vcftools-vcf=0.1.16
   - wheel=0.33.6=py27_0
   - xz=5.2.4=h14c3975_1001
