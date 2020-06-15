@@ -35,6 +35,7 @@ dependencies:
   - ncurses=5.9=10
   - openjdk=8.0.192=h14c3975_1003
   - openssl=1.0.2r=h14c3975_0
+  - pandas=0.24.2
   - perl=5.26.2=h516909a_1006
   - picard=2.5.0=2
   - pilon=1.22=1
