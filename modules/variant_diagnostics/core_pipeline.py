@@ -3636,7 +3636,7 @@ def generate_position_label_dict(final_merge_anno_file):
             first_part = first_part_split[0].replace('_L001', '')
             # first_part = re.sub("_S.*_", "", first_part)
         # print filename_base
-        # first_part = re.sub("_S.*_", "", first_part)
+        first_part = re.sub("_S.*_", "", first_part)
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
         args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
