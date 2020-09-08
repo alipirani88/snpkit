@@ -19,6 +19,7 @@ from modules.logging_subprocess import *
 from modules.log_modules import *
 from argparse import RawTextHelpFormatter
 from memory_profiler import profile
+from modules.samclip import samclip
 
 # Command Line Argument Parsing
 def parser():
@@ -46,6 +47,7 @@ def parser():
                           help='Genome Size. If not provided, will be estimated from Mash')
     optional.add_argument('-downsample', action='store', dest="downsample",
                           help='yes/no: Downsample Reads data to default depth of 100X or user specified depth')
+    optional.add_argument('-clip', action="store_true", help='Filter SAM file for soft and hard clipped alignments. Default: OFF')
     return parser
 
 # Main Pipeline method
@@ -86,7 +88,7 @@ def pipeline(args, logger):
 
     """ INDIVIDUAL SUBPROCESS FOR EACH PIPELINE STEPS"""
     ## 1. Pre-Processing Raw reads using Trimmomatic
-    @profile
+    
     def clean():
         method_start_time = datetime.now()
         keep_logging('START: Pre-Processing Raw reads using Trimmomatic', 'START: Pre-Processing Raw reads using Trimmomatic', logger, 'info')
@@ -96,36 +98,39 @@ def pipeline(args, logger):
             reverse_raw = "None"
             trimmomatic(args.forward_raw, reverse_raw, args.output_folder, args.croplength, logger, Config)
         keep_logging('END: Pre-Processing Raw reads using Trimmomatic', 'END: Pre-Processing Raw reads using Trimmomatic', logger, 'info')
-	method_time_taken = datetime.now() - method_start_time
-	keep_logging('Time taken to complete the method - clean: {}'.format(method_time_taken), 'Time taken to complete the method - clean: {}'.format(method_time_taken), logger, 'info')
+        method_time_taken = datetime.now() - method_start_time
+        keep_logging('Time taken to complete the method - clean: {}'.format(method_time_taken), 'Time taken to complete the method - clean: {}'.format(method_time_taken), logger, 'info')
 
     ## 2. Stages: Alignment using BWA
-    @profile
+    
     def align_reads():
-	method_start_time = datetime.now()
+        method_start_time = datetime.now()
         keep_logging('START: Mapping Reads using BWA', 'START: Mapping Reads using BWA', logger, 'info')
         split_field = prepare_readgroup(args.forward_raw, ConfigSectionMap("pipeline", Config)['aligner'], logger)
         out_sam = align(args.output_folder, args.index, split_field, args.analysis_name, files_to_delete, logger, Config, args.type)
         keep_logging('END: Mapping Reads using BWA', 'END: Mapping Reads using BWA', logger, 'info')
-	method_time_taken = datetime.now() - method_start_time
-	keep_logging('Time taken to complete the method - align_reads: {}'.format(method_time_taken), 'Time taken to complete the method - align_reads: {}'.format(method_time_taken), logger, 'info')
+        method_time_taken = datetime.now() - method_start_time
+        keep_logging('Time taken to complete the method - align_reads: {}'.format(method_time_taken), 'Time taken to complete the method - align_reads: {}'.format(method_time_taken), logger, 'info')
         return out_sam
 
     # Run Depth of Coverage Module after read mapping and stop. Dont proceed to variant calling step.
-    @profile
+    
     def coverage_depth_stats():
-    	method_start_time = datetime.now()
+        method_start_time = datetime.now()
         gatk_DepthOfCoverage_file = gatk_DepthOfCoverage(out_sorted_bam, args.output_folder, args.analysis_name, reference, logger, Config)
         alignment_stats_file = alignment_stats(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
-	method_time_taken = datetime.now() - method_start_time
- 	keep_logging('Time taken to complete the method - coverage_depth_stats: {}'.format(method_time_taken), 'Time taken to complete the method - coverage_depth_stats: {}'.format(method_time_taken), logger, 'info')
+        method_time_taken = datetime.now() - method_start_time
+        keep_logging('Time taken to complete the method - coverage_depth_stats: {}'.format(method_time_taken), 'Time taken to complete the method - coverage_depth_stats: {}'.format(method_time_taken), logger, 'info')
         return gatk_DepthOfCoverage_file
 
     ## 3. Stages: Post-Alignment using SAMTOOLS, PICARD etc
-    @profile
+    
     def post_align(out_sam):
-	method_start_time = datetime.now()
+        method_start_time = datetime.now()
         keep_logging('START: Post-Alignment using SAMTOOLS, PICARD etc...', 'START: Post-Alignment using SAMTOOLS, PICARD etc...', logger, 'info')
+        # Add Samclip - 28 July 2020
+        if args.clip:
+            out_sam = samclip(out_sam, args.output_folder, args.analysis_name, reference, logger, Config)
         out_sorted_bam = prepare_bam(out_sam, args.output_folder, args.analysis_name, files_to_delete, logger, Config)
         keep_logging('END: Post-Alignment using SAMTOOLS, PICARD etc...', 'END: Post-Alignment using SAMTOOLS, PICARD etc...', logger, 'info')
         #out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
@@ -133,14 +138,14 @@ def pipeline(args, logger):
         bedgraph_coverage(out_sorted_bam, args.output_folder, args.analysis_name, reference, logger, Config)
         only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         keep_logging('END: Creating BedGraph Coverage', 'END: Creating BedGraph Coverage', logger, 'info')
-	method_time_taken = datetime.now() - method_start_time
-	keep_logging('Time taken to complete the method - post_align: {}'.format(method_time_taken), 'Time taken to complete the method - post_align: {}'.format(method_time_taken), logger, 'info')
+        method_time_taken = datetime.now() - method_start_time
+        keep_logging('Time taken to complete the method - post_align: {}'.format(method_time_taken), 'Time taken to complete the method - post_align: {}'.format(method_time_taken), logger, 'info')
         return out_sorted_bam
 
     ## 4. Stages: Variant Calling
-    @profile
+    
     def varcall():
-	method_start_time = datetime.now()
+        method_start_time = datetime.now()
         keep_logging('START: Variant Calling', 'START: Variant Calling', logger, 'info')
         caller = ConfigSectionMap("pipeline", Config)['variant_caller']
         if caller == "gatkhaplotypecaller":
@@ -170,13 +175,13 @@ def pipeline(args, logger):
             keep_logging('Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. gatkhaplotypecaller', 'Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. gatkhaplotypecaller', logger, 'info')
             exit()
         keep_logging('END: Variant Calling', 'END: Variant Calling', logger, 'info')
-	method_time_taken = datetime.now() - method_start_time
-	keep_logging('Time taken to complete the method - varcall: {}'.format(method_time_taken), 'Time taken to complete the method - varcall: {}'.format(method_time_taken), logger, 'info')
+        method_time_taken = datetime.now() - method_start_time
+        keep_logging('Time taken to complete the method - varcall: {}'.format(method_time_taken), 'Time taken to complete the method - varcall: {}'.format(method_time_taken), logger, 'info')
 
     ## 5. Stages: Variant Filteration
-    @profile
+    
     def filter(gatk_depth_of_coverage_file):
-	method_start_time = datetime.now()
+        method_start_time = datetime.now()
         keep_logging('START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
         final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
         #final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
@@ -193,13 +198,13 @@ def pipeline(args, logger):
         final_raw_indel_vcf = final_raw_vcf_mpileup + "_indel.vcf"
         filter_indels(final_raw_indel_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
         keep_logging('END: Variant Filteration', 'END: Variant Filteration', logger, 'info')
-	method_time_taken = datetime.now() - method_start_time
-	keep_logging('Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
+        method_time_taken = datetime.now() - method_start_time
+        keep_logging('Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
 
     ## 6. Stages: Statistics
-    @profile
+    
     def stats():
-	method_start_time = datetime.now()
+        method_start_time = datetime.now()
         keep_logging('START: Generating Statistics Reports', 'START: Generating Statistics Reports', logger, 'info')
         alignment_stats_file = alignment_stats(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         vcf_stats_file = vcf_stats(final_raw_vcf, args.output_folder, args.analysis_name, logger, Config)
@@ -207,7 +212,7 @@ def pipeline(args, logger):
         #qualimap_report = qualimap(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         keep_logging('END: Generating Statistics Reports', 'END: Generating Statistics Reports', logger, 'info')
         method_time_taken = datetime.now() - method_start_time
-	keep_logging('Time taken to complete the method - stats: {}'.format(method_time_taken), 'Time taken to complete the method - stats: {}'.format(method_time_taken), logger, 'info')
+        keep_logging('Time taken to complete the method - stats: {}'.format(method_time_taken), 'Time taken to complete the method - stats: {}'.format(method_time_taken), logger, 'info')
 
     # ################################################### Stages: Remove Unwanted Intermediate files ######################################
     # # print "Removing Imtermediate Files...\n%s" % files_to_delete
@@ -524,7 +529,7 @@ def cleanup(args, logger):
         make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
         os.system("mv %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
 
-@profile
+
 def downsample(args, logger):
     method_start_time = datetime.now()
     if args.coverage_depth:
@@ -651,79 +656,6 @@ def downsample(args, logger):
         else:
             r2_sub = "None"
 
-
-    # if not args.coverage_depth and ori_coverage_depth > 100:
-    #     # Downsample to 100
-    #     factor = float(100 / float(ori_coverage_depth))
-    #     print factor
-    #     r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
-    #
-    #     # Downsample using seqtk
-    #     try:
-    #         keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)),
-    #                      "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
-    #         call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
-    #     except sp.CalledProcessError:
-    #         keep_logging('Error running seqtk for downsampling raw fastq reads.',
-    #                      'Error running seqtk for downsampling raw fastq reads.', logger, 'info')
-    #         sys.exit(1)
-    #
-    #     if args.reverse_raw:
-    #         r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
-    #
-    #         try:
-    #             keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
-    #                          "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
-    #             call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
-    #         except sp.CalledProcessError:
-    #             keep_logging('Error running seqtk for downsampling raw fastq reads.',
-    #                          'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
-    #             sys.exit(1)
-    #     else:
-    #         r2_sub = "None"
-    # elif not args.coverage_depth and ori_coverage_depth < 100:
-    #     r1_sub = args.forward_raw
-    #     r2_sub = args.reverse_raw
-    # else:
-    #     factor = float(float(args.coverage_depth) / float(ori_coverage_depth))
-    #     #print round(factor, 3)
-    #     r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
-    #
-    #     # Downsample using seqtk
-    #     try:
-    #         keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)),
-    #                      "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
-    #         call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
-    #     except sp.CalledProcessError:
-    #         keep_logging('Error running seqtk for downsampling raw fastq reads.',
-    #                      'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
-    #         sys.exit(1)
-    #
-    #     if args.reverse_raw:
-    #         r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
-    #
-    #         try:
-    #             keep_logging("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
-    #                          "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
-    #             call("/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-    #                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
-    #         except sp.CalledProcessError:
-    #             keep_logging('Error running seqtk for downsampling raw fastq reads.',
-    #                          'Error running seqtk for downsampling raw fastq reads.', logger, 'exception')
-    #             sys.exit(1)
-    #     else:
-    #         r2_sub = "None"
 
     method_time_taken = datetime.now() - method_start_time
     keep_logging('Time taken to complete the method - downsample: {}'.format(method_time_taken), 'Time taken to complete the method - downsample: {}'.format(method_time_taken), logger, 'info')

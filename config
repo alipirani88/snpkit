@@ -282,7 +282,7 @@ dataDir: /data/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1.fasta
 # path to the reference genome fasta file.
-Ref_Path: /scratch/esnitkin_root/esnitkin/apirani/Testing_pipelines/reference/KPNIH1/
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
 
 # Name of the reference genome. Provide this value with -index_name argument.
 [aus]
@@ -1063,6 +1063,11 @@ Ref_Name: Cdiff_O14_W0022a.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O14_W0022a/
 
+[CDIFF_ST2_W0022a]
+# Name of reference genome fasta file.
+Ref_Name: CDIFF_ST2_W0022a.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/Project_Cdiff/Sequence_data/U01_supplement_014_027_genomes/reference_genome/CDIFF_ST2_W0022a/
 
 [Pt0_Chromosome_OXA232]
 # Name of reference genome fasta file.

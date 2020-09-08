@@ -948,6 +948,7 @@ def generate_position_label_data_matrix():
     :return: null
 
     """
+    method_start_time = datetime.now()
 
     def generate_position_label_data_matrix_All_label():
         position_label = OrderedDict()
@@ -1732,6 +1733,10 @@ def generate_position_label_data_matrix():
     barplot_stats()
     # barplot_additional_stats()
 
+    method_time_taken = datetime.now() - method_start_time
+
+    keep_logging('Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken),
+                 'Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
 
 def generate_indel_position_label_data_matrix():
     """
@@ -1749,6 +1754,7 @@ def generate_indel_position_label_data_matrix():
     :return: null
 
     """
+    method_start_time = datetime.now()
 
     def generate_indel_position_label_data_matrix_All_label():
         position_label = OrderedDict()
@@ -2317,7 +2323,10 @@ def generate_indel_position_label_data_matrix():
     keep_logging('Running: Generating Barplot statistics data matrices...',
                  'Running: Generating Barplot statistics data matrices...', logger, 'info')
     barplot_indel_stats()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken),
+                 'Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
 
 def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter, script_Directive, job_name_flag):
     """ Generate jobs/scripts that creates core consensus fasta file.
@@ -2524,9 +2533,9 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             if args.scheduler == "SLURM":
                 proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
                 (out, err) = proc.communicate()
-                num_cores = int(out.strip()) - 1
+                num_cores = int(out.strip())
             elif args.scheduler == "PBS":
-                num_cores = multiprocessing.cpu_count() - 1
+                num_cores = multiprocessing.cpu_count()
 
         print "Number of cores: %s" % num_cores
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
@@ -2709,6 +2718,7 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 
 
 def generate_vcf_files():
+    method_start_time = datetime.now()
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
         keep_logging(
             'Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions,
@@ -2830,7 +2840,10 @@ def generate_vcf_files():
     # sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
     # #os.system(sequence_lgth_cmd)
     # call("%s" % sequence_lgth_cmd, logger)
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the core genome method: {}'.format(method_time_taken),
+                 'Time taken to complete the core genome method: {}'.format(method_time_taken), logger, 'info')
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
@@ -3023,6 +3036,7 @@ def extract_only_ref_variant_fasta(core_vcf_fasta_dir):
 
 
 def extract_only_ref_variant_fasta_from_reference():
+    method_start_time = datetime.now()
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and \
             ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
         ffp = open(
@@ -3051,9 +3065,13 @@ def extract_only_ref_variant_fasta_from_reference():
     args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', '').replace('.fa', ''))), 'w+')
     fp.write(final_fasta_string)
     fp.close()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the extract_only_ref_variant_fasta_from_reference method: {}'.format(method_time_taken),
+                 'Time taken to complete the extract_only_ref_variant_fasta_from_reference method: {}'.format(method_time_taken), logger, 'info')
 
 def extract_only_ref_variant_fasta_from_reference_allele_variant():
+    method_start_time = datetime.now()
     ffp = open("%s/unique_positions_file" % args.filter2_only_snp_vcf_dir).readlines()
     # unique_positions_array = []
 
@@ -3080,9 +3098,13 @@ def extract_only_ref_variant_fasta_from_reference_allele_variant():
     args.filter2_only_snp_vcf_dir, os.path.basename(args.reference.replace('.fasta', '').replace('.fa', ''))), 'w+')
     fp.write(final_fasta_string)
     fp.close()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the extract_only_ref_variant_fasta_from_reference_allele_variant method: {}'.format(method_time_taken),
+                 'Time taken to complete the extract_only_ref_variant_fasta_from_reference_allele_variant method: {}'.format(method_time_taken), logger, 'info')
 
 def core_prep_snp(core_vcf_fasta_dir):
+    method_start_time = datetime.now()
     """ Generate SNP Filter Label Matrix """
     generate_paste_command()
 
@@ -3096,9 +3118,13 @@ def core_prep_snp(core_vcf_fasta_dir):
 
     """ Analyze the positions that were filtered out only due to insufficient depth"""
     # DP_analysis()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the core_prep_snp method: {}'.format(method_time_taken),
+                 'Time taken to complete the core_prep_snp method: {}'.format(method_time_taken), logger, 'info')
 
 def core_prep_indel(core_vcf_fasta_dir):
+    method_start_time = datetime.now()
     """ Generate SNP Filter Label Matrix """
     generate_indel_paste_command()
 
@@ -3106,12 +3132,16 @@ def core_prep_indel(core_vcf_fasta_dir):
 
     """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
     generate_indel_position_label_data_matrix()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the core_prep_indel method: {}'.format(method_time_taken),
+                 'Time taken to complete the core_prep_indel method: {}'.format(method_time_taken), logger, 'info')
 
 """ Annotation methods"""
 
 
 def prepare_snpEff_db(reference_basename):
+    method_start_time = datetime.now()
     keep_logging('Preparing snpEff database requirements.', 'Preparing snpEff database requirements.', logger, 'info')
     reference_basename = (os.path.basename(args.reference)).split(".")
 
@@ -3185,9 +3215,13 @@ def prepare_snpEff_db(reference_basename):
          logger)
     keep_logging('Finished Preparing snpEff database requirements.', 'Finished Preparing snpEff database requirements.',
                  logger, 'info')
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the prepare_snpEff_db method: {}'.format(method_time_taken),
+                 'Time taken to complete the prepare_snpEff_db method: {}'.format(method_time_taken), logger, 'info')
 
 def variant_annotation():
+    method_start_time = datetime.now()
     keep_logging('Annotating Variants using snpEff.', 'Annotating Variants using snpEff.', logger, 'info')
 
     if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
@@ -3232,9 +3266,13 @@ def variant_annotation():
     # print annotate_vcf_cmd_array
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
+    method_time_taken = datetime.now() - method_start_time
+    keep_logging('Time taken to complete the variant_annotation method: {}'.format(method_time_taken),
+                 'Time taken to complete the variant_annotation method: {}'.format(method_time_taken), logger, 'info')
 
 
 def indel_annotation():
+    method_start_time = datetime.now()
     keep_logging('Annotating indels using snpEff.', 'Annotating indels using snpEff.', logger, 'info')
 
     if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
@@ -3289,9 +3327,13 @@ def indel_annotation():
     print "Number of cores: %s" % num_cores
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the indel_annotation method: {}'.format(method_time_taken),
+                 'Time taken to complete the indel_annotation method: {}'.format(method_time_taken), logger, 'info')
 
 def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, logger, Config):
+    method_start_time = datetime.now()
     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)[
         'gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
     # files_gatk = "--variant " + ' --variant '.join(vcf_files_array)
@@ -3308,6 +3350,10 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
     fopen.close()
     # Commenting out calling gatk combine variants with a custom logging call method, problem with python subprocess, OSError: [Errno 7] Argument list too long
     os.system("bash %s" % merge_gatk_commands_file)
+    method_time_taken = datetime.now() - method_start_time
+
+    keep_logging('Time taken to complete the gatk_combine_variants method: {}'.format(method_time_taken),
+                 'Time taken to complete the gatk_combine_variants method: {}'.format(method_time_taken), logger, 'info')
     return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
 
 
@@ -3399,7 +3445,7 @@ def merge_vcf():
         - Parse this merged Final_vcf* file and generate a SNP/Indel matrix
 
         """
-
+    method_start_time = datetime.now()
     keep_logging(
         'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
         'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
@@ -3478,11 +3524,15 @@ def merge_vcf():
     annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
     final_gatk_snp_merged_vcf = "Final_vcf_gatk_no_proximate_snp.vcf"
     final_gatk_indel_merged_vcf = "Final_vcf_gatk_indel.vcf"
-    print "here"
+    method_time_taken = datetime.now() - method_start_time
+
+    keep_logging('Time taken to complete the merge_vcf method: {}'.format(method_time_taken),
+                 'Time taken to complete the merge_vcf method: {}'.format(method_time_taken), logger, 'info')
     return annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf
 
 
 def extract_annotations_from_multivcf():
+    method_start_time = datetime.now()
     """ Extract ANN information from bcftools Final vcf file. (There is a reason why i am using bcftools merged file to extract ANN information) """
     snp_var_ann_dict = {}
     indel_var_ann_dict = {}
@@ -3493,12 +3543,16 @@ def extract_annotations_from_multivcf():
     # Commented out for legionella bug
     for variants in VCF("%s/Final_vcf_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
-    print "here"
+    method_time_taken = datetime.now() - method_start_time
+
+    keep_logging('Time taken to complete the extract_annotations_from_multivcf method: {}'.format(method_time_taken),
+                 'Time taken to complete the extract_annotations_from_multivcf method: {}'.format(method_time_taken), logger, 'info')
     """ End of Extract ANN information from bcftools Final vcf file"""
     return snp_var_ann_dict, indel_var_ann_dict
 
 
 def extract_core_positions():
+    method_start_time = datetime.now()
     """ Generate an array of core positions. Read Only_ref_variant_positions_for_closely* to get final core variant positions into core_positions array"""
     core_positions = []
     if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
@@ -3521,13 +3575,17 @@ def extract_core_positions():
             line = line.strip()
             indel_core_positions.append(line)
         fp.close()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the extract_core_positions method: {}'.format(method_time_taken),
+                 'Time taken to complete the extract_core_positions method: {}'.format(method_time_taken), logger, 'info')
     """ End: Generate an array of core positions. """
     return core_positions, indel_core_positions
 
 
 def extract_functional_class_positions():
     """ Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
+    method_start_time = datetime.now()
     """ Read in functional class filter positions. """
     functional_filter_pos_array = []
     with open(functional_class_filter_positions, 'rU') as f_functional:
@@ -3573,11 +3631,15 @@ def extract_functional_class_positions():
                 exit()
 
     """ End: Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the extract_functional_class_positions method: {}'.format(method_time_taken),
+                 'Time taken to complete the extract_functional_class_positions method: {}'.format(method_time_taken), logger, 'info')
     return functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions
 
 
 def generate_position_label_dict(final_merge_anno_file):
+    method_start_time = datetime.now()
     global position_label, position_indel_label
 
     """ Prepare a *final_ordered_sorted.txt file with sorted unique variant positions. """
@@ -3636,7 +3698,7 @@ def generate_position_label_dict(final_merge_anno_file):
             first_part = first_part_split[0].replace('_L001', '')
             # first_part = re.sub("_S.*_", "", first_part)
         # print filename_base
-        first_part = re.sub("_S.*_", "", first_part)
+        #first_part = re.sub("_S.*_", "", first_part)
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
         args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
@@ -3716,7 +3778,10 @@ def generate_position_label_dict(final_merge_anno_file):
     csv_file.close()
 
     """ End: Generate a position_label and position_indel_label dictionary """
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken),
+                 'Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken), logger, 'info')
     return position_label, position_indel_label
 
 
@@ -3865,6 +3930,7 @@ def get_low_fq_mq_positions_indel(position_label, position_indel_label):
 
 def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                         mask_positions, position_label, core_positions, snp_var_ann_dict):
+    method_start_time = datetime.now()
     """ Prepare SNP/Indel Matrix print strings and add matrix row information subsequently """
 
     header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
@@ -4536,10 +4602,14 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
     fp_allele.close()
     fp_allele_new.close()
     fp_allele_new_phage.close()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the Generate SNP matrix method: {}'.format(method_time_taken),
+                 'Time taken to complete the Generate SNP matrix method: {}'.format(method_time_taken), logger, 'info')
 
 def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                           mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict):
+    method_start_time = datetime.now()
     """ Prepare Indel Matrix header print strings and add matrix row information subsequently """
     header_print_string = "Type of SNP at POS > ALT functional=PHAGE_REPEAT_MASK locus_tag=locus_id strand=strand; ALT|Effect|Impact|GeneID|Nrchange|Aachange|Nrgenepos|AAgenepos|gene_symbol|product"
     for sample in final_merge_anno_file.samples:
@@ -5204,7 +5274,10 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
         fp_code.write(final_code_string)
     fp_code.close()
     fp_allele.close()
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the Generate Indel matrix method: {}'.format(method_time_taken),
+                 'Time taken to complete the Generate Indel matrix method: {}'.format(method_time_taken), logger, 'info')
 
 def annotated_snp_matrix():
     """
@@ -5212,7 +5285,7 @@ def annotated_snp_matrix():
     Read Genbank file and return a dictionary of Prokka ID mapped to Gene Name, Prokka ID mapped to Product Name.
     This dictionary will then be used to insert annotation into SNP/Indel matrix
     """
-
+    method_start_time = datetime.now()
     """Annotate all VCF file formats with SNPeff"""
     # Commented for debugging
     variant_annotation()
@@ -5253,7 +5326,10 @@ def annotated_snp_matrix():
 
     generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                           mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict)
+    method_time_taken = datetime.now() - method_start_time
 
+    keep_logging('Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken),
+                 'Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken), logger, 'info')
 
 """ Report methods """
 
@@ -5474,7 +5550,7 @@ if __name__ == '__main__':
         """ 
         core_prep step
         """
-
+        method_start_time = datetime.now()
         # Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
         keep_logging('Gathering SNP position information from each final *_no_proximate_snp.vcf file...',
                      'Gathering SNP position information from each final *_no_proximate_snp.vcf file...', logger,
@@ -5512,12 +5588,16 @@ if __name__ == '__main__':
 
         call("cp %s %s/Logs/core_prep/" % (
         log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+        method_time_taken = datetime.now() - method_start_time
+
+        keep_logging('Time taken to complete the Core Step 1 method: {}'.format(method_time_taken),
+                     'Time taken to complete the Core Step 1 method: {}'.format(method_time_taken), logger, 'info')
 
     if "2" in args.steps:
         """ 
         core step 
         """
-
+        method_start_time = datetime.now()
         # Set variables; check if the output from core_prep steps (*label files) exists and was completed without any errors.
         snp_unique_positions_file = args.filter2_only_snp_vcf_dir + "/unique_positions_file"
         indel_unique_positions_file = args.filter2_only_snp_vcf_dir + "/unique_indel_positions_file"
@@ -5592,6 +5672,10 @@ if __name__ == '__main__':
 
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+        method_time_taken = datetime.now() - method_start_time
+
+        keep_logging('Time taken to complete the Core Step 2 method: {}'.format(method_time_taken),
+                     'Time taken to complete the Core Step 2 method: {}'.format(method_time_taken), logger, 'info')
 
     if "3" in args.steps:
         """ report step """

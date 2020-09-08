@@ -58,6 +58,8 @@ def parser():
                           required=False)
     optional.add_argument('-mask', action='store_true', dest="mask",
                           help='Mask Gubbins detected recombinant region in WGA and run Iqtree on masked alignment')
+    optional.add_argument('-clip', action="store_true",
+                          help='Filter SAM file for soft and hard clipped alignments. Default: OFF')
     return parser
 
 
@@ -279,6 +281,9 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
 
                 command = command + " -downsample yes -coverage_depth %s" % depth
 
+            # Adding samclip feature July 2020
+            if args.clip:
+               command = command + " -clip"
             with open(job_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, first_part)
                 out.write("#!/bin/sh" + '\n')
