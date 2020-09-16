@@ -5967,6 +5967,10 @@ if __name__ == '__main__':
         if args.mask:
             gubbins_iqtree_script = "python %s/scripts/gubbins_iqtree.py -w %s" % (
             os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
+            if args.outgroup:
+                # Get outgroup_Sample name
+                outgroup = get_outgroup()
+                gubbins_iqtree_script = gubbins_iqtree_script + " -o %s" % outgroup
             print gubbins_iqtree_script
             with open(job_file_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
@@ -5987,6 +5991,10 @@ if __name__ == '__main__':
             gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (
             os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores,
             prepare_ref_allele_unmapped_consensus_input)
+            if args.outgroup:
+                # Get outgroup_Sample name
+                outgroup = get_outgroup()
+                gubbins_command = gubbins_command + " --outgroup %s" % outgroup
             iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (
             os.path.dirname(prepare_ref_allele_unmapped_consensus_input),
             os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir,

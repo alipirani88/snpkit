@@ -1098,3 +1098,9 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MNCRE9/
 Ref_Name: PABL048.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Project_PA_bGWAS/PABL048/
+
+[KP_ST147]
+# Name of reference genome fasta file.
+Ref_Name: KP_ST147.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KP_ST147/

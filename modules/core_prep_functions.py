@@ -63,6 +63,8 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
 
     """ Get Positions Specific to Outgroup Sample name """
     if outgroup:
+        outgroup_vcf_filename = str(outgroup.replace('R1_001.fastq.gz', '')) + "_filter2_final.vcf_no_proximate_snp.vcf"
+        outgroup_indel_vcf_filename = str(outgroup.replace('R1_001.fastq.gz', '')) + "_filter2_indel_final.vcf"
         outgroup_position_file_name = temp_dir + "/" + outgroup_vcf_filename + "_positions"
         outgroup_position_array = []
         f1 = open(outgroup_position_file_name, 'r+')
@@ -177,6 +179,7 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
 
     """ Get Positions Specific to Outgroup Sample name """
     if outgroup:
+        outgroup_indel_vcf_filename = str(outgroup.replace('R1_001.fastq.gz', '')) + "_filter2_indel_final.vcf"
         outgroup_position_indel_file_name = temp_dir + "/" + outgroup_indel_vcf_filename + "_positions"
         print outgroup_position_indel_file_name
         outgroup_position_indel_array = []

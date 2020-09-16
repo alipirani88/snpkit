@@ -366,7 +366,7 @@ def run_command(job):
     return done
 
 def run_command_list(command):
-    keep_logging('Running command: %s' % command, 'Running command: %s' % command, logger, 'debug')
+    #keep_logging('', 'Running command: %s' % command, logger, 'debug')
     call("%s" % command, logger)
     done = "Command Run completed: %s" % command
     return done
@@ -853,17 +853,46 @@ if __name__ == '__main__':
             empty_files = []
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_files:
-                    #print file
-                    depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')
-                    #print depth
-                    proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
-                    (out2, err2) = proc.communicate()
-                    #print file
-                    # Bug found on 24th july
-                    cov_depth = int(float(out2.strip()))
-                    out_fp.write(os.path.basename(file) + '\n')
-                    if float(out2.strip()) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
-                        keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (os.path.basename(file), float(out2.strip())), 'The coverage depth for Sample %s - %s is lower than the threshold' % (os.path.basename(file), float(out2.strip())), logger, 'info')
+                    print file
+                    print file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')
+                    with open(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')) as fp:
+                        for line in fp:
+                            line = line.strip()
+                            if line.startswith('Total'):
+                                linesplit = line.split('\t')
+                                cov_depth = int(float(linesplit[2].strip()))
+                                print cov_depth
+
+                                if float(cov_depth) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                                    keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (
+                                    os.path.basename(file), float(cov_depth.strip())),
+                                                 'The coverage depth for Sample %s - %s is lower than the threshold' % (
+                                                 os.path.basename(file), float(cov_depth.strip())), logger, 'info')
+                    fp.close()
+                    out_fp.write(os.path.basename(file.replace('R1_001.fastq.gz', '_filter2_final.vcf_no_proximate_snp.vcf')) + '\n')
+                    # try:
+                    #     #depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')
+                    #     #print depth
+                    #     #proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
+                    #     #(out2, err2) = proc.communicate()
+                    #     #print str(out2)
+                    #     # Bug found on 24th july
+                    #     # cov_depth = int(float(out2.strip()))
+                    #     # out_fp.write(os.path.basename(file) + '\n')
+                    #     with open(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')) as fp:
+                    #         for line in fp:
+                    #             line = line.strip()
+                    #             if line.startswith('Total'):
+                    #                 linesplit = line.split('\t')
+                    #                 cov_depth = int(float(linesplit[2].strip()))
+                    #                 print cov_depth
+                    #     out_fp.write(os.path.basename(file) + '\n')
+                    #     if float(cov_depth) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
+                    #         keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (os.path.basename(file), float(cov_depth.strip())), 'The coverage depth for Sample %s - %s is lower than the threshold' % (os.path.basename(file), float(cov_depth.strip())), logger, 'info')
+                    # except OSError as exception:
+                    #     keep_logging('Failed to extract Depth from file - %s' % file, 'Failed to extract Depth from file - %s' % file, logger, exception)
+                    #     exit()
+
                     # Check if the vcf files are empty
                     if os.stat(file).st_size == 0:
                         empty_files.append(file)
@@ -962,7 +991,7 @@ if __name__ == '__main__':
             f1 = open(functional_class_filter_positions, 'w+')
             if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
                 phage_region_positions = parse_phaster(reference, core_temp_dir, logger, Config)
-                with open(phage_region_positions, 'rU') as fp:
+                with open(Decompressing gzipped files, 'rU') as fp:
                     for line in fp:
                         f1.write(line)
                 fp.close()

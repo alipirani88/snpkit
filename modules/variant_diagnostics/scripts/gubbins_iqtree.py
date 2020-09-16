@@ -12,6 +12,8 @@ import os
 #sys.path.insert(1, '/nfs/esnitkin/bin_group/pipeline/Github/beast/')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fasta_functions import mask_positions
+from fasta_functions import subset_fasta
+from Bio import *
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description='''Make tree using iqtree;
@@ -55,7 +57,12 @@ else:
     # create new alignment if outgroups present
     if args.o is not None:
         no_og_fasta = re.sub('.fa*', '_no-outgroup.fa', args.alignment)
-        subset_fasta(args.o, args.alignment, no_og_fasta)
+        wanted = []
+        fasta_sequences = SeqIO.parse(open(args.alignment), 'fasta')
+        for seq in fasta_sequences:
+            wanted.append(seq.id)
+        wanted.remove(str(args.o[0]))
+        subset_fasta(wanted, args.alignment, no_og_fasta)
         fasta = no_og_fasta
     else:
         fasta = args.alignment
