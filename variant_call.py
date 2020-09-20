@@ -991,7 +991,7 @@ if __name__ == '__main__':
             f1 = open(functional_class_filter_positions, 'w+')
             if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
                 phage_region_positions = parse_phaster(reference, core_temp_dir, logger, Config)
-                with open(Decompressing gzipped files, 'rU') as fp:
+                with open(phage_region_positions, 'rU') as fp:
                     for line in fp:
                         f1.write(line)
                 fp.close()
