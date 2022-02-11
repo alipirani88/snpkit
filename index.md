@@ -1,4 +1,4 @@
-# SNPKIT - Microbial Variant Calling and Diagnostics Pipeline
+# SNPKIT
 
 
 ## Synopsis
