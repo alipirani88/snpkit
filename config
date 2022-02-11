@@ -1104,3 +1104,22 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Project_PA_bGWAS
 Ref_Name: KP_ST147.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KP_ST147/
+
+[UMN026]
+# Name of reference genome fasta file.
+Ref_Name: UMN026.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/UMN026/
+
+
+[KPNIH1_plasmid_pKpQIL6e6]
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1_plasmid_pKpQIL6e6.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_plasmid_pKpQIL6e6/
+
+[CB1]
+# Name of reference genome fasta file.
+Ref_Name: CB1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /scratch/esnitkin_root/esnitkin/apirani/Project_Crispatus/Analysis/2022_01_19_variant_calling_against_CB1/CB1_assembly/

@@ -162,7 +162,7 @@ def mask_fq_mq_positions_specific_to_outgroup():
         for i in mask_fq_mq_positions_outgroup_specific:
             fp.write(i + '\n')
         fp.close()
-        print "Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
+        #print "Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
 
         outgroup = get_outgroup()
         fqmqpositionsspecifictooutgroup = []
@@ -203,18 +203,12 @@ def mask_fq_mq_positions_specific_to_outgroup():
         fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
             args.reference, vcf_filename_unmapped, outgroup)
 
-        # print bgzip_cmd
-        # print tabix_cmd
-        # print fasta_cmd
-
         subprocess.call([bgzip_cmd], shell=True)
         subprocess.call([tabix_cmd], shell=True)
         subprocess.call([fasta_cmd], shell=True)
         sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_unmapped_variants.fa\n" % (outgroup, outgroup)
         subprocess.call([sed_command], shell=True)
-        # print sed_command
-
-
+        
     else:
         position_label = OrderedDict()
 
@@ -2740,7 +2734,7 @@ def generate_vcf_files():
                 ref_variant_position_array.append(line)
         ffp.close()
         now = time.time()
-        print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
+        #print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
 
         # Adding core indel support: 2018-07-24
         ref_indel_variant_position_array = []
@@ -3451,7 +3445,7 @@ def merge_vcf():
         'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
         logger, 'info')
 
-    # Commented for debugging
+    # Commented for SNP Matrix debugging
     files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
     tabix(files_for_tabix, "vcf", logger, Config)
     files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
@@ -3477,7 +3471,7 @@ def merge_vcf():
     os.system("bash %s" % merge_commands_file)
 
     """ Merge with Gatk combine variants method """
-    # Commented for debugging
+    # Commented for SNP Matrix debugging
     merged_file_suffix = "_no_proximate_snp.vcf"
 
     annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
@@ -3698,7 +3692,7 @@ def generate_position_label_dict(final_merge_anno_file):
             first_part = first_part_split[0].replace('_L001', '')
             # first_part = re.sub("_S.*_", "", first_part)
         # print filename_base
-        #first_part = re.sub("_S.*_", "", first_part)
+        first_part = re.sub("_S.*_", "", first_part)
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % (
         args.filter2_only_snp_vcf_dir, first_part)
         sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
@@ -3942,14 +3936,16 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
 
     """ Open Matrix files to write strings """
     fp_code = open("%s/SNP_matrix_code.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele = open("%s/SNP_matrix_allele_outdated.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code_unmasked = open("%s/SNP_matrix_code_unmasked.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    # fp_allele = open("%s/SNP_matrix_allele_outdated.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_allele_new = open("%s/SNP_matrix_allele_new.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
-    fp_allele_new_phage = open("%s/SNP_matrix_allele_unmasked.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_allele_phage = open("%s/SNP_matrix_allele_unmasked.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_code.write(header_print_string)
-    fp_allele.write(header_print_string)
+    fp_code_unmasked.write(header_print_string)
+    #fp_allele.write(header_print_string)
     fp_allele_new.write(header_print_string)
-    fp_allele_new_phage.write(header_print_string)
-
+    fp_allele_phage.write(header_print_string)
+    
     """ Parse variant positions from the loaded cyvcf VCF object/ merged gatk multivcf file and generate matrix row information """
     for variants in VCF("%s/Final_vcf_gatk_no_proximate_snp.vcf.gz" % args.filter2_only_snp_vcf_dir):
         # Initiate print_string variable to add matrix row information.
@@ -3979,6 +3975,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         # True but non-core = 3
 
         code_string = position_label[str(variants.POS)]
+        
         # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
         code_string = code_string.replace('reference_allele_indel_proximate', '4')
         code_string = code_string.replace('reference_allele', '0')
@@ -4005,15 +4002,20 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         code_string = code_string.replace('HighFQ_DP', '2')
         code_string = code_string.replace('LowFQ', '-3')
         code_string = code_string.replace('HighFQ', '-4')
+        code_string_unmasked =code_string
 
         if str(variants.POS) in core_positions:
             code_string = code_string.replace('VARIANT', '1')
+            code_string_unmasked = code_string_unmasked.replace('VARIANT', '1')
         # Adding functional class status code to SNP matrix: 2018-07-24
         elif str(variants.POS) in functional_filter_pos_array:
             # Changing Functional class filter code to -2 from 2: 2018-12-04
             code_string = code_string.replace('VARIANT', '-2')
+            code_string_unmasked = code_string_unmasked.replace('VARIANT', '3')
+            # code_string_unmasked = code_string_unmasked.replace('VARIANT', 'PHAGE')
         else:
             code_string = code_string.replace('VARIANT', '3')
+            code_string_unmasked = code_string_unmasked.replace('VARIANT', '3')
 
         # Annotation Bug fix 2
         # Changing SNP type: Date 28/05/2019
@@ -4493,11 +4495,19 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         for gt in variants.gt_bases:
             gt = gt.replace('./.', '.')
             gt_string = gt_string + "," + gt
-        gt_string = gt_string.replace('A/A', 'A')
-        gt_string = gt_string.replace('G/G', 'G')
-        gt_string = gt_string.replace('C/C', 'C')
-        gt_string = gt_string.replace('T/T', 'T')
-        gt_string = gt_string.replace('.', variants.REF)
+        if "A/A" in gt_string:
+            gt_string = gt_string.replace('A/A', 'A')
+        elif "G/G" in gt_string:
+            gt_string = gt_string.replace('G/G', 'G')
+        elif "C/C" in gt_string:
+            gt_string = gt_string.replace('C/C', 'C')
+        elif "T/T" in gt_string:
+            gt_string = gt_string.replace('T/T', 'T')
+        elif "." in gt_string:
+            gt_string = gt_string.replace('.', variants.REF)
+        else:
+            print "Warning: Doesn't recognize GT code at %s - %s" % (variants.POS, gt_string)
+            exit()
 
         # print_string generator no. 4
         # Replace various seperators that were used in old matrix. Clean up this block of code
@@ -4535,19 +4545,28 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
             code_string = ','.join(code_string_array)
 
         final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
+        final_code_string_unmasked = print_string + "\t" + code_string_unmasked.replace(',', '\t') + '\n'
         final_allele_string = final_allele_string.replace(',|', '|')
 
         final_allele_string = final_allele_string.replace(',;,', ':::')
         final_allele_string = final_allele_string.replace(';,', ':::')
         final_code_string = final_code_string.replace(',|', '|')
+        final_code_string_unmasked = final_code_string_unmasked.replace(',|', '|')
+
+        final_code_string_unmasked = final_code_string_unmasked.replace(',;,', ':::')
+        final_code_string_unmasked = final_code_string_unmasked.replace(';,', ':::')
+        final_code_string_unmasked = final_code_string_unmasked.replace(';\t\t', ';\t')
+        final_code_string_unmasked = final_code_string_unmasked.replace('\t\t', '\t')
 
         final_code_string = final_code_string.replace(',;,', ':::')
         final_code_string = final_code_string.replace(';,', ':::')
         final_code_string = final_code_string.replace(';\t\t', ';\t')
         final_code_string = final_code_string.replace('\t\t', '\t')
+
         final_allele_string = final_allele_string.replace('\t\t', '\t')
-        fp_allele.write(final_allele_string)
+        # fp_allele.write(final_allele_string)
         fp_code.write(final_code_string)
+        fp_code_unmasked.write(final_code_string_unmasked)
 
         ntd_string = ""
         ntd_string_phage = ""
@@ -4592,16 +4611,19 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         """ This is a hardcoded solution. Find the root cause of these strings getting into the print_strint variable """
         print_string.replace(',;,', '\t')
         print_string.replace(';,', '\t')
+        fp_allele_new.write(print_string)
+
         print_string_phage.replace(',;,', '\t')
         print_string_phage.replace(';,', '\t')
-
-        fp_allele_new.write(print_string)
-        fp_allele_new_phage.write(print_string_phage)
-
+        fp_allele_phage.write(print_string_phage)
+    
     fp_code.close()
-    fp_allele.close()
     fp_allele_new.close()
-    fp_allele_new_phage.close()
+    fp_allele_phage.close()
+    fp_code_unmasked.close()
+    # fp_allele.close()
+    
+    
     method_time_taken = datetime.now() - method_start_time
 
     keep_logging('Time taken to complete the Generate SNP matrix method: {}'.format(method_time_taken),
@@ -4618,9 +4640,13 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
     header_print_string = header_print_string + "\n"
 
     fp_code = open("%s/Indel_matrix_code.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    fp_code_unmasked = open("%s/Indel_matrix_code_unmasked.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
     fp_allele = open("%s/Indel_matrix_allele.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+    
     fp_code.write(header_print_string)
+    fp_code_unmasked.write(header_print_string)
     fp_allele.write(header_print_string)
+    
 
     for variants in VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir):
         print_string = ""
@@ -4664,15 +4690,19 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
         code_string = code_string.replace('HighAF_DP', '2')
         code_string = code_string.replace('LowAF', '-3')
         code_string = code_string.replace('HighAF', '-4')
+        code_string_unmasked =code_string
 
         if str(variants.POS) in indel_core_positions:
             code_string = code_string.replace('VARIANT', '1')
+            code_string_unmasked = code_string_unmasked.replace('VARIANT', '1')
         # Adding functional class status code to SNP matrix: 2018-07-24
         elif str(variants.POS) in functional_filter_pos_array:
             # Changing Functional class filter code to -2 from 2: 2018-12-04
             code_string = code_string.replace('VARIANT', '-2')
+            code_string_unmasked = code_string_unmasked.replace('VARIANT', '3')
         else:
             code_string = code_string.replace('VARIANT', '3')
+            code_string_unmasked = code_string_unmasked.replace('VARIANT', '3')
 
         # Changing SNP type: Date 28/05/2019
         # Assign type of snp: coding / non-coding
@@ -5239,7 +5269,8 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 # ann_string = ann_string + str('|'.join(ann_string_array_split_columns[: -2 or None])) + ";"
                 # print ann_string
         print_string = print_string + " locus_tag=" + tag + strandness + ann_string
-
+        print_string_phage = print_string
+        
         gt_string = ""
         for gt in variants.gt_bases:
             gt = gt.replace('./.', '.')
@@ -5258,21 +5289,30 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
 
         final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
         final_code_string = print_string + "\t" + code_string.replace(',', '\t') + '\n'
+        final_code_string_unmasked = print_string + "\t" + code_string_unmasked.replace(',', '\t') + '\n'
         final_allele_string = final_allele_string.replace(',|', '|')
         # final_allele_string = final_allele_string.replace(',;,', ':::')
         # final_allele_string = final_allele_string.replace(';,', ':::')
         final_allele_string = final_allele_string.replace(',;,', ':::')
         final_allele_string = final_allele_string.replace(';,', ':::')
         final_code_string = final_code_string.replace(',|', '|')
+        final_code_string_unmasked = final_code_string_unmasked.replace(',|', '|')
         # final_code_string = final_code_string.replace(',;,', ':::')
         # final_code_string = final_code_string.replace(';,', ':::')
         final_code_string = final_code_string.replace(',;,', ':::')
         final_code_string = final_code_string.replace(';,', ':::')
         final_code_string = final_code_string.replace('\t\t', '\t')
+        final_code_string_unmasked = final_code_string_unmasked.replace(',;,', ':::')
+        final_code_string_unmasked = final_code_string_unmasked.replace(';,', ':::')
+        final_code_string_unmasked = final_code_string_unmasked.replace('\t\t', '\t')
+
         final_allele_string = final_allele_string.replace('\t\t', '\t')
         fp_allele.write(final_allele_string)
         fp_code.write(final_code_string)
+        fp_code_unmasked.write(final_code_string_unmasked)
+
     fp_code.close()
+    fp_code_unmasked.close()
     fp_allele.close()
     method_time_taken = datetime.now() - method_start_time
 
@@ -5287,7 +5327,7 @@ def annotated_snp_matrix():
     """
     method_start_time = datetime.now()
     """Annotate all VCF file formats with SNPeff"""
-    # Commented for debugging
+    # Commented for SNP Matrix debugging
     variant_annotation()
 
     indel_annotation()
@@ -6071,19 +6111,53 @@ if __name__ == '__main__':
         # Annotate core variants. Generate SNP and Indel matrix.
         annotated_snp_matrix()
 
-        # # Read new allele matrix and generate fasta; generate a seperate function
-        keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
-                     'info')
+        # # # Read new allele matrix and generate fasta; generate a seperate function
+        # keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
+        #              'info')
 
-        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
-                                        script_Directive, job_name_flag)
+        # create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
+        #                                 script_Directive, job_name_flag)
 
-        extract_only_ref_variant_fasta_from_reference_allele_variant()
+        # extract_only_ref_variant_fasta_from_reference_allele_variant()
 
-        mask_fq_mq_positions_specific_to_outgroup()
+        # mask_fq_mq_positions_specific_to_outgroup()
 
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+
+    """ The below steps are for debugging purpose only."""
+    if "6" in args.steps:
+        """ 
+        Debugging Purposes only: Collapse SNP matrix step 
+        """
+
+        keep_logging('Step 5: Running Collapse SNP matrix step.', 'Step 5: Running Collapse SNP matrix step.',
+                     logger, 'info')
+        
+        position_label = {}
+        c_reader = csv.reader(open('%s/SNP_matrix_code.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+        header = next(c_reader)
+        
+        for row in c_reader:
+            position_label[row[0]] = ','.join(row[1:])
+        
+
+        position_label_rev = dict()
+        for key, value in position_label.items():
+            position_label_rev.setdefault(value, set()).add(key)
+            
+        fp_code_collapsed = open("%s/SNP_matrix_code_collapsed.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+        fp_code_collapsed_key = open("%s/SNP_matrix_code_collapsed_key.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
+        result = [key for key, values in position_label_rev.items()
+                              if len(values) > 1]
+        fp_code_collapsed.write(','.join(header))
+        for key, values in position_label_rev.items():
+            if len(values) > 1:
+                fp_code_collapsed_key.write("%s\n" % list(values))
+                fp_code_collapsed.write("%s,%s\n" % (list(values)[0], key))
+                #print "%s,%s" % (list(values)[0], key)
+        print len(result)
+
 
     time_taken = datetime.now() - start_time_2
     if args.remove_temp:

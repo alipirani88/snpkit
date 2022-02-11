@@ -57,8 +57,8 @@ def extract_only_ref_variant_fasta_unique_positions():
     get_reference = Fasta(args.reference)
     if len(get_reference.keys()) == 1:
         ref_id = get_reference.keys()
-
-
+    print ref_id
+    #ref_id = "NC_011751.1"
     c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
@@ -172,6 +172,7 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
     get_reference = Fasta(args.reference)
     if len(get_reference.keys()) == 1:
         ref_id = get_reference.keys()
+    #ref_id = "NC_011751.1"
     print "The reference genome ID from reference genome - %s" % ref_id
 
     # Read in the SNP Matrix file and seperate the columns.
