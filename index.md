@@ -2,7 +2,10 @@
 
 ## Synopsis
 
-SNPKIT is a highly customisable micrbial variant calling pipeline that can be easily deployed for infectious disease outbreak investigations and other clinical microbiology projects.
+SNPKIT is a microbial variant calling pipeline/toolkit that can be used for outbreak investigations and other clinical microbiology projects.
+
+## Author
+[Ali Pirani](https://twitter.com/alipirani88)
 
 ## Contents
 
@@ -12,18 +15,17 @@ SNPKIT is a highly customisable micrbial variant calling pipeline that can be ea
 
 ## Installation
 
-The pipeline can be set up in two easy steps:
+The pipeline can be set up in two steps:
 
-> 1. Clone the github directory onto your system.
+> 1. Clone the snpkit github directory onto your system.
 
 ```
 git clone https://github.com/alipirani88/snpkit.git
 
 ```
 
-> 2. Use snpkit/environment.yml and snpkit/environment_gubbins.yml files to create conda environment.
+> 2. Use snpkit/environment.yml and snpkit/environment_gubbins.yml files to set up the conda environments.
 
-Create two new environments - varcall and gubbins
 ```
 conda env create -f snpkit/environment.yml -n varcall
 conda env create -f snpkit/environment_gubbins.yml -n gubbins
@@ -39,7 +41,7 @@ python snpkit/variant_call.py -h
 
 ## Quick Start
 
-Assuming you want to call variants for more than a few samples against a reference genome KPNIH1 and want the pipeline to run in parallel on HPC cluster. 
+Assuming you want to call variants for more than a few samples against a reference genome KPNIH1 and run the analysis in parallel with SLURM HPC manager. 
 
 
 - You can run the first step of pipeline with option "-steps All" that will call variants for samples placed in test_readsdir against a reference genome KPNIH1.
@@ -64,7 +66,7 @@ python snpkit/variant_call.py \
 - The reference genome path will be read from YAML config file.
 
 
-The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. 
+The results of variant calling will be placed in an individual folder generated for each sample in the output directory. 
 
 - Run the second part of the pipeline to generate SNP and Indel Matrices and various multiple sequence alignments outputs.
 
@@ -82,7 +84,7 @@ python snpkit/variant_call.py \
 
 ```
 
-This step will gather all the variant call results of the pipeline, generate SNP-Indel Matrices, qc reports and core/non-core sequence alignments that can be used as an input for phylogenetic analysis suchs as gubbins-iqtree-beast.
+This step will gather all the variant call results from the first step, generate SNP-Indel Matrices, qc reports and core/non-core sequence alignments that can be used as an input for downstream phylogenetic analysis such as gubbins, iqtree and beast.
 
 ## Input
 
@@ -100,20 +102,17 @@ The pipeline requires three main inputs -
 
 ```
 
-**2. config:** A high level easy to write YAML format configuration file that lets you configure your system wide runs and specify analysis parameters, path to the installed tools, data and system wide information.
+**2. config:** A high level YAML format configuration file that lets you configure your system wide runs and specify analysis parameters, path to the installed tools, data and system wide information.
 
-- This config file will contain High level information such as locations of installed programs like GATK, cores and memory usage for running on HPC compute cluster, path to a reference genome, various parameters used by different tools. These settings will apply across multiple runs and samples. 
-
-- The config file stores data in KEY: VALUE pair. 
-
-- An example [config](https://github.com/alipirani88/snpkit/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
+- The config file stores data in KEY: VALUE pair. An example [config](https://github.com/alipirani88/snpkit/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
 
 - Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in config file. 
 
-- If you wish to run pipeline in hpc compute environment such as PBS or SLURM, change the number of nodes/cores memory reuirements based on your needs else the pipeline will run with default settings.
+- If you wish to run pipeline in hpc compute environment such as PBS or SLURM, change the number of nodes/cores memory reuirements based on your needs.
 
+**3. index:** a reference genome index name as specified in a config file. 
 
-**3. index:** a reference genome index name as specified in a config file. For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
+For example; if you have set the reference genome path in config file as shown below, then the required value for command line argument -index would be -index KPNIH1
 
 ```
 [KPNIH1]
