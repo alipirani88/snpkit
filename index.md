@@ -1,9 +1,8 @@
 # SNPKIT
 
-
 ## Synopsis
 
-This is a highly customisable, automated variant detection pipeline that can be easily deployed for infectious disease outbreak investigations and other clinical microbiology projects.  
+SNPKIT is a highly customisable micrbial variant calling pipeline that can be easily deployed for infectious disease outbreak investigations and other clinical microbiology projects.
 
 ## Contents
 
@@ -18,16 +17,16 @@ The pipeline can be set up in two easy steps:
 > 1. Clone the github directory onto your system.
 
 ```
-git clone https://github.com/alipirani88/variant_calling_pipeline.git
+git clone https://github.com/alipirani88/snpkit.git
 
 ```
 
-> 2. Use variant_calling_pipeline/environment.yml and variant_calling_pipeline/environment_gubbins.yml files to create conda environment.
+> 2. Use snpkit/environment.yml and snpkit/environment_gubbins.yml files to create conda environment.
 
-Create two new environments - varcall and varcall_gubbins
+Create two new environments - varcall and gubbins
 ```
-conda env create -f variant_calling_pipeline/environment.yml -n varcall
-conda env create -f variant_calling_pipeline/environment_gubbins.yml -n gubbins
+conda env create -f snpkit/environment.yml -n varcall
+conda env create -f snpkit/environment_gubbins.yml -n gubbins
 ```
 
 Check installation
@@ -35,19 +34,19 @@ Check installation
 ```
 conda activate varcall
 
-python variant_calling_pipeline/variant_call.py -h
+python snpkit/variant_call.py -h
 ```
 
 ## Quick Start
 
-Lets say you want to detect variants for more than a few hundred samples against a reference genome KPNIH1 and want the pipeline to run in parallel on HPC cluster. 
+Assuming you want to call variants for more than a few samples against a reference genome KPNIH1 and want the pipeline to run in parallel on HPC cluster. 
 
 
-- Run the first step of pipeline with option "-steps All" that will call variants for samples placed in test_readsdir against a reference genome KPNIH1
+- You can run the first step of pipeline with option "-steps All" that will call variants for samples placed in test_readsdir against a reference genome KPNIH1.
 
 ```
 
-python variant_calling_pipeline/variant_call.py \
+python snpkit/variant_call.py \
 -type PE \
 -readsdir /Path-To-Your/test_readsdir/ \
 -outdir /Path/test_output_core/ \
@@ -60,9 +59,9 @@ python variant_calling_pipeline/variant_call.py \
 
 ```
 
-- The above command will run the variant calling part of the pipeline on a set of PE reads residing in test_readsdir. 
-- The results will be saved in the output directory test_output_core. 
-- The reference genome and its path will be detected from the KPNIH1 settings that is set in config file.
+- The above command will run variant calling steps of the pipeline on a set of PE reads residing in test_readsdir. 
+- The results will be saved in output directory test_output_core. 
+- The reference genome path will be read from YAML config file.
 
 
 The results of variant calling will be placed in an individual folder generated for each sample in the output directory. A log file for each sample will be generated and can be found in each sample folder inside the output directory. 
@@ -70,7 +69,7 @@ The results of variant calling will be placed in an individual folder generated 
 - Run the second part of the pipeline to generate SNP and Indel Matrices and various multiple sequence alignments outputs.
 
 ```
-python variant_calling_pipeline/variant_call.py \
+python snpkit/variant_call.py \
 -type PE \
 -readsdir /Path-To-Your/test_readsdir/ \
 -outdir /Path/test_output_core/ \
@@ -107,7 +106,7 @@ The pipeline requires three main inputs -
 
 - The config file stores data in KEY: VALUE pair. 
 
-- An example [config](https://github.com/alipirani88/variant_calling_pipeline/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
+- An example [config](https://github.com/alipirani88/snpkit/blob/master/config) file with default parameters is included with the installation folder. You can customize this config file and provide it with the -config argument or edit this config file based on your requirements. 
 
 - Parameters for each of the tools can be customised under the 'tool_parameter' attribute of each tool in config file. 
 
@@ -137,5 +136,5 @@ Ref_Name: KPNIH1_new.fasta
 THe pipeline also requires Phaster results of your reference genome to mask phage region. To enable this place the phaster results files in the reference genome folder.
 
 
-### For detailed information, please refer to the [wiki](https://github.com/alipirani88/variant_calling_pipeline/wiki) page.
+### For detailed information, please refer to the [wiki](https://github.com/alipirani88/snpkit/wiki) page.
 
