@@ -27,14 +27,14 @@ git clone https://github.com/alipirani88/snpkit.git
 > 2. Use snpkit/environment.yml and snpkit/environment_gubbins.yml files to set up the conda environments.
 
 ```
-conda env create -f snpkit/environment.yml -n varcall
-conda env create -f snpkit/environment_gubbins.yml -n gubbins
+conda env create -f snpkit/envs/environment.yml -n snpkit
+conda env create -f snpkit/envs/environment_gubbins.yml -n gubbins
 ```
 
 Check installation
 
 ```
-conda activate varcall
+conda activate snpkit
 
 python snpkit/variant_call.py -h
 ```
