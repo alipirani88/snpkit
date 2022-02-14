@@ -67,9 +67,9 @@ else:
     else:
         fasta = args.alignment
     # run gubbins
-    gub = 'run_gubbins.py --prefix ' + pref + ' --threads 12 ' + fasta
+    gub = 'run_gubbins.py --prefix ' + pref + ' --threads 32 ' + fasta
     print('Gubbins command: ' + gub)
-    #os.system(gub)
+    os.system(gub)
     # mask recombinant variants in whole genome alignment
     fasta_wga = mask_positions(args.alignment, pref + '.recombination_predictions.gff', masked_sites_file=True, mask_all=args.o)
     print ('Masked whole genome alignment - %s' % fasta_wga)
@@ -100,5 +100,5 @@ if args.w:
     # run iqtree
     iqtree_wga = 'iqtree -s ' + wd + '/' + os.path.basename(fasta_wga) + ' -nt AUTO -bb 1000 -m ' + args.m + ' -pre ' + wd + '/iqtree_masked_wga/' + pref + ' -t PARS -ninit 2'
     print('iqtree WGA command: ' + iqtree_wga)
-    #os.system(iqtree_wga)
+    os.system(iqtree_wga)
 

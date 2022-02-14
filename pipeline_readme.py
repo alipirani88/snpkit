@@ -1,7 +1,5 @@
 from __future__ import division
 __author__ = 'alipirani'
-
-
 import sys
 import os
 import argparse
@@ -16,10 +14,9 @@ from joblib import Parallel, delayed
 from config_settings import ConfigSectionMap
 from argparse import RawTextHelpFormatter
 
-
 """ Command Line Argument Parsing """
 def parser():
-    parser = argparse.ArgumentParser(description='\nGenerate a README pieplien for every pipeline run.\n', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='\nGenerate a README for every pipeline run.\n', formatter_class=RawTextHelpFormatter)
     required = parser.add_argument_group('Required arguments')
     optional = parser.add_argument_group('Optional arguments')
     # Input this file at the start of run. It should be submitted by the user or submitter
@@ -40,14 +37,9 @@ global Config_readme
 global logger
 
 log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-
-
 Config_readme = ConfigParser.ConfigParser()
 Config_readme.read(args.readme_meta)
-
-
 readme_file = args.out_dir + "/README.md"
-
 print readme_file
 
 if not os.path.isfile(readme_file):
@@ -66,15 +58,3 @@ else:
     f.write("Parameters used/changed: %s\n" % ConfigSectionMap("Description", Config_readme)['parameters'])
     f.write("Filters used for this pipeline run: %s\n" % ConfigSectionMap("Description", Config_readme)['filters'])
     f.close()
-
-
-
-
-
-
-
-
-
-
-
-

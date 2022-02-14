@@ -5328,15 +5328,20 @@ def annotated_snp_matrix():
     method_start_time = datetime.now()
     """Annotate all VCF file formats with SNPeff"""
     # Commented for SNP Matrix debugging
-    variant_annotation()
+    #variant_annotation()
 
-    indel_annotation()
+    #indel_annotation()
 
     locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
 
     # Commented for debugging
-    annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf = merge_vcf()
+    #annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf = merge_vcf()
 
+    annotated_no_proximate_snp_file = "%s/annotated_no_proximate_snp_list.txt" % args.filter2_only_snp_vcf_dir
+    annotated_no_proximate_snp_indel_file = "%s/annotated_no_proximate_snp_indel_list.txt" % args.filter2_only_snp_vcf_dir
+    final_gatk_snp_merged_vcf = "Final_vcf_gatk_no_proximate_snp.vcf"
+    final_gatk_indel_merged_vcf = "Final_vcf_gatk_indel.vcf"
+    
     snp_var_ann_dict, indel_var_ann_dict = extract_annotations_from_multivcf()
 
     core_positions, indel_core_positions = extract_core_positions()
@@ -6111,14 +6116,14 @@ if __name__ == '__main__':
         # Annotate core variants. Generate SNP and Indel matrix.
         annotated_snp_matrix()
 
-        # # # Read new allele matrix and generate fasta; generate a seperate function
-        # keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
-        #              'info')
+        # # Read new allele matrix and generate fasta; generate a seperate function
+        keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
+                     'info')
 
-        # create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
-        #                                 script_Directive, job_name_flag)
+        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
+                                        script_Directive, job_name_flag)
 
-        # extract_only_ref_variant_fasta_from_reference_allele_variant()
+        extract_only_ref_variant_fasta_from_reference_allele_variant()
 
         # mask_fq_mq_positions_specific_to_outgroup()
 

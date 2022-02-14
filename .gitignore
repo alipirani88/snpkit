@@ -16,3 +16,5 @@ modules/beast/test/penn-st258_LA_bmt_ucln_bs_dta.xml
 modules/beast/test/test_commands.sh
 modules/beast/test/test_fasta_path.txt
 modules/beast/test/test_gff_path.txt
+*.pyc
+._modules
