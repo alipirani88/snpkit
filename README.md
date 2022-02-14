@@ -23,16 +23,16 @@ git clone https://github.com/alipirani88/variant_calling_pipeline.git
 
 > 2. Use variant_calling_pipeline/environment.yml and variant_calling_pipeline/environment_gubbins.yml files to create conda environment.
 
-Create two new environments - varcall and varcall_gubbins
+Create two new environments - snpkit and gubbins
 ```
-conda env create -f variant_calling_pipeline/envs/environment.yml -n varcall
+conda env create -f variant_calling_pipeline/envs/environment.yml -n snpkit
 conda env create -f variant_calling_pipeline/envs/environment_gubbins.yml -n gubbins
 ```
 
 Check installation
 
 ```
-conda activate varcall
+conda activate snpkit
 
 python variant_calling_pipeline/variant_call.py -h
 ```
