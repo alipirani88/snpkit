@@ -65,8 +65,6 @@ optional.add_argument('-gubbins', action='store', dest="gubbins", help='yes/no f
 optional.add_argument('-outgroup', action='store', dest="outgroup", help='outgroup sample name')
 required.add_argument('-reference', action='store', dest="reference",
                       help='Path to Reference Fasta file for consensus generation')
-optional.add_argument('-gubbins_env', action='store', dest="gubbins_env",
-                      help='Name of the Gubbins Raxml Iqtree environment to load for Phylogenetic analysis')
 optional.add_argument('-mask', action='store_true', dest="mask",
                       help='Mask Gubbins detected recombinant region in WGA and run Iqtree on masked alignment')
 optional.add_argument('-readme', action='store', dest="readme",
@@ -80,10 +78,6 @@ required.add_argument('-results_dir', action='store', dest="results_dir",
                       help='Path to Core results directory')
 required.add_argument('-config', action='store', dest="config",
                       help='Path to config file')
-# optional.add_argument('-db', action='store', dest="snpeff_db",
-#                     help='snpEff prebuilt reference database to use for variant annotations. The database will be downloaded in /data/ folder under snpEff install directory. Make sure if you are providing the name of pre-built snpEff reference database then the build option of snpeff section in config section is set to \"no\"')
-optional.add_argument('-debug_mode', action='store', dest="debug_mode",
-                      help='yes/no for debug mode')
 args = parser.parse_args()
 
 """ Generic Methods """
@@ -5994,11 +5988,6 @@ if __name__ == '__main__':
         # call("%s" % prepare_var_consensus_input_cmd, logger)
         # call("%s" % prepare_allele_var_consensus_input_cmd, logger)
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
-
-        # if args.gubbins and args.gubbins == "yes":
-        if args.gubbins_env:
-            os.system("conda deactivate")
-            os.system("conda activate %s" % args.gubbins_env)
         os.chdir(gubbins_dir)
 
         if args.scheduler == "SLURM":
