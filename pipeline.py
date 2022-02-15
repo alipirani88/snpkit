@@ -23,7 +23,7 @@ from modules.samclip import samclip
 
 # Command Line Argument Parsing
 def parser():
-    parser = argparse.ArgumentParser(description='\nVariant Calling pipeline for Illumina PE/SE data.\n', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='\nSNPKIT - A workflow for Microbial Variant Calling, Recombination detection and Phylogenetic tree reconstruction.\n', formatter_class=RawTextHelpFormatter)
     required = parser.add_argument_group('Required arguments')
     optional = parser.add_argument_group('Optional arguments')
     required.add_argument('-type', action='store', dest="type", help='Type of analysis: SE or PE', required=True)

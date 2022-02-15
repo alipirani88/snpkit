@@ -407,7 +407,8 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
         keep_logging('Running Jobs in local mode', 'Running Jobs in local mode', logger, 'info')
         for job in command_list_qsub:
             keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
-            call("bash %s" % job, logger)
+            if not args.dryrun:
+                call("bash %s" % job, logger)
     return job_id_array
 
 """ Pipeline individual task methods """
@@ -562,9 +563,8 @@ def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, 
     return core_pipeline
 
 def create_fai_index(reference, ref_fai_index):
-    keep_logging('Creating FAI Index using Samtools.', 'Creating FAI Index using Samtools.', logger, 'info')
     cmd = "%s %s %s" % (ConfigSectionMap("samtools", Config)['base_cmd'], ConfigSectionMap("samtools", Config)['faiindex'], reference)
-    keep_logging(cmd, cmd, logger, 'debug')
+    keep_logging('', cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -574,14 +574,12 @@ def create_fai_index(reference, ref_fai_index):
 
     if not os.path.isfile(ref_fai_index):
         keep_logging('The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), 'The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), logger, 'exception')
-    else:
-        keep_logging('Samtools Fai Index file created.', 'Samtools Fai Index file created.', logger, 'info')
 
 def picard_seqdict(dict_name, reference):
     #dict_name = os.path.splitext(os.path.basename(reference_filename))[0] + ".dict"
-    keep_logging('Creating Sequence Dictionary using Picard.', 'Creating Sequence Dictionary using Picard.', logger, 'info')
+    keep_logging('', 'Creating Sequence Dictionary using Picard.', logger, 'info')
     cmd = "%s CreateSequenceDictionary R=%s O=%s/%s" % (ConfigSectionMap("picard", Config)['base_cmd'], reference, ConfigSectionMap(args.index, Config)['ref_path'], dict_name)
-    keep_logging(cmd, cmd, logger, 'debug')
+    keep_logging('', cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -590,10 +588,10 @@ def picard_seqdict(dict_name, reference):
 
 def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4, ref_index_suffix5):
     aligner = ConfigSectionMap("pipeline", Config)['aligner']
-    keep_logging('Creating Index of reference fasta file for {} aligner.'.format(aligner), 'Creating Index of reference fasta file for {} aligner'.format(aligner), logger, 'info')
+    keep_logging('Creating Reference Genome Index for {} aligner.'.format(aligner), 'Creating Reference Genome Index for {} aligner'.format(aligner), logger, 'info')
     if aligner == "bwa":
         cmd = "%s %s %s" % (ConfigSectionMap("bwa", Config)['base_cmd'], ConfigSectionMap("bwa", Config)['index'], reference)
-        keep_logging(cmd, cmd, logger, 'debug')
+        keep_logging('', cmd, logger, 'debug')
         try:
             call(cmd, logger)
         except sp.CalledProcessError:
@@ -639,11 +637,7 @@ def generate_index(reference):
         ref_index_suffix6 = reference + ".rev.2.bt2"
     if not os.path.isfile(ref_index_suffix1):
         keep_logging(
-            'The reference index files given below does not exists:\n {}\n {}\n {}\n {}\n {}'.format(ref_index_suffix1,
-                                                                                                     ref_index_suffix2,
-                                                                                                     ref_index_suffix3,
-                                                                                                     ref_index_suffix4,
-                                                                                                     ref_index_suffix5),
+            '',
             'The reference index files given below does not exists:\n {}\n {}\n {}\n {}\n {}'.format(ref_index_suffix1,
                                                                                                      ref_index_suffix2,
                                                                                                      ref_index_suffix3,
@@ -657,8 +651,7 @@ def generate_index(reference):
 
     ref_fai_index = reference + ".fai"
     if not os.path.isfile(ref_fai_index):
-        keep_logging('The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index),
-                     'The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index), logger,
+        keep_logging('Creating FAI Index using Samtools.', 'The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index), logger,
                      'warning')
         create_fai_index(reference, ref_fai_index)
     else:
@@ -666,7 +659,7 @@ def generate_index(reference):
 
     dict_name = os.path.splitext(os.path.basename(reference))[0] + ".dict"
     if not os.path.isfile(ConfigSectionMap(args.index, Config)['ref_path'] + "/" + dict_name):
-        keep_logging('The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name),
+        keep_logging('Creating Sequence Dictionary using Picard.',
                      'The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name),
                      logger, 'warning')
         picard_seqdict(dict_name, reference)
@@ -722,13 +715,15 @@ if __name__ == '__main__':
         else:
             cluster_mode = "local"
 
-        keep_logging('START: Variant Calling Pipeline', 'START: Variant Calling Pipeline', logger, 'info')
+        keep_logging('START:', 'START:', logger, 'info')
 
         """ Generate Reference Genome Index """
         # Reference Genome file name
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
-        keep_logging('Getting Reference Genome name from config file: {}'.format(reference),
-                     'Getting Reference Genome name from config file: {}'.format(reference), logger, 'info')
+        keep_logging('Getting Reference Genome name from config file.',
+                     'Getting Reference Genome name from config file.', logger, 'info')
+        keep_logging('Reference Genome: {}'.format(reference),
+                     'Reference Genome: {}'.format(reference), logger, 'info')
 
         generate_index(reference)
 
