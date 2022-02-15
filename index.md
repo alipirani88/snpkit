@@ -36,7 +36,7 @@ Check installation
 ```
 conda activate snpkit
 
-python snpkit/variant_call.py -h
+python snpkit/snpkit.py -h
 ```
 
 ## Quick Start
@@ -48,7 +48,7 @@ Assuming you want to call variants for more than a few samples against a referen
 
 ```
 
-python snpkit/variant_call.py \
+python snpkit/snpkit.py \
 -type PE \
 -readsdir /Path-To-Your/test_readsdir/ \
 -outdir /Path/test_output_core/ \
@@ -71,7 +71,7 @@ The results of variant calling will be placed in an individual folder generated 
 - Run the second part of the pipeline to generate SNP and Indel Matrices and various multiple sequence alignments outputs.
 
 ```
-python snpkit/variant_call.py \
+python snpkit/snpkit.py \
 -type PE \
 -readsdir /Path-To-Your/test_readsdir/ \
 -outdir /Path/test_output_core/ \
