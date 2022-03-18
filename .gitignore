@@ -19,3 +19,17 @@ modules/beast/test/test_gff_path.txt
 *.pyc
 ._modules
 modules/variant_diagnostics/*.pyc
+modules/variant_diagnostics/config_settings.pyc
+modules/variant_diagnostics/core_pipeline_core_prep_label.pyc
+modules/variant_diagnostics/core_pipeline_core_prep_main.pyc
+modules/variant_diagnostics/core_pipeline_core_prep.pyc
+modules/variant_diagnostics/core_pipeline.pyc
+modules/variant_diagnostics/core_prep.pyc
+modules/variant_diagnostics/find_repeats.pyc
+modules/variant_diagnostics/__init__.pyc
+modules/variant_diagnostics/logging_subprocess.pyc
+modules/variant_diagnostics/log_modules.pyc
+modules/variant_diagnostics/mask_regions.pyc
+modules/variant_diagnostics/parse_vcf_for_reason_individual_jobs.pyc
+modules/variant_diagnostics/PBS_generate_jobs.pyc
+
