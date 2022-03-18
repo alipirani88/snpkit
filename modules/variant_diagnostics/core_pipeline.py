@@ -360,7 +360,6 @@ def generate_paste_command():
     remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir
     call("%s" % remove_unwanted_text, logger)
 
-
 def generate_paste_command_outgroup():
     """
     This Function will take all the *label file and generate/paste it column wise to generate a matrix. These matrix will be used in downstream analysis.
@@ -504,7 +503,6 @@ def generate_paste_command_outgroup():
     else:
         print "Skip generating seperate intermediate files for outgroup"
 
-
 def generate_indel_paste_command():
     """
     This Function will take all the *label file and generate/paste it column wise to generate a matrix. These matrix will be used in downstream analysis.
@@ -640,7 +638,6 @@ def generate_indel_paste_command():
         shell=True)
     remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir
     call("%s" % remove_unwanted_text, logger)
-
 
 def generate_indel_paste_command_outgroup():
     """
@@ -787,7 +784,6 @@ def generate_indel_paste_command_outgroup():
         call("%s" % remove_unwanted_text, logger)
     else:
         print "Skip generating seperate intermediate files for outgroup"
-
 
 def generate_position_label_data_matrix():
     """
@@ -2310,7 +2306,6 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filte
         # os.system("bash command_file")
         call("bash %s" % command_file, logger)
 
-
 def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, config_file, script_Directive,
                                     job_name_flag):
     """ Generate jobs/scripts that creates core consensus fasta file.
@@ -2433,7 +2428,6 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
         fpp.close()
         # os.system("bash command_file")
         call("bash %s" % command_file, logger)
-
 
 def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
     """
@@ -2572,7 +2566,6 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
         f3.close()
         # os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
         call("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir, logger)
-
 
 def generate_vcf_files():
     method_start_time = datetime.now()
@@ -2717,7 +2710,6 @@ def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_final_vcf = "%s/%s_filter2_final.vcf" % (out_path, analysis)
     return gatk_filter2_final_vcf
 
-
 def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, reference):
     all_position = []
     remove_proximate_position_array = []
@@ -2757,7 +2749,6 @@ def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, refer
         f2.write(position_print_string)
     return gatk_filter2_final_vcf_file_no_proximate_snp
 
-
 def FQ_analysis():
     for i in vcf_filenames:
         filename_base = os.path.basename(i)
@@ -2781,7 +2772,6 @@ def FQ_analysis():
         call("%s" % grep_fq_field, logger)
         # print grep_fq_field
 
-
 def DP_analysis():
     create_job_DP(args.jobrun, vcf_filenames, script_Directive, job_name_flag)
     paste_command = "paste %s/extract_DP_positions.txt" % args.filter2_only_snp_vcf_dir
@@ -2804,7 +2794,6 @@ def DP_analysis():
     f2.write(sed_command + '\n')
     cmd = "bash %s" % paste_file
     # os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
-
 
 def DP_analysis_barplot():
     # os.system("bash %s/paste_DP_files.sh" % args.filter2_only_snp_vcf_dir)
@@ -2996,7 +2985,6 @@ def core_prep_indel(core_vcf_fasta_dir):
 
 """ Annotation methods"""
 
-
 def prepare_snpEff_db(reference_basename):
     method_start_time = datetime.now()
     keep_logging('Preparing snpEff database requirements.', 'Preparing snpEff database requirements.', logger, 'info')
@@ -3126,7 +3114,6 @@ def variant_annotation():
     method_time_taken = datetime.now() - method_start_time
     keep_logging('Time taken to complete the variant_annotation method: {}'.format(method_time_taken),
                  'Time taken to complete the variant_annotation method: {}'.format(method_time_taken), logger, 'info')
-
 
 def indel_annotation():
     method_start_time = datetime.now()

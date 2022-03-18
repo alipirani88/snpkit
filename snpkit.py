@@ -18,6 +18,7 @@ from argparse import RawTextHelpFormatter
 from modules.phage_detection import *
 from modules.variant_diagnostics.find_repeats import *
 from modules.variant_diagnostics.mask_regions import *
+from modules.snpeff import *
 
 """ Command Line Argument Parsing """
 def parser():
@@ -719,12 +720,16 @@ if __name__ == '__main__':
         """ Generate Reference Genome Index """
         # Reference Genome file name
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
+        
+
         keep_logging('Getting Reference Genome name from config file.',
                      'Getting Reference Genome name from config file.', logger, 'info')
         keep_logging('Reference Genome: {}'.format(reference),
                      'Reference Genome: {}'.format(reference), logger, 'info')
 
         generate_index(reference)
+        
+        prepare_snpEff_db(reference, vc_logs_folder, logger, Config)
 
         """ Main Variant calling Methods: Generate and Run the jobs"""
         list_of_files = get_filenames(args.dir, args.type, args.filenames, args.prefix, args.suffix)

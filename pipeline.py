@@ -20,6 +20,8 @@ from modules.log_modules import *
 from argparse import RawTextHelpFormatter
 from memory_profiler import profile
 from modules.samclip import samclip
+from modules.snpeff import variant_annotation
+from modules.snpeff import indel_annotation
 
 # Command Line Argument Parsing
 def parser():
@@ -201,7 +203,20 @@ def pipeline(args, logger):
         method_time_taken = datetime.now() - method_start_time
         keep_logging('Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
 
-    ## 6. Stages: Statistics
+    ## 6. SNP annotation
+
+    def annotation(vcf_file):
+        logs_folder = (args.output_folder).replace(args.analysis_name, '') + "/Logs"
+        vc_logs_folder = logs_folder + "/variant_calling"
+        method_start_time = datetime.now()
+        keep_logging('START: Variant Annotation', 'START: Variant Annotation', logger, 'info')
+        variant_annotation(vcf_file, args.index, vc_logs_folder, Config, logger)
+        indel_annotation(vcf_file, args.index, vc_logs_folder, Config, logger)
+        keep_logging('END: Variant Annotation', 'END: Variant Annotation', logger, 'info')
+        method_time_taken = datetime.now() - method_start_time
+        keep_logging('Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
+
+    ## 7. Stages: Statistics
     
     def stats():
         method_start_time = datetime.now()
@@ -223,8 +238,6 @@ def pipeline(args, logger):
     # #     os.remove(files)
     # ############################################################################ End ####################################################
 
-
-
     if args.downsample == "yes":
         read1, read2 = downsample(args, logger)
         args.forward_raw = read1
@@ -233,44 +246,7 @@ def pipeline(args, logger):
         print "Using downsampled reverse reads %s" % args.reverse_raw
 
     if len(steps_list) == 1:
-        if steps_list[0] == "coverage_depth_stats":
-            #clean()
-            #out_sam = align_reads()
-            #out_sorted_bam = post_align()
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            gatk_DepthOfCoverage_file = coverage_depth_stats()
-
-        if steps_list[0] == "filter":
-            #Sanity Check Post-varcall vcf and other files here
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            if os.path.exists(out_sorted_bam) and os.path.exists(final_raw_vcf) and os.path.exists(gatk_depth_of_coverage_file) and os.path.exists(final_raw_vcf_mpileup):
-                filter(gatk_depth_of_coverage_file)
-                stats()
-            else:
-                keep_logging('The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files\n', 'The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files', logger, 'exception')
-                exit()
-
-        if steps_list[0] == "stats":
-            #Sanity Check Post-varcall vcf and other files here
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                print gatk_depth_of_coverage_file
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            if os.path.exists(out_sorted_bam) and os.path.exists(final_raw_vcf) and os.path.exists(gatk_depth_of_coverage_file) and os.path.exists(final_raw_vcf_mpileup):
-                stats()
-            else:
-                keep_logging('The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files\n', 'The required intermediate files does not exists. Please rerun the variant calling pipeline to generate the files', logger, 'exception')
-                exit()
-
-        elif steps_list[0] == "All":
+        if steps_list[0] == "All":
             clean()
             out_sam = align_reads()
             out_sorted_bam = post_align(out_sam)
@@ -281,91 +257,8 @@ def pipeline(args, logger):
             final_raw_vcf, final_raw_indel_vcf = varcall()
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
+            annotation((final_raw_vcf).replace('_aln_mpileup_raw.vcf_5bp_indel_removed.vcf', '_filter2_final.vcf_no_proximate_snp.vcf'))
             stats()
-
-        elif steps_list[0] == "bedtools":
-                out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-                only_unmapped_positions_file = bedtools(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
-
-        elif steps_list[0] == "varcall":
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (
-            args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf, final_raw_indel_vcf = varcall()
-
-
-
-    # Run individual variant calling steps: clean, align, post-align, varcall, filter, stats etc
-    else:
-
-        if steps_list[0] == "clean":
-            clean()
-            out_sam = align_reads()
-            out_sorted_bam = post_align()
-            #out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf, final_raw_indel_vcf = varcall()
-            filter(gatk_depth_of_coverage_file)
-            stats()
-        elif steps_list[0] == "align":
-            #Sanity Check clean reads here
-            out_sam = align_reads()
-            out_sorted_bam = post_align(out_sam)
-            out_sorted_bam = post_align()
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf, final_raw_indel_vcf = varcall()
-            filter(gatk_depth_of_coverage_file)
-            stats()
-        elif steps_list[0] == "post-align":
-            #Sanity Check BAM file here
-            out_sam = "%s/%s_aln.sam" % (args.output_folder, args.analysis_name)
-            out_sorted_bam = post_align(out_sam)
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf, final_raw_indel_vcf = varcall()
-            filter(gatk_depth_of_coverage_file)
-            stats()
-
-        elif steps_list[0] == "varcall":
-            #Sanity Check Post-aligned-BAM and Bed files here
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            if not os.path.exists("%s.bai" % out_sorted_bam):
-                index_bam(out_sorted_bam, args.output_folder, logger, Config)
-
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf, final_raw_indel_vcf = varcall()
-            filter(gatk_depth_of_coverage_file)
-            stats()
-
-        elif steps_list[0] == "filter":
-            #Sanity Check Post-varcall vcf and other files here
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
-            filter(gatk_depth_of_coverage_file)
-            stats()
-        elif steps_list[0] == "stats":
-            #Sanity check BAM and vcf files
-            gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
-            final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
-            stats()
-        else:
-            keep_logging('Seems like the Analysis Steps are not in sequential order. Please recheck the -steps argument and run the pipeline again', 'Seems like the Analysis Steps are not in sequential order. Please recheck the -steps argument and run the pipeline again', logger, 'exception')
-
 
 ## Sanity checks and directory structure maintenance methods
 def usage():
