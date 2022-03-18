@@ -6026,7 +6026,3 @@ if __name__ == '__main__':
     if args.remove_temp:
         del_command = "rm -r %s" % temp_dir
         os.system(del_command)
-
-
-
-

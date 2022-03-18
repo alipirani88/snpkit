@@ -64,7 +64,6 @@ def parser():
                           help='Filter SAM file for soft and hard clipped alignments. Default: OFF')
     return parser
 
-
 """ Sanity checks and maintenance methods """
 def file_exists(path1):
     """Checks if the file path exists.
@@ -1061,7 +1060,6 @@ if __name__ == '__main__':
                 proc = subprocess.Popen(["qsub %s" % combine_job_name], stdout=subprocess.PIPE, shell=True)
                 (out, err) = proc.communicate()
 
-    
     else:
         logger = generate_logger(logs_folder, args.prefix, log_unique_time)
         keep_logging('Please provide argument -steps to run pipeline', 'Please provide argument -steps to run pipeline', logger, 'info')

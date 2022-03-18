@@ -18,3 +18,4 @@ modules/beast/test/test_fasta_path.txt
 modules/beast/test/test_gff_path.txt
 *.pyc
 ._modules
+modules/variant_diagnostics/*.pyc

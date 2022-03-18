@@ -5,6 +5,14 @@ aligner: bwa
 # Options for variant_caller: samtools / gatkhaplotypecaller / freebayes
 variant_caller: samtools
 
+[scheduler]
+resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
+large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
+email: apirani@med.umich.edu
+queue: flux
+flux_account: esnitkin_flux
+notification: a
+
 [pbs]
 resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
 large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
@@ -19,7 +27,7 @@ large_resources: --nodes=1 --ntasks-per-node=12 --mem=47000mb --time=250:00:00
 email: apirani@med.umich.edu
 partition: standard
 flux_account: esnitkin1
-notification: FAIL,REQUEUE
+notification: BEGIN,END,FAIL,REQUEUE
 
 # Set command line Parameters for individual tools used by snpkit
 
@@ -254,3 +262,64 @@ Ref_Name: index.fasta
 # path to the reference genome fasta file.
 Ref_Path: /path-to/reference/index/
 
+# Name of the reference genome. Provide this value with -index_name argument.
+[KPNIH1]
+# Name of reference genome fasta file.
+Ref_Name: KPNIH1.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+
+[MRSA_USA_300]
+# Name of reference genome fasta file.
+Ref_Name: MRSA_USA_300.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300/
+
+#[MRSA_USA_100]
+# Name of reference genome fasta file.
+#Ref_Name: MRSA_USA_100_1.fasta
+# path to the reference genome fasta file.
+#Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_100/
+#Gff_Name: MRSA_USA_100.gff
+
+[CDIFF_630]
+# Name of reference genome fasta file.
+Ref_Name: cdiff_630.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630/
+
+[CDIFF_630_ncbi]
+# Name of reference genome fasta file.
+Ref_Name: cdiff_630.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630_ncbi/
+
+[Cdiff_O27_R20291]
+# Name of reference genome fasta file.
+Ref_Name: Cdiff_O27_R20291.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O27_R20291/
+
+[Cdiff_O14_PH44]
+# Name of reference genome fasta file.
+Ref_Name: Cdiff_O14_PH44.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O14_PH44/
+
+[CFT073]
+# Name of reference genome fasta file.
+Ref_Name: EscherichiacoliCFT073.fna
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CFT073
+
+[Escherichia_coli_K_12]
+# Name of reference genome fasta file.
+Ref_Name: Escherichia_coli_K_12.fna
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Nursing_home/e_coli/Escherichia_coli_K_12/
+##Ecoli NH cluster-based Reference Genomes
+
+# This setting is deprecated. snpkit uses conda environments for 
+# Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
+[bin_path]
+binbase: 
