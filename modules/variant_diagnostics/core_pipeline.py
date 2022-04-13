@@ -3296,10 +3296,10 @@ def merge_vcf():
         logger, 'info')
 
     # Commented for SNP Matrix debugging
-    files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
-    tabix(files_for_tabix, "vcf", logger, Config)
-    files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
-    tabix(files_for_tabix, "vcf", logger, Config)
+    # files_for_tabix = glob.glob("%s/*.vcf_no_proximate_snp.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    # tabix(files_for_tabix, "vcf", logger, Config)
+    # files_for_tabix = glob.glob("%s/*_filter2_indel_final.vcf_ANN.vcf" % args.filter2_only_snp_vcf_dir)
+    # tabix(files_for_tabix, "vcf", logger, Config)
 
     files = ' '.join(vcf_filenames)
 
@@ -4343,22 +4343,31 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         """ Go over each genotype for a variant and generate a gt_string variable """
         gt_string = ""
         for gt in variants.gt_bases:
-            gt = gt.replace('./.', '.')
-            gt_string = gt_string + "," + gt
-        if "A/A" in gt_string:
-            gt_string = gt_string.replace('A/A', 'A')
-        elif "G/G" in gt_string:
-            gt_string = gt_string.replace('G/G', 'G')
-        elif "C/C" in gt_string:
-            gt_string = gt_string.replace('C/C', 'C')
-        elif "T/T" in gt_string:
-            gt_string = gt_string.replace('T/T', 'T')
-        elif "." in gt_string:
-            gt_string = gt_string.replace('.', variants.REF)
-        else:
-            print "Warning: Doesn't recognize GT code at %s - %s" % (variants.POS, gt_string)
-            exit()
+            gt_modified = gt.replace("./.", variants.REF)
+            gt_string = gt_string + "," + gt_modified
+        gt_string = gt_string.replace("A/A", "A")
+        gt_string = gt_string.replace("G/G", "G")
+        gt_string = gt_string.replace("C/C", "C")
+        gt_string = gt_string.replace("T/T", "T")
 
+        # Extra Check
+        if "A/A" in gt_string:
+            gt_string = gt_string.replace("A/A", "A")
+        elif "G/G" in gt_string:
+            gt_string = gt_string.replace("G/G", "G")
+        elif "C/C" in gt_string:
+            gt_string = gt_string.replace("C/C", "C")
+        elif "T/T" in gt_string:
+            gt_string = gt_string.replace("T/T", "T")
+        # Not recognizing "." as a string. Its also redundant to replace "./." with "." and again with Reference allele
+        # elif "." in gt_string:
+        #     gt_string = gt_string.replace(".", variants.REF)
+        #     print "Go over each genotype for a variant and generate a gt_string variable"
+        # else:
+        #     print "Warning: Doesn't recognize GT code at %s - %s" % (variants.POS, gt_string)
+        #     exit()
+        
+        
         # print_string generator no. 4
         # Replace various seperators that were used in old matrix. Clean up this block of code
         final_allele_string = print_string + gt_string.replace(',', '\t') + '\n'
@@ -5177,10 +5186,10 @@ def annotated_snp_matrix():
     """
     method_start_time = datetime.now()
     """Annotate all VCF file formats with SNPeff"""
-    # Commented for SNP Matrix debugging
-    variant_annotation()
-
-    indel_annotation()
+    # Removing the snpEff steps from thsi script. 
+    # snpEff will be individually run as a part of variant calling steps.
+    # variant_annotation()
+    # indel_annotation()
 
     locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
 
@@ -5578,10 +5587,12 @@ if __name__ == '__main__':
         # Get outgroup_Sample name
         outgroup = get_outgroup()
 
-        keep_logging('Step 3: Generate Reports and Results folder.', 'Step 3: Generate Reports and Results folder.',
+        keep_logging('Step 3: Generate Results folder.', 'Step 3: Generate Results folder.',
                      logger, 'info')
 
         # Set up Report and results directories to transfer the final results.
+        keep_logging('Step 3: Setting up Result directory - %s' % args.results_dir, 'Step 3: Setting up Result directory - %s' % args.results_dir,
+                     logger, 'info')
         data_matrix_dir = args.results_dir + '/data_matrix'
         plots_dir = "%s/plots" % data_matrix_dir
         matrices_dir = "%s/matrices" % data_matrix_dir
@@ -5601,6 +5612,9 @@ if __name__ == '__main__':
         # Move results to the results directory
         # List of files to move
         
+        keep_logging('Step 3: Copying data to - %s' % args.results_dir, 'Step 3: Copying data to - %s' % args.results_dir,
+                     logger, 'info')
+
         list_of_data_matrix_output_files = ['unique_positions_file', 'unique_indel_positions_file', 
         'All_label_final_ordered_sorted.txt', 'All_indel_label_final_ordered_sorted.txt',
         'SNP_matrix_allele_new.tsv', 'SNP_matrix_allele_unmasked.tsv', 'SNP_matrix_code.tsv', 'SNP_matrix_code_unmasked.tsv',
@@ -5621,9 +5635,10 @@ if __name__ == '__main__':
             os.system("cp %s/%s %s" % (args.filter2_only_snp_vcf_dir, files, functional_ann_dir))
 
         """ Generating Gubbins MFA files"""
+        keep_logging('Step 3: Generating Gubbins MFA files', 'Generating Gubbins MFA files',
+                     logger, 'info')
         reference_base = os.path.basename(args.reference).split('.')[0]
         gubbins_dir = args.results_dir + '/gubbins'
-        tree_dir = args.results_dir + '/trees'
 
         make_sure_path_exists(gubbins_dir)
         
@@ -5635,6 +5650,62 @@ if __name__ == '__main__':
             args.reference, args.filter2_only_snp_vcf_dir, prepare_ref_allele_unmapped_consensus_input)
         
         call("%s" % prepare_ref_allele_unmapped_consensus_input_cmd, logger)
+
+        os.chdir(gubbins_dir)
+
+        if args.scheduler == "SLURM":
+            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
+        elif args.scheduler == "PBS":
+            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.pbs'))
+        else:
+            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
+
+        if args.mask:
+            gubbins_iqtree_script = "python %s/scripts/gubbins_iqtree.py -w %s" % (
+            os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
+            if args.outgroup:
+                # Get outgroup_Sample name
+                outgroup = get_outgroup()
+                gubbins_iqtree_script = gubbins_iqtree_script + " -o %s" % outgroup
+            print gubbins_iqtree_script
+            with open(job_file_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
+                out.write(gubbins_iqtree_script + '\n')
+            out.close()
+
+        else:
+            iqtree_results_dir = args.results_dir + '/gubbins/iqtree_results'
+            gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (
+            os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores,
+            prepare_ref_allele_unmapped_consensus_input)
+            if args.outgroup:
+                # Get outgroup_Sample name
+                outgroup = get_outgroup()
+                gubbins_command = gubbins_command + " --outgroup %s" % outgroup
+            iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (
+            os.path.dirname(prepare_ref_allele_unmapped_consensus_input),
+            os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir,
+            os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
+
+            with open(job_file_name, 'w') as out:
+                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
+                out.write("#!/bin/sh" + '\n')
+                out.write(job_title + '\n')
+                out.write(scheduler_directives + '\n')
+                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
+                out.write(gubbins_command + '\n')
+                out.write(iqtree_command + '\n')
+            out.close()
+
+        keep_logging('sbatch %s' % job_file_name, 'sbatch %s' % job_file_name, logger, 'info')
+
+        call("cp %s %s/Logs/tree/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+
 
         call("cp %s/%s*.log.txt %s" % (args.filter2_only_snp_vcf_dir, datetime.now().strftime('%Y_%m_%d'), logs_dir), logger)
 
@@ -5654,136 +5725,39 @@ if __name__ == '__main__':
         #     os.path.dirname(args.results_dir), args.results_dir), logger)
 
         # Generate Readme file for these results
-        if args.readme:
-            readme_metedata_form = args.readme
-        else:
-            readme_metedata_form = "%s/readme_metadata_form.txt" % os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        # if args.readme:
+        #     readme_metedata_form = args.readme
+        # else:
+        #     readme_metedata_form = "%s/readme_metadata_form.txt" % os.path.dirname(
+        #         os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
-        Config_readme = ConfigParser.ConfigParser()
-        Config_readme.read(readme_metedata_form)
-        out_readme = "%s/README" % args.results_dir
-        f = open(out_readme, 'w+')
-        print "Generating README file for - %s" % os.path.basename(args.results_dir)
-        f.write("Request submitted by: %s\n" % ConfigSectionMap("Main", Config_readme)['submitter'])
-        f.write("Project Name: %s\n" % ConfigSectionMap("Main", Config_readme)['project_name'])
-        f.write("Date when pipeline was run: %s\n" % ConfigSectionMap("Main", Config_readme)['date'])
-        f.write("Pipeline Version: %s\n" % ConfigSectionMap("Main", Config_readme)['version'])
-        f.write("Comments: %s\n" % ConfigSectionMap("Description", Config_readme)['comments'])
-        f.write("Parameters used/changed: %s\n" % ConfigSectionMap("Description", Config_readme)['parameters'])
-        f.write("Filters used for this pipeline run: %s\n" % ConfigSectionMap("Description", Config_readme)['filters'])
-        f.write("Reference Genome Name: %s\n" % ConfigSectionMap("reference_genome", Config_readme)['name'])
-        f.write("Reference Genome Path: %s\n" % ConfigSectionMap("reference_genome", Config_readme)['path'])
-        f.write("Results Output Directory: %s\n" % args.results_dir)
-        f.write("Core whole genome alignment: %s\n" % os.path.basename(prepare_ref_var_consensus_input))
-        f.write("Non-core whole genome alignment: %s\n" % os.path.basename(prepare_ref_allele_unmapped_consensus_input))
-        f.close()
+        # Config_readme = ConfigParser.ConfigParser()
+        # Config_readme.read(readme_metedata_form)
+        # out_readme = "%s/README" % args.results_dir
+        # f = open(out_readme, 'w+')
+        # print "Generating README file for - %s" % os.path.basename(args.results_dir)
+        # f.write("Request submitted by: %s\n" % ConfigSectionMap("Main", Config_readme)['submitter'])
+        # f.write("Project Name: %s\n" % ConfigSectionMap("Main", Config_readme)['project_name'])
+        # f.write("Date when pipeline was run: %s\n" % ConfigSectionMap("Main", Config_readme)['date'])
+        # f.write("Pipeline Version: %s\n" % ConfigSectionMap("Main", Config_readme)['version'])
+        # f.write("Comments: %s\n" % ConfigSectionMap("Description", Config_readme)['comments'])
+        # f.write("Parameters used/changed: %s\n" % ConfigSectionMap("Description", Config_readme)['parameters'])
+        # f.write("Filters used for this pipeline run: %s\n" % ConfigSectionMap("Description", Config_readme)['filters'])
+        # f.write("Reference Genome Name: %s\n" % ConfigSectionMap("reference_genome", Config_readme)['name'])
+        # f.write("Reference Genome Path: %s\n" % ConfigSectionMap("reference_genome", Config_readme)['path'])
+        # f.write("Results Output Directory: %s\n" % args.results_dir)
+        # #f.write("Core whole genome alignment: %s\n" % os.path.basename(prepare_ref_var_consensus_input))
+        # f.write("Non-core whole genome alignment: %s\n" % os.path.basename(prepare_ref_allele_unmapped_consensus_input))
+        # f.close()
 
-        print_details = "Results for core pipeline can be found in: %s\n" \
-                        "Description of Results:\n" \
-                        "1. data_matrix folder contains all the data matrices and other temporary files generated during the core pipeline. bargraph_counts.txt and bargraph_percentage.txt: contains counts/percentage of unique positions filtered out due to different filter parameters for each sample. Run bargraph.R to plot bargraph statistics." \
-                        "2. core_snp_consensus contains all the core vcf and fasta files. *_core.vcf.gz: core vcf files, *.fa and *_variants.fa: core consensus fasta file and core consensus fasta with only variant positions." % (
-                            args.results_dir)
-        keep_logging(print_details, print_details, logger, 'info')
+        # print_details = "Results for core pipeline can be found in: %s\n" \
+        #                 "Description of Results:\n" \
+        #                 "1. data_matrix folder contains all the data matrices and other temporary files generated during the core pipeline. bargraph_counts.txt and bargraph_percentage.txt: contains counts/percentage of unique positions filtered out due to different filter parameters for each sample. Run bargraph.R to plot bargraph statistics." \
+        #                 "2. core_snp_consensus contains all the core vcf and fasta files. *_core.vcf.gz: core vcf files, *.fa and *_variants.fa: core consensus fasta file and core consensus fasta with only variant positions." % (
+        #                     args.results_dir)
+        # keep_logging(print_details, print_details, logger, 'info')
 
         call("cp %s %s/Logs/report/" % (
-            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
-
-    if "4" in args.steps:
-        """ 
-        Gubbins/Raxml step
-        """
-
-        keep_logging('Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.',
-                     'Step 4: Run Gubbins on core alignments and generate iqtree/RaxML trees.', logger, 'info')
-
-        """
-        Deactivate current conda environment
-        """
-
-        # parse_phaster(args.reference)
-        reference_base = os.path.basename(args.reference).split('.')[0]
-        gubbins_dir = args.results_dir + '/gubbins'
-        iqtree_results_dir = args.results_dir + '/gubbins/iqtree_results'
-
-        make_sure_path_exists(gubbins_dir)
-        make_sure_path_exists(iqtree_results_dir)
-
-        prepare_ref_allele_unmapped_consensus_input = "%s/gubbins/%s_%s_genome_aln_w_alt_allele_unmapped.fa" % (
-        args.results_dir, (os.path.basename(os.path.normpath(args.results_dir))).replace('_core_results', ''),
-        reference_base)
-
-        os.chdir(gubbins_dir)
-
-        if args.scheduler == "SLURM":
-            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
-        elif args.scheduler == "PBS":
-            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.pbs'))
-        else:
-            job_file_name = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '.sbat'))
-        load_conda = "%s" % (prepare_ref_allele_unmapped_consensus_input.replace('.fa', '_conda.sh'))
-
-        if args.mask:
-            gubbins_iqtree_script = "python %s/scripts/gubbins_iqtree.py -w %s" % (
-            os.path.dirname(os.path.abspath(__file__)), prepare_ref_allele_unmapped_consensus_input)
-            if args.outgroup:
-                # Get outgroup_Sample name
-                outgroup = get_outgroup()
-                gubbins_iqtree_script = gubbins_iqtree_script + " -o %s" % outgroup
-            print gubbins_iqtree_script
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title + '\n')
-                out.write(scheduler_directives + '\n')
-                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
-                # out.write("conda deactivate\n")
-                # out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
-                out.write(gubbins_iqtree_script + '\n')
-            out.close()
-
-            with open(load_conda, 'w') as out:
-                out.write('conda deactivate' + '\n')
-                out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
-            out.close()
-        else:
-            gubbins_command = "run_gubbins.py --prefix %s --threads %s %s" % (
-            os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), num_cores,
-            prepare_ref_allele_unmapped_consensus_input)
-            if args.outgroup:
-                # Get outgroup_Sample name
-                outgroup = get_outgroup()
-                gubbins_command = gubbins_command + " --outgroup %s" % outgroup
-            iqtree_command = "iqtree -s %s/%s.filtered_polymorphic_sites.fasta -nt AUTO -bb 1000 -m MFP -pre %s/%s" % (
-            os.path.dirname(prepare_ref_allele_unmapped_consensus_input),
-            os.path.basename(prepare_ref_allele_unmapped_consensus_input).replace('.fa', ''), iqtree_results_dir,
-            os.path.basename(prepare_ref_allele_unmapped_consensus_input.replace('.fa', '')))
-
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title + '\n')
-                out.write(scheduler_directives + '\n')
-                out.write("cd %s" % os.path.dirname(prepare_ref_allele_unmapped_consensus_input) + '\n')
-                # out.write("conda deactivate\n")
-                # out.write("conda activate variantcalling_env_gubbins_raxml_iqtree\n")
-                out.write(gubbins_command + '\n')
-                out.write(iqtree_command + '\n')
-            out.close()
-
-            with open(load_conda, 'w') as out:
-                out.write('conda deactivate' + '\n')
-                out.write('conda activate variantcalling_env_gubbins_raxml_iqtree' + '\n')
-            out.close()
-
-        keep_logging('Run following code on login terminal:\n', 'Run following code on login terminal:\n', logger,
-                     'info')
-        keep_logging('conda deactivate', 'conda deactivate', logger, 'info')
-        keep_logging('conda activate variantcalling_env_gubbins_raxml_iqtree',
-                     'conda activate variantcalling_env_gubbins_raxml_iqtree', logger, 'info')
-        keep_logging('sbatch %s' % job_file_name, 'sbatch %s' % job_file_name, logger, 'info')
-
-        call("cp %s %s/Logs/tree/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     """ The below steps are for debugging purpose only."""
@@ -5843,40 +5817,6 @@ if __name__ == '__main__':
 
         call("cp %s %s/Logs/core/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
-
-    """ The below steps are for debugging purpose only."""
-    if "6" in args.steps:
-        """ 
-        Debugging Purposes only: Collapse SNP matrix step 
-        """
-
-        keep_logging('Step 5: Running Collapse SNP matrix step.', 'Step 5: Running Collapse SNP matrix step.',
-                     logger, 'info')
-        
-        position_label = {}
-        c_reader = csv.reader(open('%s/SNP_matrix_code.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
-        header = next(c_reader)
-        
-        for row in c_reader:
-            position_label[row[0]] = ','.join(row[1:])
-        
-
-        position_label_rev = dict()
-        for key, value in position_label.items():
-            position_label_rev.setdefault(value, set()).add(key)
-            
-        fp_code_collapsed = open("%s/SNP_matrix_code_collapsed.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
-        fp_code_collapsed_key = open("%s/SNP_matrix_code_collapsed_key.tsv" % args.filter2_only_snp_vcf_dir, 'w+')
-        result = [key for key, values in position_label_rev.items()
-                              if len(values) > 1]
-        fp_code_collapsed.write(','.join(header))
-        for key, values in position_label_rev.items():
-            if len(values) > 1:
-                fp_code_collapsed_key.write("%s\n" % list(values))
-                fp_code_collapsed.write("%s,%s\n" % (list(values)[0], key))
-                #print "%s,%s" % (list(values)[0], key)
-        print len(result)
-
 
     time_taken = datetime.now() - start_time_2
     if args.remove_temp:

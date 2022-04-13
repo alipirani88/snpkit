@@ -6,6 +6,7 @@ from modules.logging_subprocess import *
 from sys import platform as _platform
 import subprocess as subprocess
 import errno
+from tabix import * 
 
 def make_sure_path_exists(out_path):
     """This function checks if the args out_path exists and generates an empty directory if it doesn't.
@@ -155,7 +156,8 @@ def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
 
     call(annotate_vcf_cmd, logger)
     call(annotate_final_vcf_cmd, logger)
-
+    files_for_tabix = ['%s_ANN.vcf' % raw_vcf, '%s_ANN.vcf' % final_vcf]
+    tabix([files_for_tabix], "vcf", logger, Config)
 
 def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
     global bin_dir
@@ -191,3 +193,6 @@ def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
                                 vc_logs_folder, snpeffdb, final_vcf, final_vcf)
     print annotate_final_vcf_cmd
     call(annotate_final_vcf_cmd, logger)
+
+    files_for_tabix = ['%s_ANN.vcf' % final_vcf]
+    tabix([files_for_tabix], "vcf", logger, Config)
