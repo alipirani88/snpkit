@@ -21,7 +21,7 @@ args = parser.parse_args()
 
 
 
-def generate_PTR_dataframe(list_of_files):
+def generate_depth_dataframe(list_of_files):
     for file in list_of_files:
         print "Analyzing file - %s" % file
         df = pd.read_csv("%s" % file, sep='\t', header=0)
@@ -44,6 +44,8 @@ def generate_PTR_dataframe(list_of_files):
     paste_command = paste_command + " > Mean_Depth_of_coverage_matrix.tsv"
     os.system(paste_command)
 
-list_of_files = glob.glob(args.depth + "/PCMP_H*/*/*_depth_of_coverage")
+list_of_files = glob.glob(args.depth + "*_depth_of_coverage")
+#list_of_files += [each for each in os.listdir(args.depth) if each.endswith('*_depth_of_coverage')]
 
-generate_PTR_dataframe(list_of_files)
+print ("Number of Depth of Coverage files - %s" % len(list_of_files))
+generate_depth_dataframe(list_of_files)

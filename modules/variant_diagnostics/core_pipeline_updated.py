@@ -961,9 +961,9 @@ def generate_position_label_data_matrix():
                 for line in fphage:
                     phage_positions.append(line.strip())
             fphage.close()
-        # else:
-        #     raise IOError('%s/phage_region_positions.txt does not exist.' % args.filter2_only_snp_vcf_dir)
-        #     exit()
+        else:
+            raise IOError('%s/phage_region_positions.txt does not exist.' % args.filter2_only_snp_vcf_dir)
+            exit()
 
         """ End: Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
 
@@ -3432,10 +3432,9 @@ def extract_functional_class_positions():
     method_start_time = datetime.now()
     """ Read in functional class filter positions. """
     functional_filter_pos_array = []
-    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-        with open(functional_class_filter_positions, 'rU') as f_functional:
-            for line_func in f_functional:
-                functional_filter_pos_array.append(line_func.strip())
+    with open(functional_class_filter_positions, 'rU') as f_functional:
+        for line_func in f_functional:
+            functional_filter_pos_array.append(line_func.strip())
 
     """ GET individual PHAGE/Repetitive/masked region positions to assign functional class group string """
     phage_positions = []

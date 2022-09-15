@@ -1005,10 +1005,11 @@ if __name__ == '__main__':
              logger)
         core_temp_dir = args.output + "/core_temp_dir/"
 
-        proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output], stdout=subprocess.PIPE,
-                                shell=True)
-        (out2, err2) = proc.communicate()
-        core_results_dir = out2.strip()
+        # This code snippet is not working, Commenting it for now. Test it later.
+        # proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output], stdout=subprocess.PIPE,
+        #                         shell=True)
+        # (out2, err2) = proc.communicate()
+        # core_results_dir = out2.strip()
 
         #print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
