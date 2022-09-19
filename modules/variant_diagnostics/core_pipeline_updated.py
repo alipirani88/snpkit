@@ -5374,7 +5374,10 @@ if __name__ == '__main__':
     start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     start_time_2 = datetime.now()
     log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+
+    # Updated - Initialize Global variables
     global logger
+
     analysis_name_log = "step_" + str(args.steps)
     logger = generate_logger(args.filter2_only_snp_vcf_dir, analysis_name_log, log_unique_time)
     keep_logging('\nThe Script started at: %s' % start_time, '\nThe Script started at: %s' % start_time, logger, 'info')
@@ -5384,10 +5387,11 @@ if __name__ == '__main__':
                     "3. Barplot Statistics about the filtered variants and their reason for getting filtered.\n" \
                     "4. Final Consensus fasta file using only Core SNP Positions\n"
     keep_logging('%s' % print_details, '%s' % print_details, logger, 'info')
-
-    # Create temporary Directory core_temp_dir/temp for storing temporary intermediate files. Check if core_temp_dir contains all the required files to run these pipeline.
+    
+    # Create temporary Directory /tmp/snpkit_temp for storing temporary intermediate files. Check if core_temp_dir contains all the required files to run these pipeline.
     global temp_dir
-    temp_dir = args.filter2_only_snp_vcf_dir + "/temp"
+    temp_dir = "/tmp/snpkit_temp"
+    make_sure_path_exists(temp_dir)
 
     # Read Config file into Config object that will be used to extract configuration settings set up in config file.
     global config_file
@@ -5414,7 +5418,12 @@ if __name__ == '__main__':
         else:
             num_cores = 1
 
-    make_sure_path_exists(temp_dir)
+    global bin_dir
+    proc = subprocess.Popen(["which gatk"], stdout=subprocess.PIPE, shell=True)
+    (out, err) = proc.communicate()
+    bin_dir = os.path.dirname(out)
+
+    
 
     # Get outgroup_Sample name
     outgroup = get_outgroup()
@@ -5444,10 +5453,7 @@ if __name__ == '__main__':
 
     scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
 
-    global bin_dir
-    proc = subprocess.Popen(["which gatk"], stdout=subprocess.PIPE, shell=True)
-    (out, err) = proc.communicate()
-    bin_dir = os.path.dirname(out)
+    
 
     # Start Variant Calling Core Pipeline steps based on steps argument supplied.
     if "1" in args.steps:
