@@ -101,7 +101,7 @@ def parse_phaster(reference_genome, outdir, logger, Config):
             f_open.write(str(pos) + "\n")
 
     if os.path.isfile("%s/summary.txt" % os.path.dirname(reference_genome)):
-        keep_logging('Extracting Phage region information from %s/summary.txt' % os.path.dirname(reference_genome), 'Extracting Phage region information from %s/summary.txt' % os.path.dirname(reference_genome), logger, 'info')
+        keep_logging('- Extracting Phage region information from %s/summary.txt' % os.path.dirname(reference_genome), '- Extracting Phage region information from %s/summary.txt' % os.path.dirname(reference_genome), logger, 'info')
         get_phage_regions = "sed -n -e '/REGION/,$p' %s/summary.txt | awk 'NR>2' | awk -F' ' '{print $5}'" % os.path.dirname(reference_genome)
         proc = subprocess.Popen([get_phage_regions], stdout=subprocess.PIPE, shell=True)
         (out, err) = proc.communicate()
@@ -122,9 +122,9 @@ def parse_phaster(reference_genome, outdir, logger, Config):
                      'Phaster output file %s/summary.txt not found. Phaster job is still running or Phaster get json results were empty.' % outdir, logger, 'exception')
         exit()
 
-    keep_logging('Number of phage Positions: %s' % len(phage_positions),
-                 'Number of phage Positions: %s' % len(phage_positions),
+    keep_logging('- Number of phage Positions: %s' % len(phage_positions),
+                 '- Number of phage Positions: %s' % len(phage_positions),
                  logger, 'info')
-    keep_logging('The Phage region positions in this file %s/phage_region_positions.txt will be filtered out' % outdir,
-                 'The Phage region positions in this file %s/phage_region_positions.txt will be filtered out' % outdir, logger, 'info')
+    keep_logging('- The Phage region positions in this file %s/phage_region_positions.txt will be filtered out' % outdir,
+                 '- The Phage region positions in this file %s/phage_region_positions.txt will be filtered out' % outdir, logger, 'info')
     return "%s/phage_region_positions.txt" % outdir

@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 def keep_logging(pmessage, lmessage, logger, mode):
-    print(pmessage)
+    #print(pmessage)
     if mode == 'warning':
         logger.warning(lmessage)
     elif mode == 'info':

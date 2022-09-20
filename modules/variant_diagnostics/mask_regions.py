@@ -7,8 +7,8 @@ import json
 import subprocess
 
 def mask_regions(mask_file, outdir, logger, Config):
-    keep_logging('\nMasking custom region from bed file: %s\n' % mask_file,
-                 '\nMasking custom region from bed file: %s\n' % mask_file, logger,
+    keep_logging('- Masking custom region from bed file: %s' % mask_file,
+                 '- Masking custom region from bed file: %s' % mask_file, logger,
                  'info')
     mask_positions_file = outdir + "mask_positions.txt"
     f1 = open(mask_positions_file, 'w+')
