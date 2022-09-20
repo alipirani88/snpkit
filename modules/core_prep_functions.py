@@ -104,7 +104,7 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
                 position_array.append(int(line))
             f.close()
 
-        keep_logging('Sorting unique variant positions.\n', 'Sorting unique variant positions.\n', logger, 'info')
+        keep_logging('- Sorting unique variant positions.', '- Sorting unique variant positions.', logger, 'info')
         position_array_unique = set(position_array)
         position_array_sort = sorted(position_array_unique)
         keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort),
@@ -134,11 +134,11 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
                 position_array.append(int(line))
             f.close()
 
-        keep_logging('Sorting unique variant positions.\n', 'Sorting unique variant positions.\n', logger, 'info')
+        keep_logging('- Sorting unique variant positions.', '- Sorting unique variant positions.', logger, 'info')
         position_array_unique = set(position_array)
         position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort),
-                     '\nThe number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
+        keep_logging('- The number of unique variant positions:%s' % len(position_array_sort),
+                     '- The number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
         unique_position_file = "%s/unique_positions_file" % filter2_only_snp_vcf_dir
         f = open(unique_position_file, 'w+')
         for i in position_array_sort:
@@ -221,8 +221,8 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
             f.close()
         position_array_unique = set(position_array)
         position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique indel positions:%s' % len(position_array_sort),
-                     '\nThe number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
+        keep_logging('- The number of unique indel positions:%s' % len(position_array_sort),
+                     '- The number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
         unique_indel_position_file = "%s/unique_indel_positions_file" % filter2_only_snp_vcf_dir
         f = open(unique_indel_position_file, 'w+')
         for i in position_array_sort:
@@ -249,8 +249,8 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
             f.close()
         position_array_unique = set(position_array)
         position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique indel positions:%s' % len(position_array_sort),
-                     '\nThe number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
+        keep_logging('- The number of unique indel positions:%s' % len(position_array_sort),
+                     '- The number of unique indel positions:%s' % len(position_array_sort), logger, 'info')
         unique_indel_position_file = "%s/unique_indel_positions_file" % filter2_only_snp_vcf_dir
         f = open(unique_indel_position_file, 'w+')
         for i in position_array_sort:

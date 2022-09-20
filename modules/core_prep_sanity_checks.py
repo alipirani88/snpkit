@@ -5,6 +5,7 @@ import errno
 from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
+import glob
 
 
 def make_sure_files_exists(vcf_file_array, Config, logger):
@@ -52,7 +53,7 @@ def make_sure_files_exists(vcf_file_array, Config, logger):
             not_found_files.append(ori_indel_file)
         else:
             continue
-
+    
     if len(not_found_files) > 0:
         for i in not_found_files:
             keep_logging('Error finding variant calling output files for: %s' % os.path.basename(i.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),

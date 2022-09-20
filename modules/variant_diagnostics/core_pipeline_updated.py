@@ -160,7 +160,7 @@ def get_outgroup():
 
         return outgroup
     else:
-        keep_logging('Outgroup Sample Name not provided\n', 'Outgroup Sample Name not provided\n', logger, 'info')
+        keep_logging('- Note: Outgroup Sample Name not provided', '- Note: Outgroup Sample Name not provided', logger, 'info')
         outgroup = ""
 
 
@@ -5438,8 +5438,10 @@ if __name__ == '__main__':
     with open(filter2_only_snp_vcf_filenames) as fp:
         for line in fp:
             line = line.strip()
-            line = args.filter2_only_snp_vcf_dir + line
-            vcf_filenames_temp.append(line)
+            #line = args.filter2_only_snp_vcf_dir + line
+            line = (args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '*/*_vcf_results') + line
+            line = glob.glob(line)
+            vcf_filenames_temp.append(line[0])
             if args.outgroup:
                 if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in line:
                     vcf_filenames_temp_outgroup.append(line)
@@ -5462,8 +5464,8 @@ if __name__ == '__main__':
         """
         method_start_time = datetime.now()
         # Gather SNP positions from each final *_no_proximate_snp.vcf file (that passed the variant filter parameters from variant calling pipeline) and write to *_no_proximate_snp.vcf_position files for use in downstream methods
-        keep_logging('Gathering SNP position information from each final *_no_proximate_snp.vcf file...',
-                     'Gathering SNP position information from each final *_no_proximate_snp.vcf file...', logger,
+        keep_logging('- Gathering Filtered SNP positions information.',
+                     '- Gathering Filtered SNP positions information.', logger,
                      'info')
 
         # Extract All the unique SNO and Indel position list from final filtered *_no_proximate_snp.vcf files.

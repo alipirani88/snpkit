@@ -420,7 +420,7 @@ def cleanup(args, logger):
         make_sure_path_exists("%s/%s_logs" % (args.output_folder, args.analysis_name))
         os.system("mv %s/*.log.txt %s/%s_logs" % (args.output_folder, args.output_folder, args.analysis_name))
         make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
-        os.system("mv %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
+        os.system("mv %s/*_unmapped.bed_positions %s/header.txt %s/*.vcf* %s/%s_vcf_results" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
 
 
 def downsample(args, logger):

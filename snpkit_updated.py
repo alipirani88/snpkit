@@ -665,7 +665,8 @@ if __name__ == '__main__':
     global logger
 
     if args.output != '':
-        args.output += '/'
+        if not (args.output).endswith('/'):
+            args.output += '/'
     make_sure_path_exists(args.output)
 
     log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
@@ -676,7 +677,7 @@ if __name__ == '__main__':
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
 
 
-    logs_folder = args.output + "/Logs"
+    logs_folder = args.output + "Logs"
     make_sure_path_exists(logs_folder)
     # logger = generate_logger(logs_folder, args.prefix, log_unique_time)
 
@@ -729,7 +730,8 @@ if __name__ == '__main__':
         """ Set Up Core Prep logs folder/logger object, cluster mode and copy config files to it"""
         core_prep_logs_folder = logs_folder + "/core_prep"
         make_sure_path_exists(core_prep_logs_folder)
-        core_temp_dir = args.output + "/core_temp_dir/"
+        core_temp_dir = args.output + "core_temp_dir/"
+        
         logger = generate_logger(core_prep_logs_folder, args.prefix, log_unique_time)
         call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_prep_logs_folder, log_unique_time, args.prefix), logger)
         make_sure_path_exists(core_temp_dir)
@@ -785,8 +787,6 @@ if __name__ == '__main__':
             empty_files = []
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_files:
-                    print file
-                    print file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')
                     with open(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')) as fp:
                         for line in fp:
                             line = line.strip()
@@ -836,7 +836,7 @@ if __name__ == '__main__':
                         (out2, err2) = proc.communicate()
                         #print file
                         cov_depth = int(float(out2.strip()))
-                        out_fp.write(os.path.basename(file) + '\n')
+                        out_fp.write(os.path.basename(file.replace('_depth_of_coverage.sample_summary', '_filter2_final.vcf_no_proximate_snp.vcf ')) + '\n')
                         if float(out2.strip()) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
                             keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (
                             os.path.basename(file), float(out2.strip())),
