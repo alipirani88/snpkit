@@ -34,7 +34,7 @@ indel_file = (args.filter2_only_snp_vcf_file).replace('_final.vcf_no_proximate_s
 """Set variables and set up the tmp directories"""
 dir = args.filter2_only_snp_vcf_dir
 unique_positions_file = args.unique_position_file
-os.system("mkdir %s" % args.tmp_dir)
+# os.system("mkdir %s" % args.tmp_dir)
 os.system("cp %s %s/%s" % (indel_file, args.tmp_dir, os.path.basename(indel_file)))
 
 """ Generate unique positions array"""
@@ -47,7 +47,7 @@ f.close()
 
 """ Prepare output label file """
 file = args.tmp_dir + "/" + os.path.basename(indel_file)
-print "Processing %s" % file
+#print "Processing %s" % file
 out_file_name = indel_file + "_indel_positions_label"
 
 """ Get the prefix for all the arrays """
@@ -99,7 +99,7 @@ def generate_dicts():
             unmapped_array[line] = ""
     fp1.close()
     now = time.time()
-    print "Time taken to load unmapped positions array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load unmapped positions array - {0} seconds".format(now - program_starts)
 
     #proximate position array
     program_starts = time.time()
@@ -112,7 +112,7 @@ def generate_dicts():
             proximate_array[liness] = ""
     fp2.close()
     now = time.time()
-    print "Time taken to load proximate positions array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load proximate positions array - {0} seconds".format(now - program_starts)
 
     """ Prepare cyvcf vcf files; Load Cyvcf objects """
     # Optimization changes
@@ -125,7 +125,7 @@ def generate_dicts():
     for variants in VCF(indel_file + ".gz"):
         positions_final_vcf[int(variants.POS)].append(variants.INFO.get('DP'))
     now = time.time()
-    print "Time taken to load filtered positions array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load filtered positions array - {0} seconds".format(now - program_starts)
 
     program_starts = time.time()
     for variants in VCF(ori_mpileup_file + ".gz"):
@@ -183,4 +183,4 @@ def get_reason():
             f1.write(st)
     f1.close()
 
-print "Time taken to execute this code block: %s" % (timeit.timeit(get_reason, number=1))
+#print "Time taken to execute this code block: %s" % (timeit.timeit(get_reason, number=1))

@@ -33,7 +33,7 @@ args = parser.parse_args()
 """Set variables and set up the tmp directories"""
 dir = args.filter2_only_snp_vcf_dir
 unique_positions_file = args.unique_position_file
-os.system("mkdir %s" % args.tmp_dir)
+
 os.system("cp -f %s %s/%s" % (args.filter2_only_snp_vcf_file, args.tmp_dir, os.path.basename(args.filter2_only_snp_vcf_file)))
 
 """ Generate unique positions array"""
@@ -46,7 +46,7 @@ f.close()
 
 """ Prepare output label file """
 file = args.tmp_dir + "/" + os.path.basename(args.filter2_only_snp_vcf_file)
-print "Processing %s" % file
+#print "Processing %s" % file
 out_file_name = args.filter2_only_snp_vcf_file + "_positions_label"
 
 """ Get the prefix for all the arrays """
@@ -96,7 +96,7 @@ def generate_dicts():
             unmapped_array[line] = ""
     fp1.close()
     now = time.time()
-    print "Time taken to load unmapped positions array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load unmapped positions array - {0} seconds".format(now - program_starts)
 
     #proximate position dict
     program_starts = time.time()
@@ -109,7 +109,7 @@ def generate_dicts():
             proximate_array[liness] = ""
     fp2.close()
     now = time.time()
-    print "Time taken to load proximate positions array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load proximate positions array - {0} seconds".format(now - program_starts)
 
     """ Prepare cyvcf vcf files - Load Cyvcf objects """
     # Optimization changes
@@ -122,7 +122,7 @@ def generate_dicts():
     for variants in VCF(args.filter2_only_snp_vcf_file + ".gz"):
         positions_final_vcf[int(variants.POS)].append(variants.INFO.get('DP'))
     now = time.time()
-    print "Time taken to load filtered positions array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load filtered positions array - {0} seconds".format(now - program_starts)
 
     program_starts = time.time()
     for variants in VCF(ori_mpileup_file + ".gz"):
@@ -132,12 +132,12 @@ def generate_dicts():
         positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('MQ'))
         positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
     now = time.time()
-    print "Time taken to load raw vcf data array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load raw vcf data array - {0} seconds".format(now - program_starts)
 
 # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
 def extract_indel_proximates():
     indel_proximate_variants = []
-    print "Reading vcf file - %s" % file
+    #print "Reading vcf file - %s" % file
     before_indel_proximate_variants = []
     after_indel_proximate_variants = []
 
@@ -157,13 +157,13 @@ def extract_indel_proximates():
         # else:
         #     print variants.POS
         #     print variants.INFO.get('INDEL')
-    print "Raw pre-filtered variants - %s" % len(before_indel_proximate_variants)
-    print "After Indel proximate filter - %s" % len(after_indel_proximate_variants)
+    #print "Raw pre-filtered variants - %s" % len(before_indel_proximate_variants)
+    #print "After Indel proximate filter - %s" % len(after_indel_proximate_variants)
 
     set_difference = set(before_indel_proximate_variants) - set(after_indel_proximate_variants)
     #indel_proximate_variants = list(set_difference)
     indel_proximate_variants.extend(list(set_difference))
-    print "Number of positions filtered with 5 bp Indel proximate filter - %s" % len(indel_proximate_variants)
+    #print "Number of positions filtered with 5 bp Indel proximate filter - %s" % len(indel_proximate_variants)
     with open(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_proximate_indel_filtered_positions.txt'), 'w+') as fopen:
         for i in list(set_difference):
             fopen.write(str(i) + "\n")
@@ -260,7 +260,7 @@ def get_reason():
         #print "Time taken to iterate the loop once - {0} seconds".format(now - program_starts)
     f1.close()
 
-print "Time taken to execute this code block: %s" % (timeit.timeit(get_reason, number=1))
+#print "Time taken to execute this code block: %s" % (timeit.timeit(get_reason, number=1))
 
 # """ Generate label files and check why the positions were filtered out from the final vcf file """
 # def get_reason():

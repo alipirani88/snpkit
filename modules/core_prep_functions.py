@@ -342,14 +342,12 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
             else:
                 num_cores = 1
 
-        print "Number of cores: %s" % num_cores
+        
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "cluster":
-        # command_file = "%s/commands_list.sh" % filter2_only_snp_vcf_dir
-        # os.system("bash %s" % command_file)
         command_array = []
-        command_file = "%s/commands_list.sh" % filter2_only_snp_vcf_dir
+        command_file = "%s/temp/commands_list.sh" % filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
 
         ### Great Lakes changes
@@ -357,7 +355,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
             command = "python %s/variant_diagnostics/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
                 os.path.dirname(os.path.abspath(__file__)), filter2_only_snp_vcf_dir, i, unique_position_file,
                 tmp_dir)
-            job_file_name = "%s.pbs" % (i)
+            job_file_name = "%s.sbat" % (i)
 
             with open(job_file_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
@@ -367,9 +365,8 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 out.write("cd %s/" % filter2_only_snp_vcf_dir + '\n')
                 out.write(command + '\n')
             out.close()
-
-        # os.system("mv %s/*.pbs %s/temp" % (filter2_only_snp_vcf_dir, filter2_only_snp_vcf_dir))
-        pbs_dir = filter2_only_snp_vcf_dir + "/*vcf.pbs"
+            os.system("mv %s %s/temp/" % (job_file_name, filter2_only_snp_vcf_dir))
+        pbs_dir = "%s/temp/*vcf.sbat" % filter2_only_snp_vcf_dir
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
@@ -391,8 +388,6 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 num_cores = multiprocessing.cpu_count()
             else:
                 num_cores = 1
-
-        print "Number of cores: %s" % num_cores
 
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
@@ -474,7 +469,7 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
         Generate a Command list of each job and run it in parallel on different cores available on local system
         """
         command_array = []
-        command_file = "%s/commands_indel_list.sh" % filter2_only_snp_vcf_dir
+        command_file = "%s/temp/commands_indel_list.sh" % filter2_only_snp_vcf_dir
         f3 = open(command_file, 'w+')
 
         ### Great Lakes changes
@@ -482,7 +477,7 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
             command = "python %s/variant_diagnostics/reason_job_indel_debug_gatk.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
                 os.path.dirname(os.path.abspath(__file__)), filter2_only_snp_vcf_dir, i, unique_position_file,
                 tmp_dir)
-            job_file_name = "%s_indel.pbs" % (i)
+            job_file_name = "%s_indel.sbat" % (i)
 
             with open(job_file_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
@@ -492,8 +487,9 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
                 out.write("cd %s/" % filter2_only_snp_vcf_dir + '\n')
                 out.write(command + '\n')
             out.close()
+            os.system("mv %s %s/temp/" % (job_file_name, filter2_only_snp_vcf_dir))
 
-        pbs_dir = filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
+        pbs_dir = "%s/temp/*vcf_indel.sbat" % filter2_only_snp_vcf_dir
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
@@ -516,7 +512,7 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
             else:
                 num_cores = 1
 
-        print "Number of cores: %s" % num_cores
+        
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "local":

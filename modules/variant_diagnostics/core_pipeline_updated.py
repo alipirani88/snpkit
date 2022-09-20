@@ -244,49 +244,32 @@ def generate_paste_command():
     """
 
     """ Paste/Generate and sort SNP Filter Label Matrix """
-    paste_file = args.filter2_only_snp_vcf_dir + "/paste_label_files.sh"
-    f4 = open(paste_file, 'w+')
+    # Initialize Paste command. First column should be unique positions. 
     paste_command = "paste %s/unique_positions_file" % args.filter2_only_snp_vcf_dir
+    
+    # Add VCF label filenames to the Paste commands.
     for i in vcf_filenames:
         label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
                                '_filter2_final.vcf_no_proximate_snp.vcf_positions_label')
         paste_command = paste_command + " " + label_file
+    
+    # Generate a header line. First column should be a tab.
     header_awk_cmd = "awk \'{ORS=\"\t\";}{print $1}\' %s > %s/header.txt" % (
     args.filter2_only_snp_vcf_filenames, args.filter2_only_snp_vcf_dir)
     sed_header = "sed -i \'s/^/\t/\' %s/header.txt" % args.filter2_only_snp_vcf_dir
     sed_header_2 = "sed -i -e \'$a\\' %s/header.txt" % args.filter2_only_snp_vcf_dir
-
     call("%s" % header_awk_cmd, logger)
     call("%s" % sed_header, logger)
     call("%s" % sed_header_2, logger)
 
-    temp_paste_command = paste_command + " > %s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
+    
     paste_command = paste_command + " > %s/All_label_final_raw" % args.filter2_only_snp_vcf_dir
-    f4.write(paste_command)
-    f4.close()
-    sort_All_label_cmd = "sort -n -k1,1 %s/All_label_final_raw > %s/All_label_final_sorted.txt" % (
-    args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-    paste_command_header = "cat %s/header.txt %s/All_label_final_sorted.txt > %s/All_label_final_sorted_header.txt" % (
+    call(paste_command, logger)
+    
+    paste_command_header = "cat %s/header.txt %s/All_label_final_raw > %s/All_label_final_sorted_header.txt" % (
     args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
-    ls = []
-    for i in vcf_filenames:
-        label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
-                               '_filter2_final.vcf_no_proximate_snp.vcf_positions_label')
-        ls.append(label_file)
-    ls.insert(0, "%s/unique_positions_file" % args.filter2_only_snp_vcf_dir)
-
-    with open('%s/All_label_final_raw.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
-        outfile.write(paste_command)
-    outfile.close()
-
-    with open('%s/temp_label_final_raw.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
-        outfile.write(temp_paste_command)
-    outfile.close()
-
-    call("bash %s/All_label_final_raw.sh" % args.filter2_only_snp_vcf_dir, logger)
-    call("bash %s/temp_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
-    call("%s" % sort_All_label_cmd, logger)
+    
     call("%s" % paste_command_header, logger)
 
     """ Assign numeric code to each variant filter reason"""
@@ -511,8 +494,6 @@ def generate_indel_paste_command():
     """
 
     """ Paste/Generate and sort SNP Filter Label Matrix """
-    paste_file = args.filter2_only_snp_vcf_dir + "/paste_indel_label_files.sh"
-    f4 = open(paste_file, 'w+')
     paste_command = "paste %s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
     for i in vcf_filenames:
         label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
@@ -527,39 +508,14 @@ def generate_indel_paste_command():
     call("%s" % sed_header, logger)
     call("%s" % sed_header_2, logger)
 
-    temp_paste_command = paste_command + " > %s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
+    
     paste_command = paste_command + " > %s/All_indel_label_final_raw" % args.filter2_only_snp_vcf_dir
-    f4.write(paste_command)
-    f4.close()
 
-    call("bash %s" % paste_file, logger)
+    call(paste_command, logger)
 
-    sort_All_label_cmd = "sort -n -k1,1 %s/All_indel_label_final_raw > %s/All_indel_label_final_sorted.txt" % (
-    args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-    paste_command_header = "cat %s/header.txt %s/All_indel_label_final_sorted.txt > %s/All_indel_label_final_sorted_header.txt" % (
+    paste_command_header = "cat %s/header.txt %s/All_indel_label_final_raw > %s/All_indel_label_final_sorted_header.txt" % (
     args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
-    ls = []
-    for i in vcf_filenames:
-        label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
-                               '_filter2_indel_final.vcf_indel_positions_label')
-        ls.append(label_file)
-    ls.insert(0, "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir)
-
-    with open('%s/All_indel_label_final_raw.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
-        outfile2.write(paste_command)
-    outfile2.close()
-
-    with open('%s/temp_indel_label_final_raw.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
-        outfile2.write(temp_paste_command)
-    outfile2.close()
-
-    # Why is this not working?
-    call("bash %s/All_indel_label_final_raw.sh" % args.filter2_only_snp_vcf_dir, logger)
-    call("bash %s/temp_indel_label_final_raw.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
-    keep_logging('Finished pasting...DONE', 'Finished pasting...DONE', logger, 'info')
-
-    call("%s" % sort_All_label_cmd, logger)
     call("%s" % paste_command_header, logger)
 
     """ Assign numeric code to each variant filter reason"""
@@ -2264,7 +2220,7 @@ def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filte
             else:
                 num_cores = 1
 
-        print "Number of cores: %s" % num_cores
+        
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     else:
@@ -2389,7 +2345,7 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             elif args.scheduler == "PBS":
                 num_cores = multiprocessing.cpu_count()
 
-        print "Number of cores: %s" % num_cores
+        
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     else:
@@ -2516,7 +2472,7 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
             elif args.scheduler == "PBS":
                 num_cores = multiprocessing.cpu_count()
 
-        print "Number of cores: %s" % num_cores
+        
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     # elif jobrun == "cluster":
@@ -3168,7 +3124,7 @@ def indel_annotation():
         else:
             num_cores = 1
 
-    print "Number of cores: %s" % num_cores
+    
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
     method_time_taken = datetime.now() - method_start_time
@@ -5475,11 +5431,12 @@ if __name__ == '__main__':
                                                                      args.filter2_only_snp_vcf_dir, num_cores)
 
         # bgzip and tabix all the vcf files in core_temp_dir.
-        files_for_tabix = glob.glob("%s/*.vcf" % args.filter2_only_snp_vcf_dir)
+        files_for_tabix = glob.glob((args.filter2_only_snp_vcf_dir).replace('core_temp_dir/', '*/*_vcf_results/*.vcf'))
         tabix(files_for_tabix, "vcf", logger, Config)
 
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
+        make_sure_path_exists(tmp_dir)
 
         create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_directives, script_Directive,
                    job_name_flag, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
@@ -5502,8 +5459,8 @@ if __name__ == '__main__':
         log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
         method_time_taken = datetime.now() - method_start_time
 
-        keep_logging('Time taken to complete the Core Step 1 method: {}'.format(method_time_taken),
-                     'Time taken to complete the Core Step 1 method: {}'.format(method_time_taken), logger, 'info')
+        keep_logging('- Time taken to complete the Core Step 1 method: {}'.format(method_time_taken),
+                     '- Time taken to complete the Core Step 1 method: {}'.format(method_time_taken), logger, 'info')
 
     if "2" in args.steps:
         """ 
@@ -5517,8 +5474,8 @@ if __name__ == '__main__':
         uniq_indel_positions = sum(1 for line in open('%s' % indel_unique_positions_file))
         if not os.path.isfile(snp_unique_positions_file) and not os.path.isfile(indel_unique_positions_file):
             keep_logging(
-                'Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.',
-                'Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.', logger,
+                '- Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.',
+                '- Error finding unique_positions_file/unique_indel_positions_file. Please rerun core_prep step.', logger,
                 'exception')
             exit()
         make_sure_label_files_exists(vcf_filenames, uniq_snp_positions, uniq_indel_positions, Config, logger)
@@ -5555,11 +5512,10 @@ if __name__ == '__main__':
             print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
             print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
         else:
-
             outgroup_indel_specific_positions = []
             outgroup_specific_positions = []
-            print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
-            print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
+            #print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
+            #print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
 
         # Commented out for debugging
         # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
