@@ -197,7 +197,6 @@ def get_scheduler_directive(scheduler, Config):
                                   ConfigSectionMap("slurm", Config)['resources'])
     return scheduler_directives, script_Directive, job_name_flag
 
-
 def run_command(i):
     """Function to run each command and is run as a part of python Parallel mutiprocessing method.
 
@@ -263,10 +262,10 @@ def generate_paste_command():
     call("%s" % sed_header_2, logger)
 
     
-    paste_command = paste_command + " > %s/All_label_final_raw" % args.filter2_only_snp_vcf_dir
+    paste_command = paste_command + " > %s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
     call(paste_command, logger)
     
-    paste_command_header = "cat %s/header.txt %s/All_label_final_raw > %s/All_label_final_sorted_header.txt" % (
+    paste_command_header = "cat %s/header.txt %s/temp_label_final_raw.txt > %s/All_label_final_sorted_header.txt" % (
     args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
     
@@ -352,7 +351,7 @@ def generate_paste_command_outgroup():
 
     if args.outgroup:
         """ Paste/Generate and sort SNP Filter Label Matrix """
-        paste_file = args.filter2_only_snp_vcf_dir + "/paste_label_files_outgroup.sh"
+        paste_file = args.filter2_only_snp_vcf_dir + "/temp/paste_label_files_outgroup.sh"
         f4 = open(paste_file, 'w+')
         paste_command = "paste %s/unique_positions_file" % args.filter2_only_snp_vcf_dir
         for i in vcf_filenames:
@@ -378,32 +377,11 @@ def generate_paste_command_outgroup():
         call("%s" % sed_header, logger)
         call("%s" % sed_header_2, logger)
 
-        temp_paste_command = paste_command + " > %s/temp_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir
-        paste_command = paste_command + " > %s/All_label_final_raw_outgroup" % args.filter2_only_snp_vcf_dir
+        paste_command = paste_command + " > %s/temp_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir
         f4.write(paste_command)
         f4.close()
-        sort_All_label_cmd = "sort -n -k1,1 %s/All_label_final_raw_outgroup > %s/All_label_final_sorted_outgroup.txt" % (
-        args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-        paste_command_header = "cat %s/header_outgroup.txt %s/All_label_final_sorted_outgroup.txt > %s/All_label_final_sorted_header_outgroup.txt" % (
+        paste_command_header = "cat %s/header_outgroup.txt %s/temp_label_final_raw_outgroup.txt > %s/All_label_final_sorted_header_outgroup.txt" % (
         args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-
-        ls = []
-        for i in vcf_filenames:
-            label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
-                                   '_filter2_final.vcf_no_proximate_snp.vcf_positions_label')
-            ls.append(label_file)
-        ls.insert(0, "%s/unique_positions_file" % args.filter2_only_snp_vcf_dir)
-
-        with open('%s/All_label_final_raw_outgroup.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
-            outfile.write(paste_command)
-        outfile.close()
-
-        with open('%s/temp_label_final_raw_outgroup.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile:
-            outfile.write(temp_paste_command)
-        outfile.close()
-        call("bash %s/All_label_final_raw_outgroup.sh" % args.filter2_only_snp_vcf_dir, logger)
-        call("bash %s/temp_label_final_raw_outgroup.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
-        call("%s" % sort_All_label_cmd, logger)
         call("%s" % paste_command_header, logger)
 
         """ Assign numeric code to each variant filter reason"""
@@ -483,9 +461,6 @@ def generate_paste_command_outgroup():
         remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir
         call("%s" % remove_unwanted_text, logger)
 
-    else:
-        print "Skip generating seperate intermediate files for outgroup"
-
 def generate_indel_paste_command():
     """
     This Function will take all the *label file and generate/paste it column wise to generate a matrix. These matrix will be used in downstream analysis.
@@ -509,11 +484,11 @@ def generate_indel_paste_command():
     call("%s" % sed_header_2, logger)
 
     
-    paste_command = paste_command + " > %s/All_indel_label_final_raw" % args.filter2_only_snp_vcf_dir
+    paste_command = paste_command + " > %s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
 
     call(paste_command, logger)
 
-    paste_command_header = "cat %s/header.txt %s/All_indel_label_final_raw > %s/All_indel_label_final_sorted_header.txt" % (
+    paste_command_header = "cat %s/header.txt %s/temp_indel_label_final_raw.txt > %s/All_indel_label_final_sorted_header.txt" % (
     args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
     call("%s" % paste_command_header, logger)
@@ -605,7 +580,7 @@ def generate_indel_paste_command_outgroup():
     if args.outgroup:
         """ Paste/Generate and sort SNP Filter Label Matrix """
         # define a file name where the paste commands will be saved.
-        paste_file = args.filter2_only_snp_vcf_dir + "/paste_indel_label_files_outgroup.sh"
+        paste_file = args.filter2_only_snp_vcf_dir + "/temp/paste_indel_label_files_outgroup.sh"
         f4 = open(paste_file, 'w+')
 
         # initiate paste command string
@@ -628,40 +603,18 @@ def generate_indel_paste_command_outgroup():
         call("%s" % sed_header, logger)
         call("%s" % sed_header_2, logger)
 
-        temp_paste_command = paste_command + " > %s/temp_indel_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir
-        paste_command = paste_command + " > %s/All_indel_label_final_raw_outgroup" % args.filter2_only_snp_vcf_dir
+        
+        paste_command = paste_command + " > %s/temp_indel_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir
         f4.write(paste_command)
         f4.close()
 
-        call("bash %s" % paste_file, logger)
-
-        sort_All_label_cmd = "sort -n -k1,1 %s/All_indel_label_final_raw_outgroup > %s/All_indel_label_final_sorted_outgroup.txt" % (
-        args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
-        paste_command_header = "cat %s/header_outgroup.txt %s/All_indel_label_final_sorted_outgroup.txt > %s/All_indel_label_final_sorted_header_outgroup.txt" % (
+        call(paste_command, logger)
+    
+        paste_command_header = "cat %s/header_outgroup.txt %s/temp_indel_label_final_raw_outgroup.txt > %s/All_indel_label_final_sorted_header_outgroup.txt" % (
         args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
-        ls = []
-        for i in vcf_filenames:
-            label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
-                                   '_filter2_indel_final.vcf_indel_positions_label')
-            ls.append(label_file)
-        ls.insert(0, "%s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir)
-
-        with open('%s/All_indel_label_final_raw_outgroup.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
-            outfile2.write(paste_command)
-        outfile2.close()
-
-        with open('%s/temp_indel_label_final_raw_outgroup.txt.sh' % args.filter2_only_snp_vcf_dir, 'w') as outfile2:
-            outfile2.write(temp_paste_command)
-        outfile2.close()
-
-        # Why is this not working?
-        call("bash %s/All_indel_label_final_raw_outgroup.sh" % args.filter2_only_snp_vcf_dir, logger)
-        call("bash %s/temp_indel_label_final_raw_outgroup.txt.sh" % args.filter2_only_snp_vcf_dir, logger)
-        keep_logging('Finished pasting...DONE', 'Finished pasting...DONE', logger, 'info')
-        call("%s" % sort_All_label_cmd, logger)
         call("%s" % paste_command_header, logger)
-
+        
         """ Assign numeric code to each variant filter reason"""
         subprocess.call([
                             "sed -i 's/reference_unmapped_position/0/g' %s/All_indel_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir],
@@ -738,8 +691,6 @@ def generate_indel_paste_command_outgroup():
                         shell=True)
         remove_unwanted_text = "sed -i \'s/_filter2_final.vcf_no_proximate_snp.vcf//g\' %s/All_indel_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir
         call("%s" % remove_unwanted_text, logger)
-    else:
-        print "Skip generating seperate intermediate files for outgroup"
 
 def generate_position_label_data_matrix():
     """
@@ -1532,7 +1483,7 @@ def generate_position_label_data_matrix():
 
     # Commented out for debugging
     """ Methods Steps"""
-    keep_logging('Running: Generating data matrices...', 'Running: Generating data matrices...', logger, 'info')
+    keep_logging('- Running: Generating data matrices.', '- Running: Generating data matrices.', logger, 'info')
     generate_position_label_data_matrix_All_label()
     keep_logging('Running: Changing variables in data matrices to codes for faster processing...',
                  'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
@@ -3156,7 +3107,6 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
                  'Time taken to complete the gatk_combine_variants method: {}'.format(method_time_taken), logger, 'info')
     return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
 
-
 def extract_locus_tag_from_genbank():
     """ Start of Extract Annotation information from Genbank file
 
@@ -3236,7 +3186,6 @@ def extract_locus_tag_from_genbank():
     """
 
     return locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag
-
 
 def merge_vcf():
     """ Start of Merging Step:
@@ -3437,7 +3386,6 @@ def extract_functional_class_positions():
                  'Time taken to complete the extract_functional_class_positions method: {}'.format(method_time_taken), logger, 'info')
     return functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions
 
-
 def generate_position_label_dict(final_merge_anno_file):
     method_start_time = datetime.now()
     global position_label, position_indel_label
@@ -3584,7 +3532,6 @@ def generate_position_label_dict(final_merge_anno_file):
                  'Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken), logger, 'info')
     return position_label, position_indel_label
 
-
 def get_low_fq_mq_positions(position_label):
     """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ """
     mask_fq_mq_positions = []
@@ -3662,7 +3609,6 @@ def get_low_fq_mq_positions(position_label):
     """ End: Generate mask_fq_mq_positions array """
     return mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific
 
-
 def get_low_fq_mq_positions_indel(position_label, position_indel_label):
     """ Generate mask_fq_mq_positions array with positions where a variant was filtered because of LowFQ or LowMQ"""
     mask_fq_mq_positions = []
@@ -3726,7 +3672,6 @@ def get_low_fq_mq_positions_indel(position_label, position_indel_label):
     print "Length of Indel mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
     print "Length of Indel mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
     return mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific
-
 
 def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                         mask_positions, position_label, core_positions, snp_var_ann_dict):
@@ -5172,7 +5117,7 @@ def annotated_snp_matrix():
     position_label, position_indel_label = generate_position_label_dict(final_merge_anno_file)
 
     # Commented for debugging
-    mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
+    #mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
 
     generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                         mask_positions, position_label, core_positions, snp_var_ann_dict)
