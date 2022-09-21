@@ -253,7 +253,7 @@ def generate_paste_command():
         paste_command = paste_command + " " + label_file
     
     # Generate a header line. First column should be a tab.
-    header_awk_cmd = "awk \'{ORS=\"\t\";}{print $1}\' %s > %s/header.txt" % (
+    header_awk_cmd = "awk \'{ORS=\"\t\";}{print $1}\' %s | sed \'s/[[:space:]]$//g\' > %s/header.txt" % (
     args.filter2_only_snp_vcf_filenames, args.filter2_only_snp_vcf_dir)
     sed_header = "sed -i \'s/^/\t/\' %s/header.txt" % args.filter2_only_snp_vcf_dir
     sed_header_2 = "sed -i -e \'$a\\' %s/header.txt" % args.filter2_only_snp_vcf_dir
@@ -474,7 +474,7 @@ def generate_indel_paste_command():
         label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
                                '_filter2_indel_final.vcf_indel_positions_label')
         paste_command = paste_command + " " + label_file
-    header_awk_cmd = "awk \'{ORS=\"\t\";}{print $1}\' %s > %s/header.txt" % (
+    header_awk_cmd = "awk \'{ORS=\"\t\";}{print $1}\' %s | sed \'s/[[:space:]]$//g\' > %s/header.txt" % (
     args.filter2_only_snp_vcf_filenames, args.filter2_only_snp_vcf_dir)
     sed_header = "sed -i \'s/^/\t/\' %s/header.txt" % args.filter2_only_snp_vcf_dir
     sed_header_2 = "sed -i -e \'$a\\' %s/header.txt" % args.filter2_only_snp_vcf_dir
