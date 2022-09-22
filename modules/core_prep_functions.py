@@ -347,7 +347,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
 
     elif jobrun == "cluster":
         command_array = []
-        command_file = "%s/temp/commands_list.sh" % filter2_only_snp_vcf_dir
+        command_file = "%s/commands_list.sh" % temp_dir
         f3 = open(command_file, 'w+')
 
         ### Great Lakes changes
@@ -365,8 +365,8 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 out.write("cd %s/" % filter2_only_snp_vcf_dir + '\n')
                 out.write(command + '\n')
             out.close()
-            os.system("mv %s %s/temp/" % (job_file_name, filter2_only_snp_vcf_dir))
-        pbs_dir = "%s/temp/*vcf.sbat" % filter2_only_snp_vcf_dir
+            os.system("mv %s %s" % (job_file_name, temp_dir))
+        pbs_dir = "%s/*vcf.sbat" % temp_dir
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)
@@ -469,7 +469,7 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
         Generate a Command list of each job and run it in parallel on different cores available on local system
         """
         command_array = []
-        command_file = "%s/temp/commands_indel_list.sh" % filter2_only_snp_vcf_dir
+        command_file = "%s/commands_indel_list.sh" % temp_dir
         f3 = open(command_file, 'w+')
 
         ### Great Lakes changes
@@ -487,9 +487,9 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
                 out.write("cd %s/" % filter2_only_snp_vcf_dir + '\n')
                 out.write(command + '\n')
             out.close()
-            os.system("mv %s %s/temp/" % (job_file_name, filter2_only_snp_vcf_dir))
+            os.system("mv %s %s" % (job_file_name, temp_dir))
 
-        pbs_dir = "%s/temp/*vcf_indel.sbat" % filter2_only_snp_vcf_dir
+        pbs_dir = "%s/*vcf_indel.sbat" % temp_dir
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
             f3.write("bash %s\n" % i)

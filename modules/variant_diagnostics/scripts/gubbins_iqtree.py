@@ -69,7 +69,7 @@ else:
     # run gubbins
     gub = 'run_gubbins.py --prefix ' + pref + ' --threads 8 --verbose --no-cleanup --first-tree-builder fasttree ' + fasta
     print('Gubbins command: ' + gub)
-    #os.system(gub)
+    os.system(gub)
     # mask recombinant variants in whole genome alignment
     fasta_wga = mask_positions(args.alignment, pref + '.recombination_predictions.gff', masked_sites_file=True, mask_all=args.o)
     print ('Masked whole genome alignment - %s' % fasta_wga)

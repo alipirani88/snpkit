@@ -16,7 +16,7 @@ import multiprocessing
 import thread
 import glob
 import readline
-# import pandas as pd
+import pandas as pd
 import errno
 from pyfasta import Fasta
 from datetime import datetime
@@ -1516,231 +1516,171 @@ def generate_indel_position_label_data_matrix():
     """
     method_start_time = datetime.now()
 
-    def generate_indel_position_label_data_matrix_All_label():
-        position_label = OrderedDict()
-        # print "Generating Only_ref_indel_positions_for_closely"
-        f1 = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'w+')
-        f2 = open("%s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
-        f3 = open("%s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
-        f4 = open(
-            "%s/Only_filtered_indel_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir,
-            'w+')
+    print_string_header = "\t"
+    if args.outgroup:
+        for i in vcf_filenames:
 
-        if args.outgroup:
-            with open("%s/All_indel_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir,
-                      'rU') as csv_file:
-                keep_logging(
-                    'Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir,
-                    'Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir,
-                    logger, 'info')
-                csv_reader = csv.reader(csv_file, delimiter='\t')
-                next(csv_reader, None)
-                for row in csv_reader:
-                    position_label[row[0]] = row[1:]
-                keep_logging('Generating different list of Positions and heatmap data matrix...',
-                             'Generating different list of Positions and heatmap data matrix...', logger, 'info')
-                print_string_header = "\t"
-                for i in vcf_filenames:
-                    print_string_header = print_string_header + os.path.basename(i) + "\t"
-                # f.write('\t' + print_string_header.strip() + '\n')
-                f2.write('\t' + print_string_header.strip() + '\n')
-                f3.write('\t' + print_string_header.strip() + '\n')
-                f4.write('\t' + print_string_header.strip() + '\n')
-                for value in position_label:
-                    lll = ['0', '2', '3', '4', '5', '6', '7']
-                    ref_var = ['1', '1TRUE']
-                    if set(ref_var) & set(position_label[value]):
-                        if set(lll) & set(position_label[value]):
-                            if int(value) not in outgroup_indel_specific_positions:
-                                print_string = ""
-                                for i in position_label[value]:
-                                    print_string = print_string + "\t" + i
-                                STRR2 = value + print_string + "\n"
-                                f3.write(STRR2)
-                                if position_label[value].count('1TRUE') >= 2:
-                                    f4.write('1\n')
-                                else:
-                                    f4.write('0\n')
-                        else:
-                            if int(value) not in outgroup_indel_specific_positions:
-                                strr = value + "\n"
-                                f1.write(strr)
-                                STRR3 = value + "\t" + str(position_label[value]) + "\n"
-                                f2.write(STRR3)
-            csv_file.close()
-            f1.close()
-            f2.close()
-            f3.close()
-            f4.close()
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_filtered_indel_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/1TRUE/-1/g' %s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-        else:
-            with open("%s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-                keep_logging(
-                    'Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir,
-                    'Reading All label positions file: %s/All_indel_label_final_sorted_header.txt' % args.filter2_only_snp_vcf_dir,
-                    logger, 'info')
-                csv_reader = csv.reader(csv_file, delimiter='\t')
-                next(csv_reader, None)
-                for row in csv_reader:
-                    position_label[row[0]] = row[1:]
-                keep_logging('Generating different list of Positions and heatmap data matrix...',
-                             'Generating different list of Positions and heatmap data matrix...', logger, 'info')
-                print_string_header = "\t"
-                for i in vcf_filenames:
-                    print_string_header = print_string_header + os.path.basename(i) + "\t"
-                # f.write('\t' + print_string_header.strip() + '\n')
-                f2.write('\t' + print_string_header.strip() + '\n')
-                f3.write('\t' + print_string_header.strip() + '\n')
-                f4.write('\t' + print_string_header.strip() + '\n')
-                for value in position_label:
-
-                    lll = ['0', '2', '3', '4', '5', '6', '7']
-                    ref_var = ['1', '1TRUE']
-                    if set(ref_var) & set(position_label[value]):
-                        if set(lll) & set(position_label[value]):
-                            print_string = ""
-                            for i in position_label[value]:
-                                print_string = print_string + "\t" + i
-                            STRR2 = value + print_string + "\n"
-                            f3.write(STRR2)
-                            if position_label[value].count('1TRUE') >= 2:
-                                f4.write('1\n')
-                            else:
-                                f4.write('0\n')
-                        else:
-                            strr = value + "\n"
-                            f1.write(strr)
-                            STRR3 = value + "\t" + str(position_label[value]) + "\n"
-                            f2.write(STRR3)
-            csv_file.close()
-            f1.close()
-            f2.close()
-            f3.close()
-            f4.close()
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_ref_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/_filter2_final.vcf_no_proximate_snp.vcf//g' %s/Only_filtered_indel_positions_for_closely_matrix_TRUE_variants_filtered_out.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-            subprocess.call([
-                                "sed -i 's/1TRUE/-1/g' %s/Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir],
-                            shell=True)
-
-    def temp_generate_indel_position_label_data_matrix_All_label():
-
-        """
-        Read **temp_label_final_raw.txt** SNP position label data matrix for generating barplot statistics.
-        """
-        temp_position_label = OrderedDict()
-        f33 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
-        print_string_header = "\t"
-        if args.outgroup:
-            for i in vcf_filenames:
-
-                if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in i:
-                    print_string_header = print_string_header + os.path.basename(i) + "\t"
-        else:
-            for i in vcf_filenames:
+            if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in i:
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
+    else:
+        for i in vcf_filenames:
+            print_string_header = print_string_header + os.path.basename(i) + "\t"
 
+    def generate_indel_position_label_data_matrix_All_label():
+        othercodes = ['0', '2', '3', '4', '5', '6', '7']
+        ref_var = ['1', '1TRUE']
+        lowAF = ['LowAF']
+        HighAF_DP = ['HighAF_DP']
+
+        f33 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
         f33.write('\t' + print_string_header.strip() + '\n')
-        keep_logging(
-            'Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir,
-            'Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir,
-            logger, 'info')
-        # lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP', 'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP', 'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP', 'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP', 'HighFQ_DP_QUAL_proximate_SNP', 'HighFQ_QUAL_DP_proximate_SNP', 'HighFQ_proximate_SNP', '_proximate_SNP']
-        lll = ['reference_unmapped_position', 'LowAF', 'LowAF_DP', 'LowAF_QUAL', 'LowAF_DP_QUAL', 'LowAF_QUAL_DP',
-               'HighAF_DP', 'HighAF_QUAL', 'HighAF_DP_QUAL', 'HighAF_QUAL_DP', 'HighAF', 'LowAF_proximate_SNP',
-               'LowAF_DP_proximate_SNP', 'LowAF_QUAL_proximate_SNP', 'LowAF_DP_QUAL_proximate_SNP',
-               'LowAF_QUAL_DP_proximate_SNP', 'HighAF_DP_proximate_SNP', 'HighAF_QUAL_proximate_SNP',
-               'HighAF_DP_QUAL_proximate_SNP', 'HighAF_QUAL_DP_proximate_SNP', 'HighAF_proximate_SNP', '_proximate_SNP']
-        # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
-        ref_var = ['reference_allele', 'reference_allele_indel_proximate', 'VARIANT']
+
+        f44 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir,'w+')
+        
+        f444 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir,
+                   'w+')
 
         if args.outgroup:
-            with open("%s/temp_indel_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter='\t')
-                next(csv_reader, None)
-                for row in csv_reader:
-                    if set(ref_var) & set(row[1:]):
-                        if set(lll) & set(row[1:]):
-                            if int(row[0]) not in outgroup_indel_specific_positions:
-                                print_string = ""
-                                for i in row[1:]:
-                                    print_string = print_string + "\t" + i
-                                STRR2 = row[0] + print_string + "\n"
-                                f33.write(STRR2)
-            csv_file.close()
-            f33.close()
-        else:
-            with open("%s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter='\t')
-                next(csv_reader, None)
-                for row in csv_reader:
-                    if set(ref_var) & set(row[1:]):
-                        if set(lll) & set(row[1:]):
-
-                            print_string = ""
+            All_indel_label_final_sorted_header_outgroup = pd.read_csv("All_indel_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=0)
+            Only_ref_indel_positions_for_closely_outgroup = []
+            Only_filtered_indel_positions_for_closely_outgroup = []
+            for x in All_indel_label_final_sorted_header_outgroup.itertuples():
+                if set(ref_var) & set(x[2:]):
+                    if set(othercodes) & set(x[2:]):
+                        if x[1] not in outgroup_indel_specific_positions:
+                            Only_filtered_indel_positions_for_closely_outgroup.append(x[1])
                             for i in row[1:]:
                                 print_string = print_string + "\t" + i
                             STRR2 = row[0] + print_string + "\n"
                             f33.write(STRR2)
-            csv_file.close()
-            f33.close()
-        """
-        Read temp_Only_filtered_positions_for_closely_matrix file and generate a matrix of positions that are being filtered just because of AF
-        """
-        temp_position_label_AF = OrderedDict()
-        f44 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir,
-                   'w+')
-        with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
-            keep_logging(
-                'Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
-                'Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            next(csv_reader, None)
+                    else:
+                        Only_ref_indel_positions_for_closely_outgroup.append(x[1])
+        else:
+            
+            All_indel_label_final_sorted_header = pd.read_csv("%s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=0)
+            Only_ref_indel_positions_for_closely = []
+            Only_filtered_indel_positions_for_closely = []
+            for x in All_indel_label_final_sorted_header.itertuples():
+                if set(ref_var) & set(x[2:]):
+                    if set(othercodes) & set(x[2:]):
+                        Only_filtered_indel_positions_for_closely.append(x[1])
+                        print_string = ""
+                        for i in x[2:]:
+                            print_string = print_string + "\t" + i
+                        STRR2 = str(x[1]) + print_string + "\n"
+                        f33.write(STRR2)
+                        if set(lowAF) & set(x[2:]):
+                            print_string = ""
+                            for i in x[2:]:
+                                print_string = print_string + "\t" + i
+                            STRR2 = str(x[0]) + print_string + "\n"
+                            f44.write(STRR2)
+                        elif set(HighAF_DP) & set(x[2:]):
+                            print_string = ""
+                            for i in set(x[2:]):
+                                print_string = print_string + "\t" + i
+                            STRR2 = str(x[0]) + print_string + "\n"
+                            f444.write(STRR2)
+                        else:
+                            Only_ref_indel_positions_for_closely.append(x[1])
+        f33.close()
+        f44.close()
+        f444.close()
 
-            for row in csv_reader:
-                temp_position_label_AF[row[0]] = row[1:]
-            print_string_header = "\t"
-            for i in vcf_filenames:
-                print_string_header = print_string_header + os.path.basename(i) + "\t"
-            f44.write('\t' + print_string_header.strip() + '\n')
-            for value in temp_position_label_AF:
-                lll = ['LowAF']
-                if set(lll) & set(temp_position_label_AF[value]):
+    def temp_generate_indel_position_label_data_matrix_All_label():
 
-                    print_string = ""
-                    for i in temp_position_label_AF[value]:
-                        print_string = print_string + "\t" + i
-                    STRR2 = value + print_string + "\n"
-                    f44.write(STRR2)
-            f44.close()
-            csv_file.close()
-            f44.close()
+        # """
+        # Read **temp_label_final_raw.txt** SNP position label data matrix for generating barplot statistics.
+        # """
+        # temp_position_label = OrderedDict()
+        # f33 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir, 'w+')
+        # print_string_header = "\t"
+        # if args.outgroup:
+        #     for i in vcf_filenames:
+
+        #         if "%s_filter2_final.vcf_no_proximate_snp.vcf" % outgroup not in i:
+        #             print_string_header = print_string_header + os.path.basename(i) + "\t"
+        # else:
+        #     for i in vcf_filenames:
+        #         print_string_header = print_string_header + os.path.basename(i) + "\t"
+
+        # f33.write('\t' + print_string_header.strip() + '\n')
+        # keep_logging(
+        #     'Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir,
+        #     'Reading temporary label positions file: %s/temp_label_final_raw.txt' % args.filter2_only_snp_vcf_dir,
+        #     logger, 'info')
+        # # lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP', 'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP', 'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP', 'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP', 'HighFQ_DP_QUAL_proximate_SNP', 'HighFQ_QUAL_DP_proximate_SNP', 'HighFQ_proximate_SNP', '_proximate_SNP']
+        # lll = ['reference_unmapped_position', 'LowAF', 'LowAF_DP', 'LowAF_QUAL', 'LowAF_DP_QUAL', 'LowAF_QUAL_DP',
+        #        'HighAF_DP', 'HighAF_QUAL', 'HighAF_DP_QUAL', 'HighAF_QUAL_DP', 'HighAF', 'LowAF_proximate_SNP',
+        #        'LowAF_DP_proximate_SNP', 'LowAF_QUAL_proximate_SNP', 'LowAF_DP_QUAL_proximate_SNP',
+        #        'LowAF_QUAL_DP_proximate_SNP', 'HighAF_DP_proximate_SNP', 'HighAF_QUAL_proximate_SNP',
+        #        'HighAF_DP_QUAL_proximate_SNP', 'HighAF_QUAL_DP_proximate_SNP', 'HighAF_proximate_SNP', '_proximate_SNP']
+        # # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
+        # ref_var = ['reference_allele', 'reference_allele_indel_proximate', 'VARIANT']
+
+        # if args.outgroup:
+        #     with open("%s/temp_indel_label_final_raw_outgroup.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
+        #         csv_reader = csv.reader(csv_file, delimiter='\t')
+        #         next(csv_reader, None)
+        #         for row in csv_reader:
+        #             if set(ref_var) & set(row[1:]):
+        #                 if set(lll) & set(row[1:]):
+        #                     if int(row[0]) not in outgroup_indel_specific_positions:
+        #                         print_string = ""
+        #                         for i in row[1:]:
+        #                             print_string = print_string + "\t" + i
+        #                         STRR2 = row[0] + print_string + "\n"
+        #                         f33.write(STRR2)
+        #     csv_file.close()
+        #     f33.close()
+        # else:
+        #     with open("%s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
+        #         csv_reader = csv.reader(csv_file, delimiter='\t')
+        #         next(csv_reader, None)
+        #         for row in csv_reader:
+        #             if set(ref_var) & set(row[1:]):
+        #                 if set(lll) & set(row[1:]):
+
+        #                     print_string = ""
+        #                     for i in row[1:]:
+        #                         print_string = print_string + "\t" + i
+        #                     STRR2 = row[0] + print_string + "\n"
+        #                     f33.write(STRR2)
+        #     csv_file.close()
+        #     f33.close()
+        # """
+        # Read temp_Only_filtered_positions_for_closely_matrix file and generate a matrix of positions that are being filtered just because of AF
+        # """
+        # temp_position_label_AF = OrderedDict()
+        # f44 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_AF.txt" % args.filter2_only_snp_vcf_dir,
+        #            'w+')
+        # with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir,
+        #           'rU') as csv_file:
+        #     keep_logging(
+        #         'Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
+        #         'Reading temporary Only_filtered_indel_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
+        #         logger, 'info')
+        #     csv_reader = csv.reader(csv_file, delimiter='\t')
+        #     next(csv_reader, None)
+
+        #     for row in csv_reader:
+        #         temp_position_label_AF[row[0]] = row[1:]
+        #     print_string_header = "\t"
+        #     for i in vcf_filenames:
+        #         print_string_header = print_string_header + os.path.basename(i) + "\t"
+        #     f44.write('\t' + print_string_header.strip() + '\n')
+        #     for value in temp_position_label_AF:
+        #         lll = ['LowAF']
+        #         if set(lll) & set(temp_position_label_AF[value]):
+
+        #             print_string = ""
+        #             for i in temp_position_label_AF[value]:
+        #                 print_string = print_string + "\t" + i
+        #             STRR2 = value + print_string + "\n"
+        #             f44.write(STRR2)
+        #     f44.close()
+        #     csv_file.close()
+        #     f44.close()
 
         """
         Perform Sed on temp files. Find a faster way to do this.
@@ -1825,35 +1765,35 @@ def generate_indel_position_label_data_matrix():
         """
         Read temp_Only_filtered_positions_for_closely_matrix file and generate a matrix of positions that are being filtered just because of Dp
         """
-        temp_position_label_DP = OrderedDict()
-        f44 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir,
-                   'w+')
-        with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
-            keep_logging(
-                'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
-                'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
-            csv_reader = csv.reader(csv_file, delimiter='\t')
-            next(csv_reader, None)
-            for row in csv_reader:
-                temp_position_label_DP[row[0]] = row[1:]
-            print_string_header = "\t"
-            for i in vcf_filenames:
-                print_string_header = print_string_header + os.path.basename(i) + "\t"
-            f44.write('\t' + print_string_header.strip() + '\n')
-            for value in temp_position_label_DP:
-                lll = ['HighAF_DP']
-                # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
-                ref_var = ['reference_allele', 'reference_allele_indel_proximate', 'VARIANT']
-                if set(lll) & set(temp_position_label_AF[value]):
-                    print_string = ""
-                    for i in temp_position_label_AF[value]:
-                        print_string = print_string + "\t" + i
-                    STRR2 = value + print_string + "\n"
-                    f44.write(STRR2)
-        f44.close()
-        csv_file.close()
+        # temp_position_label_DP = OrderedDict()
+        # f44 = open("%s/temp_Only_filtered_indel_positions_for_closely_matrix_DP.txt" % args.filter2_only_snp_vcf_dir,
+        #            'w+')
+        # with open("%s/temp_Only_filtered_indel_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir,
+        #           'rU') as csv_file:
+        #     keep_logging(
+        #         'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
+        #         'Reading temporary Only_filtered_positions label file: %s/temp_Only_filtered_indel_positions_for_closely_matrix.txt ' % args.filter2_only_snp_vcf_dir,
+        #         logger, 'info')
+        #     csv_reader = csv.reader(csv_file, delimiter='\t')
+        #     next(csv_reader, None)
+        #     for row in csv_reader:
+        #         temp_position_label_DP[row[0]] = row[1:]
+        #     print_string_header = "\t"
+        #     for i in vcf_filenames:
+        #         print_string_header = print_string_header + os.path.basename(i) + "\t"
+        #     f44.write('\t' + print_string_header.strip() + '\n')
+        #     for value in temp_position_label_DP:
+        #         lll = ['HighAF_DP']
+        #         # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
+        #         ref_var = ['reference_allele', 'reference_allele_indel_proximate', 'VARIANT']
+        #         if set(lll) & set(temp_position_label_AF[value]):
+        #             print_string = ""
+        #             for i in temp_position_label_AF[value]:
+        #                 print_string = print_string + "\t" + i
+        #             STRR2 = value + print_string + "\n"
+        #             f44.write(STRR2)
+        # f44.close()
+        # csv_file.close()
 
         """
         Perform Sed on temp files. Find a faster way to do this.
