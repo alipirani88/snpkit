@@ -748,7 +748,11 @@ def generate_position_label_data_matrix():
                             if int(value) not in outgroup_specific_positions:
                                 strr = value + "\n"
                                 f1.write(strr)
-                                Only_ref_variant_positions_for_closely_outgroup.append(value)
+                                if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                                    if line not in functional_filter_pos_array:
+                                        Only_ref_variant_positions_for_closely_outgroup.append(value)
+                                else:
+                                    Only_ref_variant_positions_for_closely_outgroup.append(value)
                                 
             csv_file.close()
             f1.close()
@@ -785,7 +789,11 @@ def generate_position_label_data_matrix():
                         else:
                             strr = value + "\n"
                             f1.write(strr)
-                            Only_ref_variant_positions_for_closely.append(value)
+                            if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                                if line not in functional_filter_pos_array:
+                                    Only_ref_variant_positions_for_closely.append(value)
+                            else:
+                                Only_ref_variant_positions_for_closely.append(value)
             csv_file.close()
             f1.close()
 
@@ -1102,7 +1110,11 @@ def generate_indel_position_label_data_matrix():
                             STRR2 = row[0] + print_string + "\n"
                             f33.write(STRR2)
                     else:
-                        Only_ref_indel_positions_for_closely_outgroup.append(x[1])
+                        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                            if x[1] not in functional_filter_pos_array:
+                                Only_ref_indel_positions_for_closely_outgroup.append(x[1])
+                        else:
+                            Only_ref_indel_positions_for_closely_outgroup.append(x[1])
         else:
             
             All_indel_label_final_sorted_header = pd.read_csv("%s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=0)
@@ -1118,7 +1130,11 @@ def generate_indel_position_label_data_matrix():
                         STRR2 = str(x[1]) + print_string + "\n"
                         f33.write(STRR2)
                     else:
-                        Only_ref_indel_positions_for_closely.append(x[1])
+                        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+                            if x[1] not in functional_filter_pos_array:
+                                Only_ref_indel_positions_for_closely.append(x[1])
+                        else:
+                            Only_ref_indel_positions_for_closely.append(x[1])
         f33.close()
 
     
@@ -1665,59 +1681,79 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 
 def generate_vcf_files():
     method_start_time = datetime.now()
-    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-        keep_logging(
-            'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
-            'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
-            logger,
-            'info')
+    # if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+    #     keep_logging(
+    #         'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
+    #         'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
+    #         logger,
+    #         'info')
 
-        functional_filter_pos_array = []
-        with open(functional_class_filter_positions, 'rU') as f_functional:
-            for line_func in f_functional:
-                functional_filter_pos_array.append(line_func.strip())
+    #     functional_filter_pos_array = []
+    #     with open(functional_class_filter_positions, 'rU') as f_functional:
+    #         for line_func in f_functional:
+    #             functional_filter_pos_array.append(line_func.strip())
 
-        program_starts = time.time()
-        ref_variant_position_array = []
-        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-        for line in ffp:
-            line = line.strip()
-            if line not in functional_filter_pos_array:
-                ref_variant_position_array.append(line)
-        ffp.close()
-        now = time.time()
-        #print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
+    #     program_starts = time.time()
+    #     ref_variant_position_array = []
+    #     ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+    #     for line in ffp:
+    #         line = line.strip()
+    #         if line not in functional_filter_pos_array:
+    #             ref_variant_position_array.append(line)
+    #     ffp.close()
+    #     now = time.time()
+    #     #print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
 
-        # Adding core indel support: 2018-07-24
-        ref_indel_variant_position_array = []
-        ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-        for line in ffp:
-            line = line.strip()
-            if line not in functional_filter_pos_array:
-                ref_indel_variant_position_array.append(line)
-        ffp.close()
+    #     # Adding core indel support: 2018-07-24
+    #     ref_indel_variant_position_array = []
+    #     ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+    #     for line in ffp:
+    #         line = line.strip()
+    #         if line not in functional_filter_pos_array:
+    #             ref_indel_variant_position_array.append(line)
+    #     ffp.close()
 
 
-    else:
-        functional_filter_pos_array = []
-        ref_variant_position_array = []
-        ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-        for line in ffp:
-            line = line.strip()
+    # else:
+    #     functional_filter_pos_array = []
+    #     ref_variant_position_array = []
+    #     ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+    #     for line in ffp:
+    #         line = line.strip()
+    #         ref_variant_position_array.append(line)
+    #     ffp.close()
+
+    #     # Adding core indel support: 2018-07-24
+    #     ref_indel_variant_position_array = []
+    #     ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+    #     for line in ffp:
+    #         line = line.strip()
+    #         if line not in functional_filter_pos_array:
+    #             ref_indel_variant_position_array.append(line)
+    #     ffp.close()
+
+    
+    ref_variant_position_array = []
+    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+    for line in ffp:
+        line = line.strip()
+        if line not in functional_filter_pos_array:
             ref_variant_position_array.append(line)
-        ffp.close()
+    ffp.close()
+    now = time.time()
+    #print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
 
-        # Adding core indel support: 2018-07-24
-        ref_indel_variant_position_array = []
-        ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-        for line in ffp:
-            line = line.strip()
-            if line not in functional_filter_pos_array:
-                ref_indel_variant_position_array.append(line)
-        ffp.close()
+    # Adding core indel support: 2018-07-24
+    ref_indel_variant_position_array = []
+    ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
+    for line in ffp:
+        line = line.strip()
+        if line not in functional_filter_pos_array:
+            ref_indel_variant_position_array.append(line)
+    ffp.close()
 
-    print "No. of core SNPs: %s" % len(ref_variant_position_array)
-    print "No. of core INDELs: %s" % len(ref_indel_variant_position_array)
+    print "No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely)
+    print "No. of core INDELs: %s" % len(Only_ref_indel_positions_for_closely)
 
     f_file = open(
         "%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir,
@@ -4545,7 +4581,21 @@ if __name__ == '__main__':
 
     scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
 
-    
+    global functional_filter_pos_array
+    functional_filter_pos_array = []
+
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+        keep_logging(
+            'Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
+            'Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
+            logger,
+            'info')
+
+        
+        with open(functional_class_filter_positions, 'rU') as f_functional:
+            for line_func in f_functional:
+                functional_filter_pos_array.append(line_func.strip())
+
 
     # Start Variant Calling Core Pipeline steps based on steps argument supplied.
     if "1" in args.steps:
