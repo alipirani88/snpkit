@@ -715,6 +715,8 @@ def generate_position_label_data_matrix():
         f1 = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'w+')
         
         if args.outgroup:
+            Only_ref_variant_positions_for_closely_outgroup = []
+            Only_filtered_variant_positions_for_closely_outgroup = []
             with open("%s/All_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir,
                       'rU') as csv_file:
                 keep_logging(
@@ -741,17 +743,20 @@ def generate_position_label_data_matrix():
                                 for i in position_label[value]:
                                     print_string = print_string + "\t" + i
                                 STRR2 = value + print_string + "\n"
+                                Only_filtered_variant_positions_for_closely_outgroup.append(value)
                         else:
                             if int(value) not in outgroup_specific_positions:
                                 strr = value + "\n"
                                 f1.write(strr)
-                                
+                                Only_ref_variant_positions_for_closely_outgroup.append(value)
                                 
             csv_file.close()
             f1.close()
             
 
         else:
+            Only_ref_variant_positions_for_closely = []
+            Only_filtered_variant_positions_for_closely = []
             with open("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
                 keep_logging(
                     'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
@@ -776,11 +781,11 @@ def generate_position_label_data_matrix():
                             for i in position_label[value]:
                                 print_string = print_string + "\t" + i
                             STRR2 = value + print_string + "\n"
-                            
+                            Only_filtered_variant_positions_for_closely.append(value)
                         else:
-
                             strr = value + "\n"
                             f1.write(strr)
+                            Only_ref_variant_positions_for_closely.append(value)
             csv_file.close()
             f1.close()
 
@@ -1662,8 +1667,8 @@ def generate_vcf_files():
     method_start_time = datetime.now()
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
         keep_logging(
-            'Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions,
-            'Removing Variants falling in Functional filters positions file: %s\n' % functional_class_filter_positions,
+            'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
+            'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
             logger,
             'info')
 
@@ -2051,7 +2056,7 @@ def core_prep_snp(core_vcf_fasta_dir):
     generate_position_label_data_matrix()
 
     """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
-    #generate_vcf_files()
+    generate_vcf_files()
 
     """ Analyze the positions that were filtered out only due to insufficient depth"""
     # DP_analysis()
