@@ -1033,8 +1033,8 @@ def generate_position_label_data_matrix():
 
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken),
-                 'Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken),
+                 '- Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_variant_positions_for_closely
 
 def generate_indel_position_label_data_matrix():
@@ -1685,7 +1685,6 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
                         print_array.append(line)
         file_open.close()
         file_name = i + "_core.vcf"
-        keep_logging('Generating %s' % file_name, 'Generating %s' % file_name, logger, 'info')
         filtered_out_vcf_files.append(file_name)
         f1 = open(file_name, 'w+')
         for ios in print_array:
@@ -1695,7 +1694,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
 
     # Turning off generating core fasta alignemnets. No longer used in pipeline
     filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
-    keep_logging('Generating Consensus...', 'Generating Consensus...', logger, 'info')
+    keep_logging('- Extracting Core Genome.', '- Extracting Consensus.', logger, 'info')
     for file in filtered_out_vcf_files:
         f1 = open(filename, 'a+')
         bgzip_cmd = "bgzip -f %s\n" % (file)
