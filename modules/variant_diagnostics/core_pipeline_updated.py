@@ -17,6 +17,7 @@ import thread
 import glob
 import readline
 import pandas as pd
+import numpy as np
 import errno
 from pyfasta import Fasta
 from datetime import datetime
@@ -1657,13 +1658,12 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
 
     print "- No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely)
 
-    f_file = open(
-        "%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir,
-        'w+')
-    for pos in Only_ref_variant_positions_for_closely:
-        f_file.write(pos + '\n')
-    f_file.close()
-
+    functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
+    functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
+    functional_filter_pos_array = functional_filter_pos_array.squeeze()
+    exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values,functional_filter_pos_array.values))
+    Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
+    Only_ref_variant_positions_for_closely_without_functional_filtered_positions.to_csv('Only_ref_variant_positions_for_closely_without_functional_filtered_positions', index=False, sep='\n')
 
     filter2_files_array = []
     for i in vcf_filenames:
@@ -1680,7 +1680,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
                     print_array.append(line)
                 else:
                     split_array = re.split(r'\t+', line)
-                    if split_array[1] in Only_ref_variant_positions_for_closely and 'INDEL' not in split_array[7]:
+                    if split_array[1] in Only_ref_variant_positions_for_closely_without_functional_filtered_positions and 'INDEL' not in split_array[7]:
                         print_array.append(line)
         file_open.close()
         file_name = i + "_core.vcf"
