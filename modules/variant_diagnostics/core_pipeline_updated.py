@@ -758,42 +758,14 @@ def generate_position_label_data_matrix():
             
 
         else:
-            Only_ref_variant_positions_for_closely = []
-            Only_filtered_variant_positions_for_closely = []
-            print_string_header = "\t"
-            for i in vcf_filenames:
-                print_string_header = print_string_header + os.path.basename(i) + "\t"
-            
-            keep_logging(
-                    '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
-                    '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
-                    logger, 'info')
-
-            with open("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter='\t')
-                next(csv_reader, None)
-                for row in csv_reader:
-                    position_label[row[0]] = row[1:]
-                csv_file.close()
-                
-                for value in position_label:
-                    if set(ref_var) & set(position_label[value]):
-                        if set(other_codes) & set(position_label[value]):
-                            print_string = ""
-                            for i in position_label[value]:
-                                print_string = print_string + "\t" + i
-                            STRR2 = value + print_string + "\n"
-                            Only_filtered_variant_positions_for_closely.append(value)
-                        else:
-                            strr = value + "\n"
-                            f1.write(strr)
-                            if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-                                if line not in functional_filter_pos_array:
-                                    Only_ref_variant_positions_for_closely.append(value)
-                            else:
-                                Only_ref_variant_positions_for_closely.append(value)
-            
-            f1.close()
+            All_label_final_sorted_header = pd.read_csv("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=0)
+            All_label_final_sorted_header.replace('1TRUE','1', inplace=True, regex=True)
+            Code_count = All_label_final_sorted_header.iloc[:, 1:].apply(pd.Series.value_counts, axis=1)
+            numberofsamples = len(All_label_final_sorted_header.columns) - 1
+            frames = [All_label_final_sorted_header['Unnamed: 0'], Code_count]
+            results = pd.concat(frames, axis=1, join='inner')
+            Only_ref_variant_positions_for_closely = results.loc[results['1'] == numberofsamples, 'Unnamed: 0']
+            Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
         
         return Only_ref_variant_positions_for_closely
 
@@ -1049,7 +1021,7 @@ def generate_position_label_data_matrix():
 
     # Commented out for debugging
     """ Methods Steps"""
-    generate_position_label_data_matrix_All_label()
+    Only_ref_variant_positions_for_closely = generate_position_label_data_matrix_All_label()
     
     # temp_generate_position_label_data_matrix_All_label()
     # keep_logging('Running: Generating Barplot statistics data matrices...',
@@ -1060,7 +1032,8 @@ def generate_position_label_data_matrix():
 
     keep_logging('Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken),
                  'Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
-
+    return Only_ref_variant_positions_for_closely
+    
 def generate_indel_position_label_data_matrix():
     """
     Generate different list of Positions using the matrix All_label_final_sorted_header.txt.

@@ -138,13 +138,13 @@ def generate_dicts():
         #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
 
     now = time.time()
-    print "Time taken to load raw vcf data array - {0} seconds".format(now - program_starts)
+    #print "Time taken to load raw vcf data array - {0} seconds".format(now - program_starts)
 
 """ Generate label files and check why the positions were filtered out from the final vcf file """
 def get_reason():
     generate_dicts()
     #print "Time taken to generate dictionaries: %s" % (timeit.timeit(generate_dicts, number=1))
-    f1=open(out_file_name, 'w+')
+    f1=open(out_file_name, 'w')
     for j in position_array_sort:
         """ Check if the unique position is present in the final no_proximate_snp.vcf file """
         #if int(j) not in positions_final_vcf.keys():
@@ -184,3 +184,4 @@ def get_reason():
     f1.close()
 
 #print "Time taken to execute this code block: %s" % (timeit.timeit(get_reason, number=1))
+get_reason()
