@@ -713,31 +713,32 @@ def generate_position_label_data_matrix():
     def generate_position_label_data_matrix_All_label():
         position_label = OrderedDict()
         f1 = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'w+')
+        other_codes = ['0', '2', '3', '4', '5', '6', '7']
+        ref_var = ['1', '1TRUE']
         
         if args.outgroup:
             Only_ref_variant_positions_for_closely_outgroup = []
             Only_filtered_variant_positions_for_closely_outgroup = []
+
+            print_string_header = "\t"
+            for i in vcf_filenames:
+                print_string_header = print_string_header + os.path.basename(i) + "\t"
+
             with open("%s/All_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir,
                       'rU') as csv_file:
                 keep_logging(
-                    'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
-                    'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+                    '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+                    '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
                     logger, 'info')
                 csv_reader = csv.reader(csv_file, delimiter='\t')
                 next(csv_reader, None)
                 for row in csv_reader:
                     position_label[row[0]] = row[1:]
-                keep_logging('Generating different list of Positions and heatmap data matrix... \n',
-                             'Generating different list of Positions and heatmap data matrix... \n', logger, 'info')
-                print_string_header = "\t"
-                for i in vcf_filenames:
-                    print_string_header = print_string_header + os.path.basename(i) + "\t"
+                csv_file.close()
                 
                 for value in position_label:
-                    lll = ['0', '2', '3', '4', '5', '6', '7']
-                    ref_var = ['1', '1TRUE']
                     if set(ref_var) & set(position_label[value]):
-                        if set(lll) & set(position_label[value]):
+                        if set(other_codes) & set(position_label[value]):
                             if int(value) not in outgroup_specific_positions:
                                 print_string = ""
                                 for i in position_label[value]:
@@ -753,34 +754,31 @@ def generate_position_label_data_matrix():
                                         Only_ref_variant_positions_for_closely_outgroup.append(value)
                                 else:
                                     Only_ref_variant_positions_for_closely_outgroup.append(value)
-                                
-            csv_file.close()
             f1.close()
             
 
         else:
             Only_ref_variant_positions_for_closely = []
             Only_filtered_variant_positions_for_closely = []
-            with open("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
-                keep_logging(
-                    'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
-                    'Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+            print_string_header = "\t"
+            for i in vcf_filenames:
+                print_string_header = print_string_header + os.path.basename(i) + "\t"
+            
+            keep_logging(
+                    '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
+                    '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
                     logger, 'info')
+
+            with open("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter='\t')
                 next(csv_reader, None)
                 for row in csv_reader:
                     position_label[row[0]] = row[1:]
-                keep_logging('Generating different list of Positions and heatmap data matrix... \n',
-                             'Generating different list of Positions and heatmap data matrix... \n', logger, 'info')
-                print_string_header = "\t"
-                for i in vcf_filenames:
-                    print_string_header = print_string_header + os.path.basename(i) + "\t"
+                csv_file.close()
+                
                 for value in position_label:
-                    lll = ['0', '2', '3', '4', '5', '6', '7']
-                    ref_var = ['1', '1TRUE']
                     if set(ref_var) & set(position_label[value]):
-                        if set(lll) & set(position_label[value]):
-
+                        if set(other_codes) & set(position_label[value]):
                             print_string = ""
                             for i in position_label[value]:
                                 print_string = print_string + "\t" + i
@@ -794,8 +792,10 @@ def generate_position_label_data_matrix():
                                     Only_ref_variant_positions_for_closely.append(value)
                             else:
                                 Only_ref_variant_positions_for_closely.append(value)
-            csv_file.close()
+            
             f1.close()
+        
+        return Only_ref_variant_positions_for_closely
 
     def temp_generate_position_label_data_matrix_All_label():
 
@@ -842,7 +842,7 @@ def generate_position_label_data_matrix():
             'Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir,
             'Reading temporary label positions file: %s/temp_label_final_raw.txt \n' % args.filter2_only_snp_vcf_dir,
             logger, 'info')
-        lll = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP',
+        other_codes = ['reference_unmapped_position', 'LowFQ', 'LowFQ_DP', 'LowFQ_QUAL', 'LowFQ_DP_QUAL', 'LowFQ_QUAL_DP',
                'HighFQ_DP', 'HighFQ_QUAL', 'HighFQ_DP_QUAL', 'HighFQ_QUAL_DP', 'HighFQ', 'LowFQ_proximate_SNP',
                'LowFQ_DP_proximate_SNP', 'LowFQ_QUAL_proximate_SNP', 'LowFQ_DP_QUAL_proximate_SNP',
                'LowFQ_QUAL_DP_proximate_SNP', 'HighFQ_DP_proximate_SNP', 'HighFQ_QUAL_proximate_SNP',
@@ -856,7 +856,7 @@ def generate_position_label_data_matrix():
                 next(csv_reader, None)
                 for row in csv_reader:
                     if set(ref_var) & set(row[1:]):
-                        if set(lll) & set(row[1:]):
+                        if set(other_codes) & set(row[1:]):
                             if int(row[0]) not in outgroup_specific_positions:
 
                                 print_string = ""
@@ -883,7 +883,7 @@ def generate_position_label_data_matrix():
                 next(csv_reader, None)
                 for row in csv_reader:
                     if set(ref_var) & set(row[1:]):
-                        if set(lll) & set(row[1:]):
+                        if set(other_codes) & set(row[1:]):
                             print_string = ""
                             for i in row[1:]:
                                 print_string = print_string + "\t" + i
@@ -1049,14 +1049,12 @@ def generate_position_label_data_matrix():
 
     # Commented out for debugging
     """ Methods Steps"""
-    keep_logging('- Running: Generating data matrices.', '- Running: Generating data matrices.', logger, 'info')
     generate_position_label_data_matrix_All_label()
-    keep_logging('Running: Changing variables in data matrices to codes for faster processing...',
-                 'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
-    temp_generate_position_label_data_matrix_All_label()
-    keep_logging('Running: Generating Barplot statistics data matrices...',
-                 'Running: Generating Barplot statistics data matrices...', logger, 'info')
-    barplot_stats()
+    
+    # temp_generate_position_label_data_matrix_All_label()
+    # keep_logging('Running: Generating Barplot statistics data matrices...',
+    #              'Running: Generating Barplot statistics data matrices...', logger, 'info')
+    # barplot_stats()
 
     method_time_taken = datetime.now() - method_start_time
 
@@ -1136,7 +1134,7 @@ def generate_indel_position_label_data_matrix():
                         else:
                             Only_ref_indel_positions_for_closely.append(x[1])
         f33.close()
-
+        return Only_ref_indel_positions_for_closely
     
     def barplot_indel_stats():
         keep_logging(
@@ -1278,20 +1276,20 @@ def generate_indel_position_label_data_matrix():
                      logger, 'info')
 
     """ Methods Steps"""
-    keep_logging('Running: Generating data matrices...', 'Running: Generating data matrices...', logger, 'info')
-    generate_indel_position_label_data_matrix_All_label()
-    keep_logging('Running: Changing variables in data matrices to codes for faster processing...',
-                 'Running: Changing variables in data matrices to codes for faster processing...', logger, 'info')
+    keep_logging('- Running: Generating data matrices.', '- Running: Generating data matrices.', logger, 'info')
+    Only_ref_indel_positions_for_closely = generate_indel_position_label_data_matrix_All_label()
+    
     # Turning off and removing Only AF and Only DP heatmap plot matrices.
     # Not super useful - Run it as an additional script.
     #temp_generate_indel_position_label_data_matrix_All_label()
-    keep_logging('Running: Generating Barplot statistics data matrices...',
-                 'Running: Generating Barplot statistics data matrices...', logger, 'info')
-    barplot_indel_stats()
+    # keep_logging('Running: Generating Barplot statistics data matrices...',
+    #              'Running: Generating Barplot statistics data matrices...', logger, 'info')
+    # barplot_indel_stats()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken),
-                 'Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken),
+                 '- Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
+    return Only_ref_indel_positions_for_closely
 
 def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter, script_Directive, job_name_flag):
     """ Generate jobs/scripts that creates core consensus fasta file.
@@ -1679,96 +1677,18 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
         # os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
         call("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir, logger)
 
-def generate_vcf_files():
+def generate_vcf_files(Only_ref_variant_positions_for_closely):
     method_start_time = datetime.now()
-    # if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-    #     keep_logging(
-    #         'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
-    #         'Removing Variants falling in Functional class region - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
-    #         logger,
-    #         'info')
 
-    #     functional_filter_pos_array = []
-    #     with open(functional_class_filter_positions, 'rU') as f_functional:
-    #         for line_func in f_functional:
-    #             functional_filter_pos_array.append(line_func.strip())
-
-    #     program_starts = time.time()
-    #     ref_variant_position_array = []
-    #     ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    #     for line in ffp:
-    #         line = line.strip()
-    #         if line not in functional_filter_pos_array:
-    #             ref_variant_position_array.append(line)
-    #     ffp.close()
-    #     now = time.time()
-    #     #print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
-
-    #     # Adding core indel support: 2018-07-24
-    #     ref_indel_variant_position_array = []
-    #     ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    #     for line in ffp:
-    #         line = line.strip()
-    #         if line not in functional_filter_pos_array:
-    #             ref_indel_variant_position_array.append(line)
-    #     ffp.close()
-
-
-    # else:
-    #     functional_filter_pos_array = []
-    #     ref_variant_position_array = []
-    #     ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    #     for line in ffp:
-    #         line = line.strip()
-    #         ref_variant_position_array.append(line)
-    #     ffp.close()
-
-    #     # Adding core indel support: 2018-07-24
-    #     ref_indel_variant_position_array = []
-    #     ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    #     for line in ffp:
-    #         line = line.strip()
-    #         if line not in functional_filter_pos_array:
-    #             ref_indel_variant_position_array.append(line)
-    #     ffp.close()
-
-    
-    ref_variant_position_array = []
-    ffp = open("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    for line in ffp:
-        line = line.strip()
-        if line not in functional_filter_pos_array:
-            ref_variant_position_array.append(line)
-    ffp.close()
-    now = time.time()
-    #print "Time taken to load ref_variant_position_array array - {0} seconds".format(now - program_starts)
-
-    # Adding core indel support: 2018-07-24
-    ref_indel_variant_position_array = []
-    ffp = open("%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir, 'r+')
-    for line in ffp:
-        line = line.strip()
-        if line not in functional_filter_pos_array:
-            ref_indel_variant_position_array.append(line)
-    ffp.close()
-
-    print "No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely)
-    print "No. of core INDELs: %s" % len(Only_ref_indel_positions_for_closely)
+    #print "No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely)
 
     f_file = open(
         "%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir,
         'w+')
-    for pos in ref_variant_position_array:
+    for pos in Only_ref_variant_positions_for_closely:
         f_file.write(pos + '\n')
     f_file.close()
 
-    # Adding core indel support: 2018-07-24
-    f_file = open(
-        "%s/Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir,
-        'w+')
-    for pos in ref_indel_variant_position_array:
-        f_file.write(pos + '\n')
-    f_file.close()
 
     filter2_files_array = []
     for i in vcf_filenames:
@@ -1785,7 +1705,7 @@ def generate_vcf_files():
                     print_array.append(line)
                 else:
                     split_array = re.split(r'\t+', line)
-                    if split_array[1] in ref_variant_position_array and 'INDEL' not in split_array[7]:
+                    if split_array[1] in Only_ref_variant_positions_for_closely and 'INDEL' not in split_array[7]:
                         print_array.append(line)
         file_open.close()
         file_name = i + "_core.vcf"
@@ -2081,7 +2001,7 @@ def extract_only_ref_variant_fasta_from_reference_allele_variant():
     keep_logging('Time taken to complete the extract_only_ref_variant_fasta_from_reference_allele_variant method: {}'.format(method_time_taken),
                  'Time taken to complete the extract_only_ref_variant_fasta_from_reference_allele_variant method: {}'.format(method_time_taken), logger, 'info')
 
-def core_prep_snp(core_vcf_fasta_dir):
+def core_prep_snp():
     method_start_time = datetime.now()
     """ Generate SNP Filter Label Matrix """
     generate_paste_command()
@@ -2089,10 +2009,10 @@ def core_prep_snp(core_vcf_fasta_dir):
     generate_paste_command_outgroup()
 
     """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-    generate_position_label_data_matrix()
+    Only_ref_variant_positions_for_closely = generate_position_label_data_matrix()
 
     """ Generate VCF files from final list of variants in Only_ref_variant_positions_for_closely; generate commands for consensus generation """
-    generate_vcf_files()
+    generate_vcf_files(Only_ref_variant_positions_for_closely)
 
     """ Analyze the positions that were filtered out only due to insufficient depth"""
     # DP_analysis()
@@ -2100,8 +2020,9 @@ def core_prep_snp(core_vcf_fasta_dir):
 
     keep_logging('Time taken to complete the core_prep_snp method: {}'.format(method_time_taken),
                  'Time taken to complete the core_prep_snp method: {}'.format(method_time_taken), logger, 'info')
+    return Only_ref_variant_positions_for_closely
 
-def core_prep_indel(core_vcf_fasta_dir):
+def core_prep_indel():
     method_start_time = datetime.now()
     """ Generate SNP Filter Label Matrix """
     generate_indel_paste_command()
@@ -2109,12 +2030,12 @@ def core_prep_indel(core_vcf_fasta_dir):
     generate_indel_paste_command_outgroup()
 
     """ Generate different list of Positions from the **All_label_final_sorted_header.txt** SNP position label data matrix. """
-    generate_indel_position_label_data_matrix()
+    Only_ref_indel_positions_for_closely = generate_indel_position_label_data_matrix()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the core_prep_indel method: {}'.format(method_time_taken),
-                 'Time taken to complete the core_prep_indel method: {}'.format(method_time_taken), logger, 'info')
-
+    keep_logging('- Time taken to complete the core_prep_indel method: {}'.format(method_time_taken),
+                 '- Time taken to complete the core_prep_indel method: {}'.format(method_time_taken), logger, 'info')
+    return Only_ref_indel_positions_for_closely
 """ Annotation methods"""
 
 def prepare_snpEff_db(reference_basename):
@@ -2725,8 +2646,8 @@ def generate_position_label_dict(final_merge_anno_file):
     position_label = OrderedDict()
     with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
         keep_logging(
-            'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
-            'Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            '- Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            '- Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
             logger, 'info')
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
@@ -4583,11 +4504,12 @@ if __name__ == '__main__':
 
     global functional_filter_pos_array
     functional_filter_pos_array = []
+    functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
 
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
         keep_logging(
-            'Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
-            'Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask - Phage, Repeat, Custom Mask: %s\n' % functional_class_filter_positions,
+            '- Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
+            '- Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
             logger,
             'info')
 
@@ -4596,7 +4518,11 @@ if __name__ == '__main__':
             for line_func in f_functional:
                 functional_filter_pos_array.append(line_func.strip())
 
-
+        keep_logging(
+            '- No of Functional Class filter positions: %s' % len(functional_filter_pos_array),
+            '- No of Functional Class filter positions: %s' % len(functional_filter_pos_array),
+            logger,
+            'info')
     # Start Variant Calling Core Pipeline steps based on steps argument supplied.
     if "1" in args.steps:
         """ 
@@ -4622,10 +4548,10 @@ if __name__ == '__main__':
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
         make_sure_path_exists(tmp_dir)
 
-        create_job(args.jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_directives, script_Directive,
+        create_job(args.jobrun, vcf_filenames, unique_position_file, temp_dir, scheduler_directives, script_Directive,
                    job_name_flag, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
 
-        create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, tmp_dir, scheduler_directives,
+        create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, temp_dir, scheduler_directives,
                          script_Directive, job_name_flag, temp_dir, args.outgroup, logger,
                          args.filter2_only_snp_vcf_dir, num_cores)
 
@@ -4703,9 +4629,9 @@ if __name__ == '__main__':
 
         # Commented out for debugging
         # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
-        core_prep_indel(core_vcf_fasta_dir)
+        Only_ref_indel_positions_for_closely = core_prep_indel()
 
-        core_prep_snp(core_vcf_fasta_dir)
+        Only_ref_variant_positions_for_closely = core_prep_snp()
 
         # # Annotate core variants. Generate SNP and Indel matrix.
         # # Commented out for debugging

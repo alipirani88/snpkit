@@ -77,7 +77,7 @@ def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_
 
         indel_label_file = files.replace("filter2_final.vcf_no_proximate_snp.vcf",
                                         "filter2_indel_final.vcf_indel_positions_label")
-
+        
         num_snps_label_lines = sum(1 for line in open('%s' % snps_label_file))
         num_indel_label_lines = sum(1 for line in open('%s' % indel_label_file))
 

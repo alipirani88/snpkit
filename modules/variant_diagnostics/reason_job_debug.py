@@ -85,6 +85,7 @@ os.system("cp -f %s %s/" % (ori_raw_vcf_file, args.tmp_dir))
 
 # Optimization changes
 def generate_dicts():
+    
     #unmapped position dict
     program_starts = time.time()
     global unmapped_array
@@ -179,7 +180,7 @@ def get_reason():
     indel_proximate_variants = extract_indel_proximates()
     #print "Time taken to generate dictionaries: %s" % (timeit.timeit(generate_dicts, number=1))
     #program_starts = time.time()
-    f1=open(out_file_name, 'w+')
+    f1=open(out_file_name, 'w')
 
     # Older chunk of code -slower
     # for j in position_array_sort:
@@ -298,3 +299,5 @@ def get_reason():
 #             st = "VARIANT" + "\n"
 #             f1.write(st)
 #     f1.close()
+
+get_reason()

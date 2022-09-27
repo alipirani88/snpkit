@@ -346,6 +346,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "cluster":
+
         command_array = []
         command_file = "%s/commands_list.sh" % temp_dir
         f3 = open(command_file, 'w+')
@@ -356,7 +357,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 os.path.dirname(os.path.abspath(__file__)), filter2_only_snp_vcf_dir, i, unique_position_file,
                 tmp_dir)
             job_file_name = "%s.sbat" % (i)
-
+            
             with open(job_file_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
                 out.write("#!/bin/sh" + '\n')
@@ -365,7 +366,8 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 out.write("cd %s/" % filter2_only_snp_vcf_dir + '\n')
                 out.write(command + '\n')
             out.close()
-            os.system("mv %s %s" % (job_file_name, temp_dir))
+            os.system("mv %s %s" % (job_file_name, tmp_dir))
+            
         pbs_dir = "%s/*vcf.sbat" % temp_dir
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
@@ -388,7 +390,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 num_cores = multiprocessing.cpu_count()
             else:
                 num_cores = 1
-
+        
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "local":
