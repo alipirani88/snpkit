@@ -1681,12 +1681,10 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
                     print_array.append(line)
                 else:
                     split_array = re.split(r'\t+', line)
-                    
                     if int(split_array[1]) in Only_ref_variant_positions_for_closely_without_functional_filtered_positions and 'INDEL' not in split_array[7]:
                         print_array.append(line)
         file_open.close()
         file_name = i + "_core.vcf"
-        print file_name
         filtered_out_vcf_files.append(file_name)
         f1 = open(file_name, 'w+')
         for ios in print_array:
@@ -1993,8 +1991,8 @@ def core_prep_snp():
     # DP_analysis()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the core_prep_snp method: {}'.format(method_time_taken),
-                 'Time taken to complete the core_prep_snp method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to complete the core_prep_snp method: {}'.format(method_time_taken),
+                 '- Time taken to complete the core_prep_snp method: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_variant_positions_for_closely
 
 def core_prep_indel():
