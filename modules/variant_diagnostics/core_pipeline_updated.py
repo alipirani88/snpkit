@@ -768,6 +768,7 @@ def generate_position_label_data_matrix():
             Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
             Only_ref_variant_positions_for_closely.to_csv('Only_ref_variant_positions_for_closely', index=False, sep='\n')
             Only_filtered_variant_positions_for_closely.to_csv('Only_filtered_positions_for_closely', index=False, sep='\n')
+
         return Only_ref_variant_positions_for_closely
 
     def temp_generate_position_label_data_matrix_All_label():
@@ -4482,8 +4483,8 @@ if __name__ == '__main__':
 
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
         keep_logging(
-            '- Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
-            '- Extracting Functiona Class filter regions  - Phage, Repeat, Custom Mask - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
+            '- Extracting Functionl Class filter regions  - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
+            '- Extracting Functional Class filter regions  - Phage, Repeat, Custom Mask - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
             logger,
             'info')
 
