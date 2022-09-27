@@ -1681,10 +1681,12 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
                     print_array.append(line)
                 else:
                     split_array = re.split(r'\t+', line)
-                    if split_array[1] in Only_ref_variant_positions_for_closely_without_functional_filtered_positions and 'INDEL' not in split_array[7]:
+                    
+                    if int(split_array[1]) in Only_ref_variant_positions_for_closely_without_functional_filtered_positions and 'INDEL' not in split_array[7]:
                         print_array.append(line)
         file_open.close()
         file_name = i + "_core.vcf"
+        print file_name
         filtered_out_vcf_files.append(file_name)
         f1 = open(file_name, 'w+')
         for ios in print_array:
@@ -1712,15 +1714,13 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
         sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
         subprocess.call([sed_command], shell=True)
         f1.write(sed_command)
-    keep_logging('The consensus commands are in : %s' % filename, 'The consensus commands are in : %s' % filename,
-                 logger, 'info')
     # sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
     # #os.system(sequence_lgth_cmd)
     # call("%s" % sequence_lgth_cmd, logger)
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the core genome method: {}'.format(method_time_taken),
-                 'Time taken to complete the core genome method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('Time taken to complete the core genome method: {}'.format(method_time_taken),
+    #              'Time taken to complete the core genome method: {}'.format(method_time_taken), logger, 'info')
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
