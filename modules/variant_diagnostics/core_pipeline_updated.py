@@ -1694,7 +1694,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
 
     # Turning off generating core fasta alignemnets. No longer used in pipeline
     filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
-    keep_logging('- Extracting Core Genome.', '- Extracting Consensus.', logger, 'info')
+    keep_logging('- Extracting Core Genome.', '- Extracting Core Genome.', logger, 'info')
     for file in filtered_out_vcf_files:
         f1 = open(filename, 'a+')
         bgzip_cmd = "bgzip -f %s\n" % (file)
