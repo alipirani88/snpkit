@@ -1656,7 +1656,7 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 def generate_vcf_files(Only_ref_variant_positions_for_closely):
     method_start_time = datetime.now()
 
-    print "- No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely)
+    
 
     functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
     functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
@@ -1665,6 +1665,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
     Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
     Only_ref_variant_positions_for_closely_without_functional_filtered_positions.to_csv('Only_ref_variant_positions_for_closely_without_functional_filtered_positions', index=False, sep='\n')
 
+    print "- No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely_without_functional_filtered_positions)
     filter2_files_array = []
     for i in vcf_filenames:
         filter2_file = i.replace('_no_proximate_snp.vcf', '')
