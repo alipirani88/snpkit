@@ -766,7 +766,8 @@ def generate_position_label_data_matrix():
             results = pd.concat(frames, axis=1, join='inner')
             Only_ref_variant_positions_for_closely = results.loc[results['1'] == numberofsamples, 'Unnamed: 0']
             Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
-        
+            Only_ref_variant_positions_for_closely.to_csv('Only_ref_variant_positions_for_closely', index=False, sep='\n')
+            Only_filtered_variant_positions_for_closely.to_csv('Only_filtered_positions_for_closely', index=False, sep='\n')
         return Only_ref_variant_positions_for_closely
 
     def temp_generate_position_label_data_matrix_All_label():
@@ -1033,7 +1034,7 @@ def generate_position_label_data_matrix():
     keep_logging('Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken),
                  'Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_variant_positions_for_closely
-    
+
 def generate_indel_position_label_data_matrix():
     """
     Generate different list of Positions using the matrix All_label_final_sorted_header.txt.
@@ -1653,7 +1654,7 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 def generate_vcf_files(Only_ref_variant_positions_for_closely):
     method_start_time = datetime.now()
 
-    #print "No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely)
+    print "- No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely)
 
     f_file = open(
         "%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir,
