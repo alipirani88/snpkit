@@ -4206,7 +4206,7 @@ def annotated_snp_matrix():
     """
     method_start_time = datetime.now()
     """Annotate all VCF file formats with SNPeff"""
-    # Removing the snpEff steps from thsi script. 
+    # Removing snpEff steps from this script. 
     # snpEff will be individually run as a part of variant calling steps.
     # variant_annotation()
     # indel_annotation()
@@ -4604,9 +4604,9 @@ if __name__ == '__main__':
 
         Only_ref_variant_positions_for_closely = core_prep_snp()
 
-        # # Annotate core variants. Generate SNP and Indel matrix.
-        # # Commented out for debugging
-        # annotated_snp_matrix()
+        # Annotate core variants. Generate SNP and Indel matrix.
+        # Commented out for debugging
+        annotated_snp_matrix()
 
         # # Read new allele matrix and generate fasta; generate a seperate function
         # keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
