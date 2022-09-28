@@ -294,3 +294,7 @@ Ref_Name: cdiff_630.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630_ncbi/
 
+# This setting is deprecated. snpkit uses conda environments for 
+# Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
+[bin_path]
+binbase: 
