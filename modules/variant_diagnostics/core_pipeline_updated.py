@@ -4210,8 +4210,8 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
     fp_allele.close()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the Generate Indel matrix method: {}'.format(method_time_taken),
-                 'Time taken to complete the Generate Indel matrix method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to complete the Generate Indel matrix method: {}'.format(method_time_taken),
+                 '- Time taken to complete the Generate Indel matrix method: {}'.format(method_time_taken), logger, 'info')
 
 def annotated_snp_matrix():
     """
@@ -4268,8 +4268,8 @@ def annotated_snp_matrix():
                           mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict)
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken),
-                 'Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('- Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken),
+    #              '- Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken), logger, 'info')
 
 """ Report methods """
 
@@ -4624,23 +4624,23 @@ if __name__ == '__main__':
         # Commented out for debugging
         annotated_snp_matrix()
 
-        # # Read new allele matrix and generate fasta; generate a seperate function
-        # keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
-        #              'info')
+        # Read new allele matrix and generate fasta; generate a seperate function
+        keep_logging('- Generating Fasta from Variant Alleles.', '- Generating Fasta from Variant Alleles.', logger,
+                     'info')
 
-        # create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
-        #                                 script_Directive, job_name_flag)
+        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
+                                        script_Directive, job_name_flag)
 
         # extract_only_ref_variant_fasta_from_reference_allele_variant()
 
-        # # mask_fq_mq_positions_specific_to_outgroup()
+        # mask_fq_mq_positions_specific_to_outgroup()
 
-        # call("cp %s %s/Logs/core/" % (
-        #     log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
-        # method_time_taken = datetime.now() - method_start_time
+        call("cp %s %s/Logs/core/" % (
+            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+        method_time_taken = datetime.now() - method_start_time
 
-        # keep_logging('Time taken to complete the Core Step 2 method: {}'.format(method_time_taken),
-        #              'Time taken to complete the Core Step 2 method: {}'.format(method_time_taken), logger, 'info')
+        keep_logging('- Time taken to parse and generate variant matrices: {}'.format(method_time_taken),
+                     '- Time taken to parse and generate variant matrices: {}'.format(method_time_taken), logger, 'info')
 
     if "3" in args.steps:
         """ report step """
@@ -4824,13 +4824,13 @@ if __name__ == '__main__':
         annotated_snp_matrix()
 
         # # Read new allele matrix and generate fasta; generate a seperate function
-        keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
+        keep_logging('- Generating Fasta from Variant Alleles.', '- Generating Fasta from Variant Alleles.', logger,
                      'info')
 
         create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
                                         script_Directive, job_name_flag)
 
-        extract_only_ref_variant_fasta_from_reference_allele_variant()
+        # extract_only_ref_variant_fasta_from_reference_allele_variant()
 
         # mask_fq_mq_positions_specific_to_outgroup()
 
