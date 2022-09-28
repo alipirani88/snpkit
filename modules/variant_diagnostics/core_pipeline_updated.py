@@ -2212,23 +2212,23 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)[
         'gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
     # files_gatk = "--variant " + ' --variant '.join(vcf_files_array)
-    keep_logging("java -jar %s/GenomeAnalysisTK.jar -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), reference, files_gatk, out_path,
-    merged_file_suffix), "java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (
-                 ConfigSectionMap("gatk", Config)['base_cmd'], reference, files_gatk, out_path, merged_file_suffix),
-                 logger, 'debug')
+    # keep_logging("java -jar %s/GenomeAnalysisTK.jar -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (
+    # os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), reference, files_gatk, out_path,
+    # merged_file_suffix), "java -jar %s -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (
+    #              ConfigSectionMap("gatk", Config)['base_cmd'], reference, files_gatk, out_path, merged_file_suffix),
+    #              logger, 'debug')
     merge_gatk_commands_file = "%s/gatk_merge.sh" % args.filter2_only_snp_vcf_dir
     with open(merge_gatk_commands_file, 'w+') as fopen:
-        fopen.write("java -jar %s/GenomeAnalysisTK.jar -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s" % (
+        fopen.write("java -jar %s/GenomeAnalysisTK.jar -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s --log_to_file %s/gatk_combinevariants.log 2> /dev/null 1> %s/gatkoutput.txt" % (
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), reference, files_gatk, out_path,
-        merged_file_suffix) + '\n')
+        merged_file_suffix, out_path, out_path) + '\n')
     fopen.close()
     # Commenting out calling gatk combine variants with a custom logging call method, problem with python subprocess, OSError: [Errno 7] Argument list too long
     os.system("bash %s" % merge_gatk_commands_file)
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the gatk_combine_variants method: {}'.format(method_time_taken),
-                 'Time taken to complete the gatk_combine_variants method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('- Time taken to complete GATK combine variants method: {}'.format(method_time_taken),
+    #              '- Time taken to complete GATK combine variants method: {}'.format(method_time_taken), logger, 'info')
     return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
 
 def extract_locus_tag_from_genbank():
@@ -2241,7 +2241,7 @@ def extract_locus_tag_from_genbank():
         - Read the locus tag and gene annotations into a dictionary that maps locus tags to gene name/product name
 
         """
-    keep_logging('Extracting Locus Tag information from Genbank.', 'Extracting Locus Tag information from Genbank.',
+    keep_logging('- Extracting Locus Tag information from Genbank.', '- Extracting Locus Tag information from Genbank.',
                  logger, 'info')
     reference_basename = (os.path.basename(args.reference)).split(".")
     if os.path.isfile("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0])):
@@ -2259,9 +2259,9 @@ def extract_locus_tag_from_genbank():
     # locus_tag_to_ec_number = {}
 
     keep_logging(
-        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
+        '- Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
             os.path.dirname(args.reference), reference_basename[0]),
-        'Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
+        '- Reading annotations from Reference genome genbank file: %s/%s.gbf' % (
             os.path.dirname(args.reference), reference_basename[0]),
         logger, 'info')
     for record in SeqIO.parse(handle, 'genbank'):
@@ -2280,12 +2280,12 @@ def extract_locus_tag_from_genbank():
                 else:
                     locus_tag_to_product[str(feature.qualifiers['locus_tag'][0])] = "null or hypothetical protein"
             else:
-                keep_logging(
-                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(
-                        feature),
-                    'Error: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(
-                        feature),
-                    logger, 'exception')
+                continue
+                # keep_logging(
+                #     '',
+                #     'Warning: locus_tag specifications for the below feature doesnt exists. Please check the format of genbank file\n%s' % str(
+                #         feature),
+                #     logger, 'warning')
 
     global first_locus_tag, last_element, last_locus_tag
 
@@ -2320,8 +2320,8 @@ def merge_vcf():
         """
     method_start_time = datetime.now()
     keep_logging(
-        'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
-        'Merging Final Annotated VCF files into %s/Final_vcf_no_proximate_snp.vcf using bcftools' % args.filter2_only_snp_vcf_dir,
+        '- Merging Final Annotated VCF files into Final_vcf_no_proximate_snp.vcf using bcftools',
+        '- Merging Final Annotated VCF files into Final_vcf_no_proximate_snp.vcf using bcftools',
         logger, 'info')
 
     # Commented for SNP Matrix debugging
@@ -2399,8 +2399,8 @@ def merge_vcf():
     final_gatk_indel_merged_vcf = "Final_vcf_gatk_indel.vcf"
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the merge_vcf method: {}'.format(method_time_taken),
-                 'Time taken to complete the merge_vcf method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('- Time taken to complete the merge_vcf method: {}'.format(method_time_taken),
+    #              '- Time taken to complete the merge_vcf method: {}'.format(method_time_taken), logger, 'info')
     return annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf
 
 
@@ -2418,8 +2418,8 @@ def extract_annotations_from_multivcf():
         indel_var_ann_dict[variants.POS] = variants.INFO.get('ANN')
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the extract_annotations_from_multivcf method: {}'.format(method_time_taken),
-                 'Time taken to complete the extract_annotations_from_multivcf method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('- Time taken to complete the extract_annotations_from_multivcf method: {}'.format(method_time_taken),
+    #              '- Time taken to complete the extract_annotations_from_multivcf method: {}'.format(method_time_taken), logger, 'info')
     """ End of Extract ANN information from bcftools Final vcf file"""
     return snp_var_ann_dict, indel_var_ann_dict
 
@@ -2450,8 +2450,8 @@ def extract_core_positions():
         fp.close()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the extract_core_positions method: {}'.format(method_time_taken),
-                 'Time taken to complete the extract_core_positions method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('Time taken to complete the extract_core_positions method: {}'.format(method_time_taken),
+    #              'Time taken to complete the extract_core_positions method: {}'.format(method_time_taken), logger, 'info')
     """ End: Generate an array of core positions. """
     return core_positions, indel_core_positions
 
@@ -2506,8 +2506,8 @@ def extract_functional_class_positions():
     """ End: Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the extract_functional_class_positions method: {}'.format(method_time_taken),
-                 'Time taken to complete the extract_functional_class_positions method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('Time taken to complete the extract_functional_class_positions method: {}'.format(method_time_taken),
+    #              'Time taken to complete the extract_functional_class_positions method: {}'.format(method_time_taken), logger, 'info')
     return functional_filter_pos_array, phage_positions, repetitive_positions, mask_positions
 
 def generate_position_label_dict(final_merge_anno_file):
@@ -2575,11 +2575,11 @@ def generate_position_label_dict(final_merge_anno_file):
         # args.filter2_only_snp_vcf_dir, first_part)
         # sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % (
         #     args.filter2_only_snp_vcf_dir, first_part)
-        (args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part))
-        sample_label_file = "%s/%s" % (
-        (args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part)), first_part.replace("_filter2_final.vcf_no_proximate_snp.vcf", "_filter2_final.vcf_no_proximate_snp.vcf_positions_label"))
-        sample_indel_label_file = "%s/%s" % (
-            (args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part)), first_part.replace("_filter2_indel_final.vcf", "_filter2_indel_final.vcf_indel_positions_label"))
+        
+        sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part)), first_part)
+        sample_indel_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part)), first_part)
+        print sample_label_file
+        print sample_indel_label_file
         paste_label_command = paste_label_command + sample_label_file + " "
         paste_indel_label_command = paste_indel_label_command + sample_indel_label_file + " "
         if args.outgroup:
@@ -4221,6 +4221,9 @@ def annotated_snp_matrix():
     # variant_annotation()
     # indel_annotation()
 
+    keep_logging('- Adding snpEff annotations to SNP/Indel Matrix.', '- Adding snpEff annotations to SNP/Indel Matrix.',
+                 logger, 'info')
+
     locus_tag_to_gene_name, locus_tag_to_product, locus_tag_to_strand, first_locus_tag, last_element, last_locus_tag = extract_locus_tag_from_genbank()
 
     # Commented for debugging
@@ -4804,8 +4807,6 @@ if __name__ == '__main__':
 
             outgroup_indel_specific_positions = []
             outgroup_specific_positions = []
-            print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
-            print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
 
         # Annotate core variants. Generate SNP and Indel matrix.
         annotated_snp_matrix()
