@@ -2803,8 +2803,8 @@ def get_low_fq_mq_positions_indel(position_label, position_indel_label):
                     if key not in mask_fq_mq_positions:
                         mask_fq_mq_positions.append(key)
 
-    print "Length of Indel mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
-    print "Length of Indel mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
+    # print "Length of Indel mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
+    # print "Length of Indel mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
     return mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific
 
 def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
@@ -3520,8 +3520,8 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
     
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the Generate SNP matrix method: {}'.format(method_time_taken),
-                 'Time taken to complete the Generate SNP matrix method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to complete the Generate SNP matrix method: {}'.format(method_time_taken),
+                 '- Time taken to complete the Generate SNP matrix method: {}'.format(method_time_taken), logger, 'info')
 
 def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                           mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict):
@@ -4264,7 +4264,7 @@ def annotated_snp_matrix():
 
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
 
-    print "Generating Indel Matrix"
+    # print "Generating Indel Matrix"
 
     generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                           mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict)
@@ -4788,6 +4788,15 @@ if __name__ == '__main__':
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
 
+        
+        functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
+        functional_filter_pos_array = functional_filter_pos_array.squeeze()
+        Only_ref_variant_positions_for_closely = pd.read_csv("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, sep='\n', header=None)
+        Only_ref_variant_positions_for_closely = Only_ref_variant_positions_for_closely.squeeze()
+        exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values,functional_filter_pos_array.values))
+        Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
+        Only_ref_variant_positions_for_closely_without_functional_filtered_positions.to_csv('%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions' % args.filter2_only_snp_vcf_dir, index=False, sep='\n', header=None)
+        
         # Get outgroup specific variant positions
         if args.outgroup:
             f_outgroup = open("%s/outgroup_indel_specific_positions.txt" % args.filter2_only_snp_vcf_dir, 'r+')
