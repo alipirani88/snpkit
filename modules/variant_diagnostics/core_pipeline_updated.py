@@ -2662,8 +2662,8 @@ def generate_position_label_dict(final_merge_anno_file):
     """ End: Generate a position_label and position_indel_label dictionary """
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('- Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken),
-                 '- Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('- Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken),
+    #              '- Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken), logger, 'info')
     return position_label, position_indel_label
 
 def get_low_fq_mq_positions(position_label):
