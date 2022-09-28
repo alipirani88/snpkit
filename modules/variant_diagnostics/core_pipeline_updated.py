@@ -2577,9 +2577,8 @@ def generate_position_label_dict(final_merge_anno_file):
         #     args.filter2_only_snp_vcf_dir, first_part)
         
         sample_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part)), first_part)
-        sample_indel_label_file = "%s/%s_filter2_final.vcf_no_proximate_snp.vcf_positions_label" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part)), first_part)
-        print sample_label_file
-        print sample_indel_label_file
+        sample_indel_label_file = "%s/%s_filter2_indel_final.vcf_indel_positions_label" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (first_part, first_part)), first_part)
+        
         paste_label_command = paste_label_command + sample_label_file + " "
         paste_indel_label_command = paste_indel_label_command + sample_indel_label_file + " "
         if args.outgroup:
@@ -2629,8 +2628,8 @@ def generate_position_label_dict(final_merge_anno_file):
     position_label = OrderedDict()
     with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
         keep_logging(
-            '- Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
-            '- Reading All label positions file: %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            '- Loading %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            '- Loading %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
             logger, 'info')
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
@@ -2641,8 +2640,8 @@ def generate_position_label_dict(final_merge_anno_file):
     position_indel_label = OrderedDict()
     with open("%s/All_indel_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
         keep_logging(
-            'Reading All label positions file: %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
-            'Reading All label positions file: %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            '- Loading %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            '- Loading %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
             logger, 'info')
         csv_reader = csv.reader(csv_file, delimiter='\t')
         for row in csv_reader:
@@ -2650,15 +2649,21 @@ def generate_position_label_dict(final_merge_anno_file):
                 position_indel_label[row[0]] = ','.join(row[1:])
             else:
                 position_indel_label[row[0]] = ','.join(row[1:])
-                keep_logging('Warning: position %s already present as a SNP' % row[0],
-                             'Warning: position %s already present as a SNP' % row[0], logger, 'info')
+                # keep_logging('Warning: position %s already present as a SNP' % row[0],
+                #              'Warning: position %s already present as a SNP' % row[0], logger, 'info')
     csv_file.close()
+
+    # All_label_final_ordered_sorted = pd.read_csv("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=None)
+    # All_indel_label_final_ordered_sorted = pd.read_csv("%s/All_indel_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=None)
+
+    # position_label = All_label_final_ordered_sorted.set_index(0).T.to_dict('list')
+    # position_indel_label = All_indel_label_final_ordered_sorted.set_index(0).T.to_dict('list')
 
     """ End: Generate a position_label and position_indel_label dictionary """
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken),
-                 'Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken),
+                 '- Time taken to complete the generate_position_label_dict method: {}'.format(method_time_taken), logger, 'info')
     return position_label, position_indel_label
 
 def get_low_fq_mq_positions(position_label):
@@ -2669,10 +2674,10 @@ def get_low_fq_mq_positions(position_label):
         position_label_exclude_outgroup = OrderedDict()
         with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
                   'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
+            # keep_logging(
+            #     '- Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     '- Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             for row in csv_reader:
                 position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
@@ -2682,10 +2687,10 @@ def get_low_fq_mq_positions(position_label):
         position_indel_label_exclude_outgroup = OrderedDict()
         with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
                   'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
+            # keep_logging(
+            #     '- Reading All label Indel positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     '- Reading All label Indel positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             for row in csv_reader:
                 if row[0] not in position_label_exclude_outgroup.keys():
@@ -2747,10 +2752,10 @@ def get_low_fq_mq_positions_indel(position_label, position_indel_label):
         position_label_exclude_outgroup = OrderedDict()
         with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
                   'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
+            # keep_logging(
+            #     'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             for row in csv_reader:
                 position_label_exclude_outgroup[row[0]] = ','.join(row[1:])
@@ -2759,10 +2764,10 @@ def get_low_fq_mq_positions_indel(position_label, position_indel_label):
         position_indel_label_exclude_outgroup = OrderedDict()
         with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
                   'rU') as csv_file:
-            keep_logging(
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
-                logger, 'info')
+            # keep_logging(
+            #     'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
+            #     logger, 'info')
             csv_reader = csv.reader(csv_file, delimiter='\t')
             for row in csv_reader:
                 if row[0] not in position_label_exclude_outgroup.keys():
@@ -3359,10 +3364,10 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         for i in ann_string_split:
             ann_string_array_split_columns = i.split('|')
             if len(ann_string_array_split_columns) > 10:
-                print variants.POS
+                #print variants.POS
                 # ann_string = ann_string.replace('||WARNING_TRANSCRIPT_NO_START_CODON||WARNING_TRANSCRIPT_NO_START_CODON', '|WARNING_TRANSCRIPT_NO_START_CODON|WARNING_TRANSCRIPT_NO_START_CODON')
                 ann_string = ";" + str('|'.join(ann_string_array_split_columns[: -2 or None])) + ";"
-                print ann_string
+                #print ann_string
             else:
                 ann_string = ann_string_old
                 # print ann_string
