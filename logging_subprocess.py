@@ -14,7 +14,6 @@ def call(popenargs, logger, stderr_log_level=logging.ERROR, stdout_log_level=log
     and logs stdout messages via logger.debug and stderr messages via
     logger.error.
     """
-
     try:
         child = sp.Popen(popenargs, stdout=sp.PIPE, stderr=sp.PIPE, shell=True, **kwargs)
         log_level = {child.stdout: stdout_log_level, child.stderr: stderr_log_level}
