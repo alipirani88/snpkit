@@ -5772,6 +5772,15 @@ if __name__ == '__main__':
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
 
+        functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
+        functional_filter_pos_array = functional_filter_pos_array.squeeze()
+        Only_ref_variant_positions_for_closely = pd.read_csv("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, sep='\n', header=None)
+        Only_ref_variant_positions_for_closely = Only_ref_variant_positions_for_closely.squeeze()
+        exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values,functional_filter_pos_array.values))
+        Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
+        Only_ref_variant_positions_for_closely_without_functional_filtered_positions.to_csv('%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions' % args.filter2_only_snp_vcf_dir, index=False, sep='\n', header=None)
+        
+        
         global outgroup_specific_positions
         global outgroup_indel_specific_positions
 
