@@ -224,19 +224,9 @@ def pipeline(args, logger):
         alignment_stats_file = alignment_stats(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         vcf_stats_file = vcf_stats(final_raw_vcf, args.output_folder, args.analysis_name, logger, Config)
         picard_stats_file = picardstats(out_sorted_bam, args.output_folder, args.analysis_name, args.index, logger, Config)
-        #qualimap_report = qualimap(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
         keep_logging('END: Generating Statistics Reports', 'END: Generating Statistics Reports', logger, 'info')
         method_time_taken = datetime.now() - method_start_time
         keep_logging('Time taken to complete the method - stats: {}'.format(method_time_taken), 'Time taken to complete the method - stats: {}'.format(method_time_taken), logger, 'info')
-
-    # ################################################### Stages: Remove Unwanted Intermediate files ######################################
-    # # print "Removing Imtermediate Files...\n%s" % files_to_delete
-    # # for files in files_to_delete:
-    # #     os.remove(files)
-    # # print "Removing Imtermediate Files...\n%s" % files_to_delete
-    # # for files in files_to_delete:
-    # #     os.remove(files)
-    # ############################################################################ End ####################################################
 
     if args.downsample == "yes":
         read1, read2 = downsample(args, logger)

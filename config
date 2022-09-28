@@ -294,32 +294,3 @@ Ref_Name: cdiff_630.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630_ncbi/
 
-[Cdiff_O27_R20291]
-# Name of reference genome fasta file.
-Ref_Name: Cdiff_O27_R20291.fasta
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O27_R20291/
-
-[Cdiff_O14_PH44]
-# Name of reference genome fasta file.
-Ref_Name: Cdiff_O14_PH44.fasta
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Cdiff_O14_PH44/
-
-[CFT073]
-# Name of reference genome fasta file.
-Ref_Name: EscherichiacoliCFT073.fna
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CFT073
-
-[Escherichia_coli_K_12]
-# Name of reference genome fasta file.
-Ref_Name: Escherichia_coli_K_12.fna
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Nursing_home/e_coli/Escherichia_coli_K_12/
-##Ecoli NH cluster-based Reference Genomes
-
-# This setting is deprecated. snpkit uses conda environments for 
-# Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
-[bin_path]
-binbase: 

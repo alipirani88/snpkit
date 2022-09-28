@@ -1,6 +1,7 @@
 __author__ = 'alipirani'
 
 # Read Config File
+
 def ConfigSectionMap(section, Config):
     dict1 = {}
     if not Config.has_section(section):
