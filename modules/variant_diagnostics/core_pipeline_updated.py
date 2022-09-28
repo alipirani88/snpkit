@@ -4781,7 +4781,7 @@ if __name__ == '__main__':
         Debugging Purposes only: Run only SNP matrix annotation step 
         """
 
-        keep_logging('Step 5: Running SNP matrix annotation step.', 'Step 5: Running SNP matrix annotation step.',
+        keep_logging('- Running SNP matrix annotation step.', '- Running SNP matrix annotation step.',
                      logger, 'info')
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
