@@ -161,7 +161,7 @@ def get_outgroup():
 
         return outgroup
     else:
-        keep_logging('- Note: Outgroup Sample Name not provided', '- Note: Outgroup Sample Name not provided', logger, 'info')
+        keep_logging('- Note: Outgroup Sample Name not provided. Ignoring Outgroup steps.', '- Note: Outgroup Sample Name not provided. Ignoring Outgroup steps.', logger, 'info')
         outgroup = ""
 
 
@@ -1033,8 +1033,8 @@ def generate_position_label_data_matrix():
 
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('- Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken),
-                 '- Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('- Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken),
+    #              '- Time taken to complete the generate_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_variant_positions_for_closely
 
 def generate_indel_position_label_data_matrix():
@@ -1252,7 +1252,7 @@ def generate_indel_position_label_data_matrix():
                      logger, 'info')
 
     """ Methods Steps"""
-    keep_logging('- Running: Generating data matrices.', '- Running: Generating data matrices.', logger, 'info')
+    keep_logging('- Generating data matrices.', '- Generating data matrices.', logger, 'info')
     Only_ref_indel_positions_for_closely = generate_indel_position_label_data_matrix_All_label()
     
     # Turning off and removing Only AF and Only DP heatmap plot matrices.
@@ -1263,8 +1263,8 @@ def generate_indel_position_label_data_matrix():
     # barplot_indel_stats()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('- Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken),
-                 '- Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
+    # keep_logging('- Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken),
+    #              '- Time taken to complete the generate_indel_position_label_data_matrix method: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_indel_positions_for_closely
 
 def create_job_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter, script_Directive, job_name_flag):
@@ -1694,7 +1694,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
 
     # Turning off generating core fasta alignemnets. No longer used in pipeline
     filename = "%s/consensus.sh" % args.filter2_only_snp_vcf_dir
-    keep_logging('- Extracting Core Genome.', '- Extracting Core Genome.', logger, 'info')
+    # keep_logging('- Extracting Core Genome.', '- Extracting Core Genome.', logger, 'info')
     for file in filtered_out_vcf_files:
         f1 = open(filename, 'a+')
         bgzip_cmd = "bgzip -f %s\n" % (file)
@@ -1991,8 +1991,8 @@ def core_prep_snp():
     # DP_analysis()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('- Time taken to complete the core_prep_snp method: {}'.format(method_time_taken),
-                 '- Time taken to complete the core_prep_snp method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to parse Single Variant VCFs: {}'.format(method_time_taken),
+                 '- Time taken to parse Single Variant VCFs: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_variant_positions_for_closely
 
 def core_prep_indel():
@@ -2006,8 +2006,8 @@ def core_prep_indel():
     Only_ref_indel_positions_for_closely = generate_indel_position_label_data_matrix()
     method_time_taken = datetime.now() - method_start_time
 
-    keep_logging('- Time taken to complete the core_prep_indel method: {}'.format(method_time_taken),
-                 '- Time taken to complete the core_prep_indel method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to parse Indel VCFs: {}'.format(method_time_taken),
+                 '- Time taken to parse Indel VCFs: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_indel_positions_for_closely
 """ Annotation methods"""
 
@@ -4400,14 +4400,14 @@ if __name__ == '__main__':
 
     analysis_name_log = "step_" + str(args.steps)
     logger = generate_logger(args.filter2_only_snp_vcf_dir, analysis_name_log, log_unique_time)
-    keep_logging('\nThe Script started at: %s' % start_time, '\nThe Script started at: %s' % start_time, logger, 'info')
     print_details = "This step will parse final vcf files(*_no_proximate_snp.vcf) generated at the end of Variant Calling Pipeline. At the end of this step, the following results will be generated and placed in output directory:\n\n" \
                     "1. Final Core SNP Positions list(Variant positions that were not filtered out in any of the samples and passed all the filters)\n" \
                     "2. SNP Positions that were filtered out with labels indicating the reason (Depth, FQ, MQ, Unmapped in one or other samples, Proximate SNPS, Quality of Variant) why they were filtered out.\n" \
                     "3. Barplot Statistics about the filtered variants and their reason for getting filtered.\n" \
                     "4. Final Consensus fasta file using only Core SNP Positions\n"
-    keep_logging('%s' % print_details, '%s' % print_details, logger, 'info')
-    
+    #keep_logging('%s' % print_details, '%s' % print_details, logger, 'info')
+    keep_logging('- Parsing VCF files generated with SNPKIT', '- Parsing VCF files generated with SNPKIT', logger, 'info')
+
     # Create temporary Directory /tmp/snpkit_temp for storing temporary intermediate files. Check if core_temp_dir contains all the required files to run these pipeline.
     global temp_dir
     temp_dir = "/tmp/snpkit_temp"
@@ -4422,7 +4422,7 @@ if __name__ == '__main__':
     global Config
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
-    keep_logging('Path to config file: %s' % config_file, 'Path to config file: %s' % config_file, logger, 'info')
+    keep_logging('- Path to config file: %s' % config_file, '- Path to config file: %s' % config_file, logger, 'info')
 
     global num_cores
     if args.numcores:
@@ -4443,7 +4443,8 @@ if __name__ == '__main__':
     (out, err) = proc.communicate()
     bin_dir = os.path.dirname(out)
 
-    
+    global outgroup_specific_positions
+    global outgroup_indel_specific_positions
 
     # Get outgroup_Sample name
     outgroup = get_outgroup()
@@ -4481,8 +4482,8 @@ if __name__ == '__main__':
 
     if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
         keep_logging(
-            '- Extracting Functionl Class filter regions  - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
-            '- Extracting Functional Class filter regions  - Phage, Repeat, Custom Mask - Phage, Repeat, Custom Mask: %s' % functional_class_filter_positions,
+            '- Extracting Functional Class filter regions such as Phage (Phaster), Repeat (MUMmer), Custom Mask to %s' % os.path.basename(functional_class_filter_positions),
+            '- Extracting Functional Class filter regions such as Phage (Phaster), Repeat (MUMmer), Custom Mask to %s' % os.path.basename(functional_class_filter_positions),
             logger,
             'info')
 
@@ -4492,8 +4493,8 @@ if __name__ == '__main__':
                 functional_filter_pos_array.append(line_func.strip())
 
         keep_logging(
-            '- No of Functional Class filter positions: %s' % len(functional_filter_pos_array),
-            '- No of Functional Class filter positions: %s' % len(functional_filter_pos_array),
+            '- Number of Functional Class filter positions: %s' % len(functional_filter_pos_array),
+            '- Number of Functional Class filter positions: %s' % len(functional_filter_pos_array),
             logger,
             'info')
     # Start Variant Calling Core Pipeline steps based on steps argument supplied.
@@ -4570,9 +4571,6 @@ if __name__ == '__main__':
         make_sure_path_exists(core_vcf_fasta_dir)
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
-
-        global outgroup_specific_positions
-        global outgroup_indel_specific_positions
 
         # Get outgroup specific variant positions
         if args.outgroup:
@@ -4771,9 +4769,6 @@ if __name__ == '__main__':
                      logger, 'info')
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
-
-        global outgroup_specific_positions
-        global outgroup_indel_specific_positions
 
         # Get outgroup specific variant positions
         if args.outgroup:
