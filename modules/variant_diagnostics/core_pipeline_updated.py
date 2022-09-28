@@ -3666,10 +3666,10 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                 elif len(tag_list) == 3:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
                     print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
-                    print tag_list
+                    
                 elif len(tag_list) > 3:
                     print "Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list)
-                    print tag_list
+                    
                     exit()
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
