@@ -1090,7 +1090,6 @@ def generate_indel_position_label_data_matrix():
                         else:
                             Only_ref_indel_positions_for_closely_outgroup.append(x[1])
         else:
-            
             All_indel_label_final_sorted_header = pd.read_csv("%s/All_indel_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=0)
             Only_ref_indel_positions_for_closely = []
             Only_filtered_indel_positions_for_closely = []
@@ -1110,6 +1109,12 @@ def generate_indel_position_label_data_matrix():
                         else:
                             Only_ref_indel_positions_for_closely.append(x[1])
         f33.close()
+        
+        Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions = open('%s/Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions' % args.filter2_only_snp_vcf_dir, 'w')
+        for pos in Only_ref_indel_positions_for_closely:
+            Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions.write(str(pos) + '\n')
+        Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions.close()
+
         return Only_ref_indel_positions_for_closely
     
     def barplot_indel_stats():
