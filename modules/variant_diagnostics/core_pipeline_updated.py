@@ -4264,8 +4264,6 @@ def annotated_snp_matrix():
 
     final_merge_anno_file = VCF("%s/Final_vcf_gatk_indel.vcf.gz" % args.filter2_only_snp_vcf_dir)
 
-    # print "Generating Indel Matrix"
-
     generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                           mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict)
     method_time_taken = datetime.now() - method_start_time
