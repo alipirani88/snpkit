@@ -1,5 +1,4 @@
 __author__ = 'alipirani'
-
 import sys
 import os
 import argparse
