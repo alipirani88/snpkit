@@ -765,8 +765,8 @@ def generate_position_label_data_matrix():
             numberofsamples = len(All_label_final_sorted_header.columns) - 1
             frames = [All_label_final_sorted_header['Unnamed: 0'], Code_count]
             results = pd.concat(frames, axis=1, join='inner')
-            Only_ref_variant_positions_for_closely = results.loc[results['1'] == numberofsamples, 'Unnamed: 0']
-            Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
+            Only_ref_variant_positions_for_closely = results.loc[results['1'] + results[1] == numberofsamples, 'Unnamed: 0']
+            Only_filtered_variant_positions_for_closely = results.loc[results['1'] + results[1] != numberofsamples, 'Unnamed: 0']
             Only_ref_variant_positions_for_closely.to_csv('Only_ref_variant_positions_for_closely', index=False, sep='\n')
             Only_filtered_variant_positions_for_closely.to_csv('Only_filtered_positions_for_closely', index=False, sep='\n')
 
@@ -1099,7 +1099,7 @@ def generate_indel_position_label_data_matrix():
                         Only_filtered_indel_positions_for_closely.append(x[1])
                         print_string = ""
                         for i in x[2:]:
-                            print_string = print_string + "\t" + i
+                            print_string = print_string + "\t" + str(i)
                         STRR2 = str(x[1]) + print_string + "\n"
                         f33.write(STRR2)
                     else:
