@@ -16,7 +16,8 @@ import multiprocessing
 import thread
 import glob
 import readline
-# import pandas as pd
+import pandas as pd
+import numpy as np
 import errno
 from pyfasta import Fasta
 from datetime import datetime
@@ -5811,22 +5812,22 @@ if __name__ == '__main__':
             print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
             print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
 
-        # Annotate core variants. Generate SNP and Indel matrix.
-        annotated_snp_matrix()
+        # # Annotate core variants. Generate SNP and Indel matrix.
+        # annotated_snp_matrix()
 
-        # # Read new allele matrix and generate fasta; generate a seperate function
-        keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
-                     'info')
+        # # # Read new allele matrix and generate fasta; generate a seperate function
+        # keep_logging('Generating Fasta from Variant Alleles...\n', 'Generating Fasta from Variant Alleles...\n', logger,
+        #              'info')
 
-        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
-                                        script_Directive, job_name_flag)
+        # create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
+        #                                 script_Directive, job_name_flag)
 
-        extract_only_ref_variant_fasta_from_reference_allele_variant()
+        # extract_only_ref_variant_fasta_from_reference_allele_variant()
 
-        # mask_fq_mq_positions_specific_to_outgroup()
+        # # mask_fq_mq_positions_specific_to_outgroup()
 
-        call("cp %s %s/Logs/core/" % (
-            log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
+        # call("cp %s %s/Logs/core/" % (
+        #     log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
     time_taken = datetime.now() - start_time_2
     if args.remove_temp:

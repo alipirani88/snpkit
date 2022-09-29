@@ -167,25 +167,24 @@ def extract_only_ref_variant_fasta_unique_positions():
             print "Sample name %s does not match with column name %s" % (os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''), sample_name_re)
 
 
-def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
+def Generate_core_plus_noncore_alignment():
     # Get reference genome ID from reference fasta file
     get_reference = Fasta(args.reference)
     if len(get_reference.keys()) == 1:
         ref_id = get_reference.keys()
-    #ref_id = "NC_011751.1"
-    print "The reference genome ID from reference genome - %s" % ref_id
+    # print "The reference genome ID from reference genome - %s" % ref_id
 
     # Read in the SNP Matrix file and seperate the columns.
-    print "Read in the SNP Matrix file and extract the number of columns"
+    # print "Read in the SNP Matrix file and extract the number of columns"
     c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     ncol = len(next(c_reader_2))
     del c_reader_2
-    print "Number of columns - %s" % ncol
+    # print "Number of columns - %s" % ncol
     c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     #columns = list(itertools.izip(*c_reader))
     del c_reader
-    print "Ending reading columns"
+    
 
     # Generate an array of all the unique variant positions that were called in all the samples
     unique_position_array = []
@@ -196,7 +195,6 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
         else:
             unique_position_array.append(int(replace_string[2]))
 
-
     counts = 1
     end = ncol
     # Loop over each column, check if the column name matches the sample name provided with argument args.filter2_only_snp_vcf_filename
@@ -204,10 +202,8 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
         print_string = ""
         ref_print_string = ""
         grab_vcf_filename = len(os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
-        #print grab_vcf_filename
 
         sample_name_re = columns[i][0][:grab_vcf_filename]
-        #print sample_name_re
 
         # Replaced this with a more stable check
         #sample_name = str(columns[i][0])
@@ -217,9 +213,8 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
         # sample_name_re = re.sub('_*1*.fastq.gz', '', sample_name_re)
         # sample_name_re = re.sub('_S.*', '', sample_name_re)
 
-        #print len(columns[i][1:])
+        
         if sample_name_re == os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', '') or sample_name_re in os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''):
-
             vcf_header = "##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\n" % sample_name_re
             print_string = print_string + ">%s\n" % sample_name_re
             ref_print_string = ref_print_string + ">%s\n" % sample_name_re
@@ -297,12 +292,15 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
             #os.system(sequence_lgth_cmd)
             #call("%s" % sequence_lgth_cmd, logger)
 
-            unmapped_positions_file = "%s/%s_unmapped.bed_positions" % (args.filter2_only_snp_vcf_dir, os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
-            #print unmapped_positions_file
-            unmapped_vcf_file = "%s/%s_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
+            
+            unmapped_positions_file = "%s/%s_unmapped.bed_positions" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
+            
+            unmapped_vcf_file = "%s/%s_unmapped.vcf" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
+            
             unmapped_vcf = open(
                 "%s/%s_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
             unmapped_vcf.write(vcf_header)
+            
             with open(unmapped_positions_file, 'r') as fpp:
                 for lines in fpp:
                     lines = lines.strip()
@@ -314,14 +312,15 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
             unmapped_vcf.close()
 
             bgzip_cmd = "bgzip -f %s\n" % (unmapped_vcf_file)
-            print bgzip_cmd
+            
             tabix_cmd = "tabix -f -p vcf %s.gz\n" % (unmapped_vcf_file)
-            print tabix_cmd
+            
             subprocess.call([bgzip_cmd], shell=True)
             subprocess.call([tabix_cmd], shell=True)
             #allele_ref_variant_unmapped_vcf = open("%s/%s_ref_allele_variants_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
 
             vcf_filename_unmapped = "%s/%s_ref_allele_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
+            
             bcftools_merge_cmd =  "bcftools merge --merge snps --force-samples %s.gz %s.gz -O v -o %s" % (unmapped_vcf_file, vcf_filename, vcf_filename_unmapped)
 
             bgzip_cmd = "bgzip -f %s\n" % (vcf_filename_unmapped)
@@ -339,11 +338,12 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
             f1.write(bgzip_cmd)
             f1.write(tabix_cmd)
             f1.write(fasta_cmd)
-            print "print here: %s" % filename
+            
             subprocess.call(['pwd'], shell=True)
             subprocess.call(bgzip_cmd, shell=True)
             subprocess.call(tabix_cmd, shell=True)
             subprocess.call(fasta_cmd, shell=True)
+            
             sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_unmapped_variants.fa\n" % (sample_name_re, sample_name_re)
             subprocess.call([sed_command], shell=True)
             f1.write(sed_command)
@@ -354,4 +354,4 @@ def extract_only_ref_variant_fasta_unique_positions_with_unmapped():
 
 #extract_only_ref_variant_fasta_unique_positions()
 
-extract_only_ref_variant_fasta_unique_positions_with_unmapped()
+Generate_core_plus_noncore_alignment()
