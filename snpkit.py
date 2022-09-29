@@ -1,5 +1,4 @@
 __author__ = 'alipirani'
-
 import sys
 import os
 import argparse
@@ -434,27 +433,8 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
     if cluster == "local":
         keep_logging('Running local mode: bash %s' % job_name, 'Running local mode: bash %s' % job_name, logger, 'info')
         call("bash %s" % job_name, logger)
-    elif cluster == "parallel-local":
-        keep_logging('Running in parallel-local mode: bash %s' % job_name, 'Running in parallel-local mode: bash %s' % job_name, logger, 'info')
-        #call("bash %s" % job_name, logger)
-        os.system("bash %s" % job_name)
     elif cluster == "cluster":
-        keep_logging('Generating core_prep command: \n%s\n' % core_prep_pipeline, 'Generating core_prep command: \n%s\n' % core_prep_pipeline, logger, 'info')
-    elif cluster == "parallel-cluster":
-        with open(job_name, 'w') as out:
-            job_title = "#PBS -N %s_%s_core" % (log_unique_time, analysis_name)
-            out.write(job_title + '\n')
-            out.write(Pbs_model_lines + '\n')
-            out.write(
-                "#  Change to the directory you submitted from\nif [ -n \"$PBS_O_WORKDIR\" ]; then cd $PBS_O_WORKDIR; fi" + '\n')
-            out.write("echo \"PBS working directory: $PBS_O_WORKDIR\"" + '\n')
-            out.write("cd %s" % core_temp_dir + '\n')
-            out.write(core_prep_pipeline + '\n')
-        out.close()
-        keep_logging('Submitting parallel-cluster Job: qsub %s' % job_name, 'Submitting parallel-cluster Job: qsub %s' % job_name, logger, 'info')
-        qid = subprocess.check_output("qsub %s" % job_name, shell=True)
-        print qid.split('.')[0]
-
+        core_prep_pipeline = "python %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 1 -jobrun %s -config %s -scheduler %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, config_file, args.scheduler)
     return core_prep_pipeline
 
 def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
@@ -684,7 +664,8 @@ if __name__ == '__main__':
     global logger
 
     if args.output != '':
-        args.output += '/'
+        if not (args.output).endswith('/'):
+            args.output += '/'
     make_sure_path_exists(args.output)
 
     log_unique_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
@@ -695,7 +676,7 @@ if __name__ == '__main__':
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
 
 
-    logs_folder = args.output + "/Logs"
+    logs_folder = args.output + "Logs"
     make_sure_path_exists(logs_folder)
     # logger = generate_logger(logs_folder, args.prefix, log_unique_time)
 
@@ -742,50 +723,58 @@ if __name__ == '__main__':
         keep_logging('End: Variant calling Pipeline', 'End: Variant calling Pipeline', logger, 'info')
 
     elif "core_All" in args.steps or "2" in args.steps:
-
+        # Add Core_All step Commands to this array
         core_All_cmds = []
+
         """ Set Up Core Prep logs folder/logger object, cluster mode and copy config files to it"""
         core_prep_logs_folder = logs_folder + "/core_prep"
         make_sure_path_exists(core_prep_logs_folder)
-        core_temp_dir = args.output + "/core_temp_dir/"
+        core_temp_dir = args.output + "core_temp_dir/"
+        
         logger = generate_logger(core_prep_logs_folder, args.prefix, log_unique_time)
         call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_prep_logs_folder, log_unique_time, args.prefix), logger)
         make_sure_path_exists(core_temp_dir)
-        keep_logging('\nCopying vcf files to %s\n' % core_temp_dir, '\nCopying vcf files to %s\n' % core_temp_dir, logger, 'info')
         
-        cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s/*/*_vcf_results/*_indel_gatk.vcf %s/*/*_stats_results/*_depth_of_coverage.sample_summary %s" % (args.output, args.output, args.output, args.output, args.output, args.output, args.output, args.output, args.output, core_temp_dir)
+        
+        # Remove Copying data files step. THis is redundant.
+        # keep_logging('\nCopying vcf files to %s\n' % core_temp_dir, '\nCopying vcf files to %s\n' % core_temp_dir, logger, 'info')
+        # cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s/*/*_vcf_results/*_indel_gatk.vcf %s/*/*_stats_results/*_depth_of_coverage.sample_summary %s" % (args.output, args.output, args.output, args.output, args.output, args.output, args.output, args.output, args.output, core_temp_dir)
 
-        cp_command_1 = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf* %s" % (args.output, core_temp_dir)
-        cp_command_2 = "cp %s/*/*_vcf_results/*_aln_mpileup_raw.vcf* %s" % (args.output, core_temp_dir)
-        cp_command_3 = "cp %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s" % (args.output, core_temp_dir)
-        cp_command_4 = "cp %s/*/*_vcf_results/*filter2_final.vcf* %s" % (args.output, core_temp_dir)
-        cp_command_5 = "cp %s/*/*_vcf_results/*array %s" % (args.output, core_temp_dir)
-        cp_command_6 = "cp %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s" % (args.output, core_temp_dir)
-        cp_command_7 = "cp %s/*/*unmapped.bed_positions %s" % (args.output, core_temp_dir)
-        cp_command_8 = "cp %s/*/*_vcf_results/*_indel_gatk.vcf* %s" % (args.output, core_temp_dir)
-        cp_command_9 = "cp %s/*/*_stats_results/*_depth_of_coverage.sample_summary %s" % (args.output, core_temp_dir)
+        # cp_command_1 = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf* %s" % (args.output, core_temp_dir)
+        # cp_command_2 = "cp %s/*/*_vcf_results/*_aln_mpileup_raw.vcf* %s" % (args.output, core_temp_dir)
+        # cp_command_3 = "cp %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s" % (args.output, core_temp_dir)
+        # cp_command_4 = "cp %s/*/*_vcf_results/*filter2_final.vcf* %s" % (args.output, core_temp_dir)
+        # cp_command_5 = "cp %s/*/*_vcf_results/*array %s" % (args.output, core_temp_dir)
+        # cp_command_6 = "cp %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s" % (args.output, core_temp_dir)
+        # cp_command_7 = "cp %s/*/*unmapped.bed_positions %s" % (args.output, core_temp_dir)
+        # cp_command_8 = "cp %s/*/*_vcf_results/*_indel_gatk.vcf* %s" % (args.output, core_temp_dir)
+        # cp_command_9 = "cp %s/*/*_stats_results/*_depth_of_coverage.sample_summary %s" % (args.output, core_temp_dir)
 
-        #call(cp_command, logger)
-        call(cp_command_1, logger)
-        call(cp_command_2, logger)
-        call(cp_command_3, logger)
-        call(cp_command_4, logger)
-        call(cp_command_5, logger)
-        call(cp_command_6, logger)
-        call(cp_command_7, logger)
-        call(cp_command_8, logger)
-        call(cp_command_9, logger)
+        # #call(cp_command, logger)
+        # call(cp_command_1, logger)
+        # call(cp_command_2, logger)
+        # call(cp_command_3, logger)
+        # call(cp_command_4, logger)
+        # call(cp_command_5, logger)
+        # call(cp_command_6, logger)
+        # call(cp_command_7, logger)
+        # call(cp_command_8, logger)
+        # call(cp_command_9, logger)
 
+        # No need to decompress the files. THis is redundant.
         """ Decompress zipped files in core temp folder"""
-        list_of_gzipped_files = glob.glob("%s/*.gz" % core_temp_dir)
-        keep_logging('Decompressing gzipped files in %s\n' % core_temp_dir, 'Decompressing gzipped files in %s\n' % core_temp_dir, logger, 'info')
-        gzipped_command_list = []
-        for i in list_of_gzipped_files:
-            gzipped_command_list.append("gzip -df %s" % i)
+        # list_of_gzipped_files = glob.glob("%s/*.gz" % core_temp_dir)
+        # keep_logging('Decompressing gzipped files in %s\n' % core_temp_dir, 'Decompressing gzipped files in %s\n' % core_temp_dir, logger, 'info')
+        # gzipped_command_list = []
+        # for i in list_of_gzipped_files:
+        #     gzipped_command_list.append("gzip -df %s" % i)
 
         """ Set the number of cores variable for Parallel-local mode """
-        num_cores = multiprocessing.cpu_count()
-        results = Parallel(n_jobs=num_cores)(delayed(run_command_list)(i) for i in gzipped_command_list)
+        #THis is redundant.
+        # num_cores = multiprocessing.cpu_count()
+        # results = Parallel(n_jobs=num_cores)(delayed(run_command_list)(i) for i in gzipped_command_list)
+        
+        # Get the filter criteria name from config file.
         filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
 
         """ Generate a custom vcf file list to process for core prep step. If file is not provided, it will consider all the samples in output folder"""
@@ -793,12 +782,10 @@ if __name__ == '__main__':
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.prefix, args.suffix)
             list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
-            keep_logging('\nNumber of final variant call vcf files: %s\n' % len(list_of_vcf_files), '\nNumber of final variant call vcf files: %s\n' % len(list_of_vcf_files), logger, 'info')
+            keep_logging('\nNumber of final variant call vcf files: %s' % len(list_of_vcf_files), '\nNumber of final variant call vcf files: %s' % len(list_of_vcf_files), logger, 'info')
             empty_files = []
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_files:
-                    print file
-                    print file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')
                     with open(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')) as fp:
                         for line in fp:
                             line = line.strip()
@@ -828,23 +815,27 @@ if __name__ == '__main__':
                     logger, 'exception')
                 exit()
         else:
-            keep_logging('\nChecking if all the variant calling results exists in %s\n' % core_temp_dir, '\nChecking if all the variant calling results exists in %s\n' % core_temp_dir, logger, 'info')
+            keep_logging('- Checking if all the variant calling results exists in %s' % args.output, '- Checking if all the variant calling results exists in %s' % args.output, logger, 'info')
             #call("ls -1a %s/*.vcf_no_proximate_snp.vcf > %s/vcf_filenames" % (core_temp_dir, core_temp_dir), logger)
             try:
-                list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
-                list_of_files = subprocess.check_output(list_cmd, shell=True)
+                # Not checking the files in core_temp_dir. This is redundant.
+                # list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
+                # list_of_files = subprocess.check_output(list_cmd, shell=True)
+                
+                list_of_files = glob.glob("%s/*/*_vcf_results/*.vcf_no_proximate_snp.vcf" % args.output)
+                list_of_GATK_depth_files = glob.glob("%s/*/*_stats_results/*_depth_of_coverage.sample_summary" % args.output)
 
-                keep_logging('Number of final variant call vcf files: %s\n' % len(list_of_files.splitlines()), 'Number of final variant call vcf files: %s\n' % len(list_of_files.splitlines()), logger, 'info')
+                keep_logging('- Number of final variant call vcf files: %s' % len(list_of_files), '- Number of final variant call vcf files: %s' % len(list_of_files), logger, 'info')
 
                 empty_files = []
                 with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                    for file in list_of_files.splitlines():
+                    for file in list_of_GATK_depth_files:
                         depth = "grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'"
                         proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F'\t' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
                         (out2, err2) = proc.communicate()
                         #print file
                         cov_depth = int(float(out2.strip()))
-                        out_fp.write(os.path.basename(file) + '\n')
+                        out_fp.write(os.path.basename(file.replace('_depth_of_coverage.sample_summary', '_filter2_final.vcf_no_proximate_snp.vcf ')) + '\n')
                         if float(out2.strip()) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
                             keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (
                             os.path.basename(file), float(out2.strip())),
@@ -876,7 +867,7 @@ if __name__ == '__main__':
         core_prep_pipeline_cmd = run_core_prep_analysis(core_temp_dir, reference, args.prefix, log_unique_time, args.cluster, logger, config_file)
         core_All_cmds.append(core_prep_pipeline_cmd)
         time_taken = datetime.now() - start_time_2
-        keep_logging('Core Prep Logs will be recorded in file with extension log.txt in %s\n' % core_prep_logs_folder, 'Core Prep Logs will be recorded in file with extension log.txt in %s\n' % core_prep_logs_folder, logger, 'info')
+        keep_logging('- Core Prep Logs will be recorded in %s' % core_prep_logs_folder, '- Core Prep Logs will be recorded in %s' % core_prep_logs_folder, logger, 'info')
 
         """ Generate Core Variants from core_prep intermediate files """
         core_logs_folder = logs_folder + "/core"
@@ -906,7 +897,7 @@ if __name__ == '__main__':
 
         # Parse Phaster results file to extract phage region.
         if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-            keep_logging('Parsing Functional class filters\n', 'Parsing Functional class filters\n', logger,
+            keep_logging('- Parsing Functional class filters', '- Parsing Functional class filters', logger,
                          'info')
             functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % core_temp_dir
             f1 = open(functional_class_filter_positions, 'w+')
@@ -931,16 +922,16 @@ if __name__ == '__main__':
                     if mask_extension == ".bed":
                         mask_positions_file = mask_regions(mask_file, core_temp_dir, logger, Config)
                         keep_logging(
-                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
-                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            '- Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            '- Mask positions in this file %s will be filtered out' % mask_positions_file,
                             logger, 'info')
                     else:
                         # mask_positions_file = mask_file
                         os.system("cp %s %s/mask_positions.txt" % (mask_file, core_temp_dir))
                         mask_positions_file = "%s/mask_positions.txt" % core_temp_dir
                         keep_logging(
-                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
-                            'Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            '- Mask positions in this file %s will be filtered out' % mask_positions_file,
+                            '- Mask positions in this file %s will be filtered out' % mask_positions_file,
                             logger, 'info')
                     with open(mask_positions_file, 'rU') as fp:
                         for line in fp:
@@ -955,8 +946,8 @@ if __name__ == '__main__':
                           core_results_dir, config_file)
         core_All_cmds.append(core_pipeline_cmd)
         time_taken = datetime.now() - start_time_2
-        keep_logging('\nCore Step Logs will be recorded in file with extension log.txt in %s\n' % core_logs_folder,
-                     '\nCore Step Logs will be recorded in file with extension log.txt in %s\n' % core_logs_folder, logger, 'info')
+        keep_logging('- Core Step Logs will be recorded in file with extension log.txt in %s' % core_logs_folder,
+                     '- Core Step Logs will be recorded in file with extension log.txt in %s' % core_logs_folder, logger, 'info')
 
 
         """ Generate Reports and organize core results folder """
@@ -990,8 +981,8 @@ if __name__ == '__main__':
         run_report_analysis_cmd = run_report_analysis(core_temp_dir, reference, args.prefix, log_unique_time, args.cluster, logger,
                             core_results_dir, config_file)
         time_taken = datetime.now() - start_time_2
-        keep_logging('Report Step Logs will be recorded in file with extension log.txt in %s\n' % report_logs_folder,
-                     'Report Step Logs will be recorded in file with extension log.txt in %s\n' % report_logs_folder, logger, 'info')
+        keep_logging('- Report Step Logs will be recorded in file with extension log.txt in %s' % report_logs_folder,
+                     '- Report Step Logs will be recorded in file with extension log.txt in %s' % report_logs_folder, logger, 'info')
 
 
         core_All_cmds.append(run_report_analysis_cmd)
@@ -1028,14 +1019,14 @@ if __name__ == '__main__':
         run_tree_analysis_cmd = run_tree_analysis(core_temp_dir, reference, args.prefix, log_unique_time,
                                                   args.cluster, logger, core_results_dir, config_file)
         time_taken = datetime.now() - start_time_2
-        keep_logging('Tree Step Logs will be recorded in file with extension log.txt in %s\n' % tree_logs_folder,
-                     'Tree Step Logs will be recorded in file with extension log.txt in %s\n' % tree_logs_folder, logger, 'info')
+        keep_logging('- Tree Step Logs will be recorded in file with extension log.txt in %s' % tree_logs_folder,
+                     '- Tree Step Logs will be recorded in file with extension log.txt in %s' % tree_logs_folder, logger, 'info')
 
         core_All_cmds.append(run_tree_analysis_cmd)
 
         if args.scheduler == "SLURM":
             combine_job_name = core_temp_dir + "/" + log_unique_time + "_" + args.prefix + "_core_All.sbat"
-            keep_logging("sbatch %s" % combine_job_name, "sbatch %s" % combine_job_name, logger, 'info')
+            keep_logging("- Submit Job: %s" % combine_job_name, "- Submit Job: %s" % combine_job_name, logger, 'info')
             scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
             with open(combine_job_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(combine_job_name))
