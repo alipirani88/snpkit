@@ -27,7 +27,6 @@ from log_modules import *
 from tabix import *
 from memory_profiler import profile
 
-
 parser = argparse.ArgumentParser(description='Sanity Check SNP matrix file')
 parser.add_argument('-matrix', action='store', dest="matrix",
                     help='SNP allele Matrix to perform sanity checks.')
@@ -41,11 +40,9 @@ with open(args.functional_annotation) as fp:
         line = line.strip()
         functional_annotation_positions.append(int(line))
     fp.close()
-
-
 f_handle=open("matrix_sanity_check.log.txt", 'w+')
 
-print "Parsing Matrix..."
+print "- Parsing Matrix..."
 N_string = ["N"]
 count = 0
 with open("%s" % args.matrix, 'rU') as csv_file:
@@ -59,8 +56,8 @@ with open("%s" % args.matrix, 'rU') as csv_file:
                 f_handle.write("Functional Position %s Masked in all samples\n" % int(position[3]))
             else:
                 count = count + 1
-                print "Error - Wrong position masked - %s\n" % int(position[3])
-                f_handle.write("Error - Wrong position masked - %s\n" % int(position[3]))
+                print "- Error - Wrong position masked - %s" % int(position[3])
+                f_handle.write("- Error - Wrong position masked - %s" % int(position[3]))
 
-print "\nNo. of wrongly masked variants %s" % count
+print "- No. of wrongly masked variants %s" % count
 exit()
