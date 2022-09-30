@@ -28,11 +28,6 @@ required.add_argument('-filter2_only_snp_vcf_filename', action='store', dest="fi
 args = parser.parse_args()
 
 
-
-
-
-
-
 def DP_analysis():
     print "Analyzing positions that were filtered out due to Depth..."
     extract_DP_positions = "awk -F\'\\t\' \'{print $1}\' temp_Only_filtered_positions_for_closely_matrix_DP.txt | sed \'/^$/d\' > extract_DP_positions.txt"

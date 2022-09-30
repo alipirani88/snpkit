@@ -757,16 +757,18 @@ def generate_position_label_data_matrix():
                                     Only_ref_variant_positions_for_closely_outgroup.append(value)
             f1.close()
             
-
         else:
             All_label_final_sorted_header = pd.read_csv("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=0)
-            All_label_final_sorted_header.replace('1TRUE','1', inplace=True, regex=True)
+            All_label_final_sorted_header.replace('1TRUE',1, inplace=True, regex=True)
+            # All_label_final_sorted_header.replace('1TRUE','1', inplace=True, regex=True)
             Code_count = All_label_final_sorted_header.iloc[:, 1:].apply(pd.Series.value_counts, axis=1)
             numberofsamples = len(All_label_final_sorted_header.columns) - 1
             frames = [All_label_final_sorted_header['Unnamed: 0'], Code_count]
             results = pd.concat(frames, axis=1, join='inner')
             Only_ref_variant_positions_for_closely = results.loc[results['1'] + results[1] == numberofsamples, 'Unnamed: 0']
             Only_filtered_variant_positions_for_closely = results.loc[results['1'] + results[1] != numberofsamples, 'Unnamed: 0']
+            # Only_ref_variant_positions_for_closely = results.loc[results['1'] == numberofsamples, 'Unnamed: 0']
+            # Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
             Only_ref_variant_positions_for_closely.to_csv('Only_ref_variant_positions_for_closely', index=False, sep='\n')
             Only_filtered_variant_positions_for_closely.to_csv('Only_filtered_positions_for_closely', index=False, sep='\n')
 
@@ -1517,7 +1519,6 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
-        # os.system("bash command_file")
         call("bash %s" % command_file, logger)
 
 def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
@@ -1660,9 +1661,6 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 
 def generate_vcf_files(Only_ref_variant_positions_for_closely):
     method_start_time = datetime.now()
-
-    
-
     functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
     functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
     functional_filter_pos_array = functional_filter_pos_array.squeeze()
@@ -2102,7 +2100,8 @@ def variant_annotation():
 
     if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
         if ConfigSectionMap("snpeff", Config)['db']:
-            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            keep_logging('- Using pre-built snpEff database: %s' % ConfigSectionMap("snpeff", Config)['db'],
+                 '- Using pre-built snpEff database: %s' % ConfigSectionMap("snpeff", Config)['db'], logger, 'info')
             ## Great Lakes Changes
             proc = subprocess.Popen(["%s databases | grep %s" % (
             ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
@@ -2111,11 +2110,12 @@ def variant_annotation():
             if out2:
                 snpeffdb = ConfigSectionMap("snpeff", Config)['db']
             else:
-                print "The database name %s provided was not found. Check the name and try again" % \
-                      ConfigSectionMap("snpeff", Config)['db']
+                keep_logging('- The database name %s provided was not found. Check the name and try again' % ConfigSectionMap("snpeff", Config)['db'],
+                 '- The database name %s provided was not found. Check the name and try again' % ConfigSectionMap("snpeff", Config)['db'], logger, 'info')
                 exit()
         else:
-            print "snpEff db section is not set in config file"
+            keep_logging('- snpEff db section is not set in config file',
+                 '- snpEff db section is not set in config file', logger, 'info')
             exit()
     else:
         reference_basename = (os.path.basename(args.reference)).split(".")
