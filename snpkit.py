@@ -696,8 +696,6 @@ if __name__ == '__main__':
         else:
             cluster_mode = "local"
 
-        keep_logging('START:', 'START:', logger, 'info')
-
         """ Generate Reference Genome Index """
         # Reference Genome file name
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']

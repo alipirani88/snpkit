@@ -38,7 +38,6 @@ required.add_argument('-out_core', action='store', dest="out_core",
 required.add_argument('-config', action='store', dest="config",
                     help='Path to core results directory')
 
-
 args = parser.parse_args()
 
 if args.config:
@@ -48,7 +47,6 @@ else:
 global Config
 Config = ConfigParser.ConfigParser()
 Config.read(config_file)
-
 
 def extract_only_ref_variant_fasta_unique_positions():
     #print "here"
@@ -165,7 +163,6 @@ def extract_only_ref_variant_fasta_unique_positions():
 
         else:
             print "Sample name %s does not match with column name %s" % (os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''), sample_name_re)
-
 
 def Generate_core_plus_noncore_alignment():
     # Get reference genome ID from reference fasta file
@@ -350,8 +347,6 @@ def Generate_core_plus_noncore_alignment():
             f1.close()
 
         else:
-            print "Sample name %s does not match with column name %s" % (os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''), sample_name_re)
-
-#extract_only_ref_variant_fasta_unique_positions()
+            print "- Sample name %s does not match with column name %s" % (os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''), sample_name_re)
 
 Generate_core_plus_noncore_alignment()
