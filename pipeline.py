@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import errno
+import glob
 from datetime import datetime
 import ConfigParser
 from config_settings import ConfigSectionMap
@@ -22,6 +23,7 @@ from memory_profiler import profile
 from modules.samclip import samclip
 from modules.snpeff import variant_annotation
 from modules.snpeff import indel_annotation
+from modules.tabix import *
 
 # Command Line Argument Parsing
 def parser():
@@ -215,7 +217,11 @@ def pipeline(args, logger):
         keep_logging('END: Variant Annotation', 'END: Variant Annotation', logger, 'info')
         method_time_taken = datetime.now() - method_start_time
         keep_logging('Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
-
+    
+    def tabix_vcf():
+        files_for_tabix = glob.glob("%s/*.vcf" % args.output_folder)
+        tabix(files_for_tabix, "vcf", logger, Config)
+    
     ## 7. Stages: Statistics
     
     def stats():
@@ -248,6 +254,7 @@ def pipeline(args, logger):
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             annotation((final_raw_vcf).replace('_aln_mpileup_raw.vcf_5bp_indel_removed.vcf', '_filter2_final.vcf_no_proximate_snp.vcf'))
+            tabix_vcf()
             stats()
 
 ## Sanity checks and directory structure maintenance methods
