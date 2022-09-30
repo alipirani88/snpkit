@@ -29,7 +29,7 @@ def make_sure_path_exists(out_path):
 
 def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
     
-    keep_logging('Preparing snpEff database requirements.', 'Preparing snpEff database requirements.', logger, 'info')
+    keep_logging('- Preparing snpEff database requirements.', '- Preparing snpEff database requirements.', logger, 'info')
 
     reference_basename = (os.path.basename(reference)).split(".")
 
@@ -44,7 +44,7 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
     if out2:
         snpeff_config = (str(out2)).strip()
     else:
-        print "Unable to find snpEff config file in conda Environment share directory"
+        print "- Unable to find snpEff config file in conda Environment share directory"
         exit()
 
     # os.system("cp %s $CONDA_PREFIX/bin/" % snpeff_config)
@@ -52,8 +52,8 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
 
     if os.path.isfile("%s/snpEff.config" % bin_dir):
         # os.system("cp %s/%s/snpEff.config %s" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], args.filter2_only_snp_vcf_dir))
-        keep_logging("cp %s/snpEff.config %s" % (bin_dir, vc_logs_folder),
-                     "cp %s/snpEff.config %s" % (bin_dir, vc_logs_folder), logger, 'debug')
+        # keep_logging("cp %s/snpEff.config %s" % (bin_dir, vc_logs_folder),
+        #              "cp %s/snpEff.config %s" % (bin_dir, vc_logs_folder), logger, 'debug')
         call("cp %s/snpEff.config %s" % (bin_dir, vc_logs_folder), logger)
     else:
         keep_logging("Error: %s/snpEff.config doesn't exists.\nExiting..." % bin_dir,
@@ -62,8 +62,8 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
     make_sure_path_exists("%s/data/%s" % (bin_dir, reference_basename[0]))
     make_sure_path_exists("%s/data/genomes/" % bin_dir)
     
-    keep_logging("cp %s %s/data/genomes/%s.fa" % (reference, bin_dir, reference_basename[0]),
-                 "cp %s %s/data/genomes/" % (reference, bin_dir), logger, 'debug')
+    # keep_logging("cp %s %s/data/genomes/%s.fa" % (reference, bin_dir, reference_basename[0]),
+    #              "cp %s %s/data/genomes/" % (reference, bin_dir), logger, 'debug')
     call("cp %s %s/data/genomes/%s.fa" % (reference, bin_dir, reference_basename[0]), logger)
     with open("%s/snpEff.config" % vc_logs_folder, "a") as conf_file:
         conf_file.write(
@@ -71,16 +71,16 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
     conf_file.close()
     # get the gff name from config file
     if os.path.isfile("%s/%s.gff" % (os.path.dirname(reference), reference_basename[0])):
-        keep_logging("cp %s/%s.gff %s/data/%s/genes.gff" % (
-            os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]),
-                     "cp %s/%s.gff %s/data/%s/genes.gff" % (os.path.dirname(reference), reference_basename[0],
-                                                            bin_dir,
-                                                            reference_basename[0]), logger, 'debug')
-        keep_logging("cp %s/%s.gb* %s/data/%s/genes.gbk" % (
-            os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]),
-                     "cp %s/%s.gff %s/data/%s/genes.gff" % (os.path.dirname(reference), reference_basename[0],
-                                                            bin_dir,
-                                                            reference_basename[0]), logger, 'debug')
+        # keep_logging("cp %s/%s.gff %s/data/%s/genes.gff" % (
+        #     os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]),
+        #              "cp %s/%s.gff %s/data/%s/genes.gff" % (os.path.dirname(reference), reference_basename[0],
+        #                                                     bin_dir,
+        #                                                     reference_basename[0]), logger, 'debug')
+        # keep_logging("cp %s/%s.gb* %s/data/%s/genes.gbk" % (
+        #     os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]),
+        #              "cp %s/%s.gff %s/data/%s/genes.gff" % (os.path.dirname(reference), reference_basename[0],
+        #                                                     bin_dir,
+        #                                                     reference_basename[0]), logger, 'debug')
         call("cp %s/%s.gff %s/data/%s/genes.gff" % (
             os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]), logger)
         call("cp %s/%s.gb* %s/data/%s/genes.gbk" % (
@@ -95,19 +95,18 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
     # keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     # keep_logging("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     ## Great Lakes Changes
-    keep_logging("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (
-    ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder, bin_dir),
-                 "%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/data" % (
-                 ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder,
-                 bin_dir), logger, 'debug')
+    # keep_logging("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (
+    # ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder, bin_dir),
+    #              "%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/data" % (
+    #              ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder,
+    #              bin_dir), logger, 'debug')
 
     # call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
     ## Great Lakes Changes
     call("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (
     ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder, bin_dir),
          logger)
-    keep_logging('Finished Preparing snpEff database requirements.', 'Finished Preparing snpEff database requirements.',
-                 logger, 'info')
+    
     
 def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
     global bin_dir

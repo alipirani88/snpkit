@@ -171,7 +171,7 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
     """
     jobs_temp_dir = "%s/temp_jobs" % output_folder
     make_sure_path_exists(jobs_temp_dir)
-    keep_logging('Generating cluster jobs in temporary directory %s' % jobs_temp_dir, 'Generating cluster jobs in temporary directory %s' % jobs_temp_dir, logger, 'exception')
+    #keep_logging('Generating cluster jobs in temporary directory %s' % jobs_temp_dir, 'Generating cluster jobs in temporary directory %s' % jobs_temp_dir, logger, 'exception')
 
     scheduler_directives, script_Directive, job_name_flag = get_scheduler_directive(args.scheduler, Config)
 
@@ -372,12 +372,13 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
 
     job_id_array = []
     if cluster == "cluster":
-        keep_logging('Running Jobs in cluster mode', 'Running Jobs in cluster mode', logger, 'info')
+        keep_logging('- Running Jobs in cluster mode', '- Running Jobs in cluster mode', logger, 'info')
+        keep_logging('- Generating Jobs in %s' % os.path.dirname(job), '- Generating Jobs in %s' % os.path.dirname(job), logger, 'info')
         for job in command_list_qsub:
-            keep_logging('Submitting Job: %s' % job, 'Submitting Job: %s' % job, logger, 'info')
+            #keep_logging('Submitting Job: %s' % job, 'Submitting Job: %s' % job, logger, 'info')
             if args.scheduler == "SLURM":
                 #call("sbatch %s" % job, logger)
-                keep_logging("sbatch %s" % job, "sbatch %s" % job, logger, 'info')
+                # keep_logging("sbatch %s" % job, "sbatch %s" % job, logger, 'info')
                 if not args.dryrun:
                     proc = subprocess.Popen(["sbatch %s" % job], stdout=subprocess.PIPE, shell=True)
                     (out, err) = proc.communicate()
@@ -627,25 +628,25 @@ def generate_index(reference):
         create_index(reference, ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4,
                      ref_index_suffix5)
     else:
-        keep_logging('Index file already exists.', 'Index file already exists.', logger, 'info')
+        keep_logging('- Index file already exists.', '- Index file already exists.', logger, 'info')
 
     ref_fai_index = reference + ".fai"
     if not os.path.isfile(ref_fai_index):
-        keep_logging('Creating FAI Index using Samtools.', 'The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index), logger,
+        keep_logging('- Creating FAI Index using Samtools.', '- The reference fai index file {} required for samtools does not exists.'.format(ref_fai_index), logger,
                      'warning')
         create_fai_index(reference, ref_fai_index)
     else:
-        keep_logging('Samtools fai Index file already exists.', 'Samtools fai Index file already exists.', logger, 'info')
+        keep_logging('- Samtools fai Index file already exists.', '- Samtools fai Index file already exists.', logger, 'info')
 
     dict_name = os.path.splitext(os.path.basename(reference))[0] + ".dict"
     if not os.path.isfile(ConfigSectionMap(args.index, Config)['ref_path'] + "/" + dict_name):
-        keep_logging('Creating Sequence Dictionary using Picard.',
-                     'The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name),
+        keep_logging('- Creating Sequence Dictionary using Picard.',
+                     '- The reference seq dict file {} required for GATK and PICARD does not exists.'.format(dict_name),
                      logger, 'warning')
         picard_seqdict(dict_name, reference)
     else:
-        keep_logging('The reference seq dict file required for GATK and PICARD exists.',
-                     'The reference seq dict file required for GATK and PICARD exists.', logger, 'info')
+        keep_logging('- Reference Genome Sequence Dictionary required for GATK and PICARD already exists.',
+                     '- Reference Genome Sequence Dictionary required for GATK and PICARD already exists.', logger, 'info')
 
 """ Start of Main Method/Pipeline """
 if __name__ == '__main__':
@@ -683,7 +684,7 @@ if __name__ == '__main__':
     files_to_delete = []
     Config = ConfigParser.ConfigParser()
     Config.read(config_file)
-
+    
     # Run pipeline steps
     if "core_All" not in args.steps and "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps and "2" not in args.steps:
         """ Set Up variant calling logs folder/logger object, cluster mode and copy config files to it"""
@@ -700,7 +701,8 @@ if __name__ == '__main__':
         # Reference Genome file name
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         
-
+        keep_logging('- SNPKIT: Microbial Variant Calling v2.0',
+                     '- SNPKIT: Microbial Variant Calling v2.0', logger, 'info')
         keep_logging('- Getting Reference Genome name from config file.',
                      '- Getting Reference Genome name from config file.', logger, 'info')
         keep_logging('- Using Reference Genome: {}'.format(reference),
