@@ -701,10 +701,10 @@ if __name__ == '__main__':
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)['ref_name']
         
 
-        keep_logging('Getting Reference Genome name from config file.',
-                     'Getting Reference Genome name from config file.', logger, 'info')
-        keep_logging('Reference Genome: {}'.format(reference),
-                     'Reference Genome: {}'.format(reference), logger, 'info')
+        keep_logging('- Getting Reference Genome name from config file.',
+                     '- Getting Reference Genome name from config file.', logger, 'info')
+        keep_logging('- Using Reference Genome: {}'.format(reference),
+                     '- Using Reference Genome: {}'.format(reference), logger, 'info')
 
         generate_index(reference)
         
@@ -716,9 +716,9 @@ if __name__ == '__main__':
         job_submitted = run_varcall_jobs(list_of_jobs, cluster_mode, log_unique_time, args.prefix, args.output, logger)
 
         time_taken = datetime.now() - start_time_2
-        keep_logging('Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, logger, 'info')
-        keep_logging('Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
-        keep_logging('End: Variant calling Pipeline', 'End: Variant calling Pipeline', logger, 'info')
+        keep_logging('- Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, logger, 'info')
+        keep_logging('- Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
+        
 
     elif "core_All" in args.steps or "2" in args.steps:
         # Add Core_All step Commands to this array
