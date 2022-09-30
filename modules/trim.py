@@ -14,7 +14,7 @@ from modules.logging_subprocess import *
 
 def trim(input1, input2, out_path, crop, logger, Config):
     if input2 != "None":
-        keep_logging('Pre-processing PE reads using Trimmomatic.', 'Pre-processing PE reads using Trimmomatic.', logger, 'info')
+        keep_logging(' - Pre-processing PE reads using Trimmomatic.', 'Pre-processing PE reads using Trimmomatic.', logger, 'info')
         #adapter_file = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "/" + ConfigSectionMap("Trimmomatic", Config)['adaptor_filepath']
         # Updated for Great Lakes and Conda Integration
         adapter_file = ConfigSectionMap("Trimmomatic", Config)['adaptor_filepath']
@@ -27,24 +27,24 @@ def trim(input1, input2, out_path, crop, logger, Config):
         if not crop:
 	    # Updated for Great Lakes and Conda Integration
             cmdstring = "trimmomatic PE -phred33 " + input1 + " " + input2 + " " + clean_filenames + " " + illumina_string + " " + sliding_string + " " + minlen_string + " " + headcrop_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
-            keep_logging(cmdstring, cmdstring, logger, 'debug')
+            #keep_logging(cmdstring, cmdstring, logger, 'debug')
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:
-                    keep_logging('Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
+                    keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                     sys.exit(1)
-            keep_logging('End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
+            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
         else:
             crop_string = 'CROP:' + crop
             cmdstring = "trimmomatic PE " + input1 + " " + input2 + " " + clean_filenames + " " + crop_string + " " + illumina_string + " " + sliding_string + " " + minlen_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:
-                keep_logging('Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
+                keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                 sys.exit(1)
-            keep_logging('End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
+            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
     else:
-        keep_logging('Pre-processing SE reads using Trimmomatic.', 'Pre-processing SE reads using Trimmomatic.', logger, 'info')
+        keep_logging(' - Pre-processing SE reads using Trimmomatic.', 'Pre-processing SE reads using Trimmomatic.', logger, 'info')
         #adapter_file = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("Trimmomatic", Config)['trimmomatic_bin'] + "/" + ConfigSectionMap("Trimmomatic", Config)['adaptor_filepath']
         # Updated for Great Lakes and Conda Integration
         adapter_file = ConfigSectionMap("Trimmomatic", Config)['adaptor_filepath']
@@ -60,9 +60,9 @@ def trim(input1, input2, out_path, crop, logger, Config):
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:
-                keep_logging('Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
+                keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                 sys.exit(1)
-            keep_logging('End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
+            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
 
         else:
             crop_string = 'CROP:' + crop
@@ -71,9 +71,9 @@ def trim(input1, input2, out_path, crop, logger, Config):
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:
-                    keep_logging('Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
+                    keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                     sys.exit(1)
-            keep_logging('End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
+            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
 
 
 
