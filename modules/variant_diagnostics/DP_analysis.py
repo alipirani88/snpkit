@@ -17,7 +17,6 @@ from pyfasta import Fasta
 from datetime import datetime
 import threading
 
-
 parser = argparse.ArgumentParser(description='Extract Only reference and variant positions and generate a fasta file out of it.')
 required = parser.add_argument_group('Required arguments')
 optional = parser.add_argument_group('Optional arguments')
@@ -32,8 +31,6 @@ def DP_analysis():
     print "Analyzing positions that were filtered out due to Depth..."
     extract_DP_positions = "awk -F\'\\t\' \'{print $1}\' temp_Only_filtered_positions_for_closely_matrix_DP.txt | sed \'/^$/d\' > extract_DP_positions.txt"
     os.system(extract_DP_positions)
-
-
     filename_base = os.path.basename(args.filter2_only_snp_vcf_filename)
     aln_mpileup_vcf_file = filename_base.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_aln_mpileup_raw.vcf_5bp_indel_removed.vcf')
     analysis = filename_base.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')
