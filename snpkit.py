@@ -297,7 +297,7 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
     return list_of_jobs
 
 def generate_custom_vcf_file_list(filenames_array, logger):
-    keep_logging('Generating custom vcf file list for core pipeline steps', 'Generating custom vcf files list for core pipeline steps', logger, 'exception')
+    keep_logging('- Generating custom vcf file list for analysis.', '- Generating custom vcf files list for analysis', logger, 'exception')
     list_of_vcf_files = []
     for file in filenames_array:
         filename_base = os.path.basename(file)
@@ -782,7 +782,7 @@ if __name__ == '__main__':
         if args.filenames:
             list_of_files = get_filenames(args.dir, args.type, args.filenames, args.prefix, args.suffix)
             list_of_vcf_files = generate_custom_vcf_file_list(sorted(list_of_files), logger)
-            keep_logging('\nNumber of final variant call vcf files: %s' % len(list_of_vcf_files), '\nNumber of final variant call vcf files: %s' % len(list_of_vcf_files), logger, 'info')
+            keep_logging('- Number of final variant call vcf files: %s' % len(list_of_vcf_files), '- Number of final variant call vcf files: %s' % len(list_of_vcf_files), logger, 'info')
             empty_files = []
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
                 for file in list_of_files:
@@ -867,7 +867,7 @@ if __name__ == '__main__':
         core_prep_pipeline_cmd = run_core_prep_analysis(core_temp_dir, reference, args.prefix, log_unique_time, args.cluster, logger, config_file)
         core_All_cmds.append(core_prep_pipeline_cmd)
         time_taken = datetime.now() - start_time_2
-        keep_logging('- Core Prep Logs will be recorded in %s' % core_prep_logs_folder, '- Core Prep Logs will be recorded in %s' % core_prep_logs_folder, logger, 'info')
+        keep_logging('- Logs will be recorded in %s' % core_prep_logs_folder, '- Logs will be recorded in %s' % core_prep_logs_folder, logger, 'info')
 
         """ Generate Core Variants from core_prep intermediate files """
         core_logs_folder = logs_folder + "/core"
