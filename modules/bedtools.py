@@ -13,7 +13,7 @@ def bedtools(out_sorted_bam, out_path, analysis, logger, Config):
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
-        keep_logging('Error in Bedtools unmapped step. Exiting.', 'Error in Bedtools unmapped step. Exiting.', logger, 'exception')
+        keep_logging(' - Error in Bedtools unmapped step. Exiting.', 'Error in Bedtools unmapped step. Exiting.', logger, 'exception')
         sys.exit(1)
     final_bed_unmapped_file = "%s/%s_unmapped.bed" % (out_path, analysis)
     only_unmapped_positions_file = parse_bed_file(final_bed_unmapped_file)
@@ -46,7 +46,7 @@ def bedgraph_coverage(out_sorted_bam, out_path, analysis, reference, logger, Con
     try:
         call(makewindows_cmd, logger)
     except sp.CalledProcessError:
-        keep_logging('Error in Bedtools Make Windows step. Exiting.', 'Error in Bedtools Make Windows step. Exiting.', logger, 'exception')
+        keep_logging(' - Error in Bedtools Make Windows step. Exiting.', 'Error in Bedtools Make Windows step. Exiting.', logger, 'exception')
         sys.exit(1)
     reference_windows_file = "%s/%s.bed" % (reference_dir, first_part)
     bedcoverage_command = ConfigSectionMap("bedtools", Config)['base_cmd'] + " coverage -abam %s -b %s > %s/%s.bedcov" % (out_sorted_bam, reference_windows_file, out_path, analysis)
@@ -54,5 +54,5 @@ def bedgraph_coverage(out_sorted_bam, out_path, analysis, reference, logger, Con
     try:
         call(bedcoverage_command, logger)
     except sp.CalledProcessError:
-        keep_logging('Error in Bedtools coverage step. Exiting.', 'Error in Bedtools coverage step. Exiting.', logger, 'exception')
+        keep_logging(' - Error in Bedtools coverage step. Exiting.', 'Error in Bedtools coverage step. Exiting.', logger, 'exception')
         sys.exit(1)

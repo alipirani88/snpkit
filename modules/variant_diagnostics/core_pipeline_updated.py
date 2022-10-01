@@ -164,6 +164,7 @@ def get_outgroup():
         keep_logging('- Note: Outgroup Sample Name not provided. Ignoring Outgroup steps.', '- Note: Outgroup Sample Name not provided. Ignoring Outgroup steps.', logger, 'info')
         outgroup = ""
 
+
 ## Great Lakes Integration Changes
 def get_scheduler_directive(scheduler, Config):
     """ Generate Cluster Directive lines for a scheduler provided with args.scheduler"""
@@ -756,18 +757,16 @@ def generate_position_label_data_matrix():
                                     Only_ref_variant_positions_for_closely_outgroup.append(value)
             f1.close()
             
+
         else:
             All_label_final_sorted_header = pd.read_csv("%s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir, sep='\t', header=0)
-            All_label_final_sorted_header.replace('1TRUE',1, inplace=True, regex=True)
-            # All_label_final_sorted_header.replace('1TRUE','1', inplace=True, regex=True)
+            All_label_final_sorted_header.replace('1TRUE','1', inplace=True, regex=True)
             Code_count = All_label_final_sorted_header.iloc[:, 1:].apply(pd.Series.value_counts, axis=1)
             numberofsamples = len(All_label_final_sorted_header.columns) - 1
             frames = [All_label_final_sorted_header['Unnamed: 0'], Code_count]
             results = pd.concat(frames, axis=1, join='inner')
-            Only_ref_variant_positions_for_closely = results.loc[results['1'] + results[1] == numberofsamples, 'Unnamed: 0']
-            Only_filtered_variant_positions_for_closely = results.loc[results['1'] + results[1] != numberofsamples, 'Unnamed: 0']
-            # Only_ref_variant_positions_for_closely = results.loc[results['1'] == numberofsamples, 'Unnamed: 0']
-            # Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
+            Only_ref_variant_positions_for_closely = results.loc[results['1'] == numberofsamples, 'Unnamed: 0']
+            Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
             Only_ref_variant_positions_for_closely.to_csv('Only_ref_variant_positions_for_closely', index=False, sep='\n')
             Only_filtered_variant_positions_for_closely.to_csv('Only_filtered_positions_for_closely', index=False, sep='\n')
 
@@ -1100,7 +1099,7 @@ def generate_indel_position_label_data_matrix():
                         Only_filtered_indel_positions_for_closely.append(x[1])
                         print_string = ""
                         for i in x[2:]:
-                            print_string = print_string + "\t" + str(i)
+                            print_string = print_string + "\t" + i
                         STRR2 = str(x[1]) + print_string + "\n"
                         f33.write(STRR2)
                     else:
@@ -1518,6 +1517,7 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
                 lines = lines.strip()
                 command_array.append(lines)
         fpp.close()
+        # os.system("bash command_file")
         call("bash %s" % command_file, logger)
 
 def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
@@ -1660,6 +1660,9 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 
 def generate_vcf_files(Only_ref_variant_positions_for_closely):
     method_start_time = datetime.now()
+
+    
+
     functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
     functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
     functional_filter_pos_array = functional_filter_pos_array.squeeze()
@@ -1718,6 +1721,9 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
     # #os.system(sequence_lgth_cmd)
     # call("%s" % sequence_lgth_cmd, logger)
     method_time_taken = datetime.now() - method_start_time
+
+    # keep_logging('Time taken to complete the core genome method: {}'.format(method_time_taken),
+    #              'Time taken to complete the core genome method: {}'.format(method_time_taken), logger, 'info')
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
@@ -1794,6 +1800,7 @@ def FQ_analysis():
         gatk_filter2_final_vcf_file_no_proximate_snp, os.path.dirname(i), analysis)
         # os.system(grep_fq_field)
         call("%s" % grep_fq_field, logger)
+        # print grep_fq_field
 
 def DP_analysis():
     create_job_DP(args.jobrun, vcf_filenames, script_Directive, job_name_flag)
@@ -1889,6 +1896,20 @@ def DP_analysis_barplot():
         os.path.basename(vcf_filenames[filename_count].replace('_filter2_final.vcf_no_proximate_snp.vcf', '')),
         reference_position_perc, oneto5_perc, sixto10_perc, elevento14_perc, fifteenorabove_perc)
         f_bar_perc.write(bar_perc_string)
+
+
+""" Deprecated Method """
+
+
+def extract_only_ref_variant_fasta(core_vcf_fasta_dir):
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes" and \
+            ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
+        functional_filter = "yes"
+    create_job_fasta(args.jobrun, vcf_filenames, core_vcf_fasta_dir, functional_filter, script_Directive, job_name_flag)
+
+
+""" Deprecated Method """
+
 
 def extract_only_ref_variant_fasta_from_reference():
     method_start_time = datetime.now()
@@ -1993,7 +2014,6 @@ def core_prep_indel():
     keep_logging('- Time taken to parse Indel VCFs: {}'.format(method_time_taken),
                  '- Time taken to parse Indel VCFs: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_indel_positions_for_closely
-    
 """ Annotation methods"""
 
 def prepare_snpEff_db(reference_basename):
@@ -2082,8 +2102,7 @@ def variant_annotation():
 
     if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
         if ConfigSectionMap("snpeff", Config)['db']:
-            keep_logging('- Using pre-built snpEff database: %s' % ConfigSectionMap("snpeff", Config)['db'],
-                 '- Using pre-built snpEff database: %s' % ConfigSectionMap("snpeff", Config)['db'], logger, 'info')
+            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
             ## Great Lakes Changes
             proc = subprocess.Popen(["%s databases | grep %s" % (
             ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
@@ -2092,12 +2111,11 @@ def variant_annotation():
             if out2:
                 snpeffdb = ConfigSectionMap("snpeff", Config)['db']
             else:
-                keep_logging('- The database name %s provided was not found. Check the name and try again' % ConfigSectionMap("snpeff", Config)['db'],
-                 '- The database name %s provided was not found. Check the name and try again' % ConfigSectionMap("snpeff", Config)['db'], logger, 'info')
+                print "The database name %s provided was not found. Check the name and try again" % \
+                      ConfigSectionMap("snpeff", Config)['db']
                 exit()
         else:
-            keep_logging('- snpEff db section is not set in config file',
-                 '- snpEff db section is not set in config file', logger, 'info')
+            print "snpEff db section is not set in config file"
             exit()
     else:
         reference_basename = (os.path.basename(args.reference)).split(".")
@@ -2385,6 +2403,7 @@ def merge_vcf():
     #              '- Time taken to complete the merge_vcf method: {}'.format(method_time_taken), logger, 'info')
     return annotated_no_proximate_snp_file, annotated_no_proximate_snp_indel_file, final_gatk_snp_merged_vcf, final_gatk_indel_merged_vcf
 
+
 def extract_annotations_from_multivcf():
     method_start_time = datetime.now()
     """ Extract ANN information from bcftools Final vcf file. (There is a reason why i am using bcftools merged file to extract ANN information) """
@@ -2403,6 +2422,7 @@ def extract_annotations_from_multivcf():
     #              '- Time taken to complete the extract_annotations_from_multivcf method: {}'.format(method_time_taken), logger, 'info')
     """ End of Extract ANN information from bcftools Final vcf file"""
     return snp_var_ann_dict, indel_var_ann_dict
+
 
 def extract_core_positions():
     method_start_time = datetime.now()
@@ -2434,6 +2454,7 @@ def extract_core_positions():
     #              'Time taken to complete the extract_core_positions method: {}'.format(method_time_taken), logger, 'info')
     """ End: Generate an array of core positions. """
     return core_positions, indel_core_positions
+
 
 def extract_functional_class_positions():
     """ Generate a list of functional class positions from Phaster, Mummer and Custom Masking results/files"""
@@ -4247,7 +4268,11 @@ def annotated_snp_matrix():
                           mask_positions, position_indel_label, indel_core_positions, indel_var_ann_dict)
     method_time_taken = datetime.now() - method_start_time
 
+    # keep_logging('- Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken),
+    #              '- Time taken to complete the Annotated SNP/Indel Matrix method: {}'.format(method_time_taken), logger, 'info')
+
 """ Report methods """
+
 
 def alignment_report(data_matrix_dir):
     keep_logging('Generating Alignment report...', 'Generating Alignment report...', logger, 'info')
@@ -4289,6 +4314,7 @@ def alignment_report(data_matrix_dir):
     keep_logging('Alignment report can be found in %s/Report_alignment.txt' % data_matrix_dir,
                  'Alignment report can be found in %s/Report_alignment.txt' % data_matrix_dir, logger, 'info')
 
+
 def variant_report(data_matrix_dir):
     keep_logging('Generating Variants report...', 'Generating Variants report...', logger, 'info')
     varcall_dir = os.path.dirname(os.path.abspath(args.results_dir))
@@ -4318,7 +4344,9 @@ def variant_report(data_matrix_dir):
     keep_logging('Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir,
                  'Variant call report can be found in %s/Report_variants.txt' % data_matrix_dir, logger, 'info')
 
+
 """ Gubbins/Iqtree methods"""
+
 
 def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
     keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta,
@@ -4742,6 +4770,8 @@ if __name__ == '__main__':
 
         call("cp %s/%s*.log.txt %s" % (args.filter2_only_snp_vcf_dir, datetime.now().strftime('%Y_%m_%d'), logs_dir), logger)
 
+        
+
         call("cp %s %s/Logs/report/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
@@ -4756,6 +4786,7 @@ if __name__ == '__main__':
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
 
+        
         functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
         functional_filter_pos_array = functional_filter_pos_array.squeeze()
         Only_ref_variant_positions_for_closely = pd.read_csv("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, sep='\n', header=None)

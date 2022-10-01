@@ -11,7 +11,7 @@ def bioawk_make_reference_size(reference, logger, Config):
     try:
         call(command, logger)
     except sp.CalledProcessError:
-        keep_logging('Error in Bioawk step. Exiting.', 'Error in Bioawk step. Exiting.', logger, 'exception')
+        keep_logging(' - Error in Bioawk step. Exiting.', 'Error in Bioawk step. Exiting.', logger, 'exception')
         sys.exit(1)
     reference_size_file = "%s.size" % reference
     return reference_size_file

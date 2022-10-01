@@ -49,8 +49,6 @@ Config = ConfigParser.ConfigParser()
 Config.read(config_file)
 
 def extract_only_ref_variant_fasta_unique_positions():
-    #print "here"
-
     # Get reference genome ID
     get_reference = Fasta(args.reference)
     if len(get_reference.keys()) == 1:
@@ -182,7 +180,6 @@ def Generate_core_plus_noncore_alignment():
     #columns = list(itertools.izip(*c_reader))
     del c_reader
     
-
     # Generate an array of all the unique variant positions that were called in all the samples
     unique_position_array = []
     for i in columns[0][1:]:
@@ -191,9 +188,9 @@ def Generate_core_plus_noncore_alignment():
             unique_position_array.append(int(replace_string[3]))
         else:
             unique_position_array.append(int(replace_string[2]))
-
     counts = 1
     end = ncol
+    
     # Loop over each column, check if the column name matches the sample name provided with argument args.filter2_only_snp_vcf_filename
     for i in xrange(1, end, 1):
         print_string = ""
@@ -203,14 +200,13 @@ def Generate_core_plus_noncore_alignment():
         sample_name_re = columns[i][0][:grab_vcf_filename]
 
         # Replaced this with a more stable check
-        #sample_name = str(columns[i][0])
+        # sample_name = str(columns[i][0])
         # sample_name_re = re.sub('_R1.fastq.gz', '', sample_name)
         # sample_name_re = re.sub('_R1_001.fastq.gz', '', sample_name_re)
         # sample_name_re = re.sub('_L001.fastq.gz', '', sample_name_re)
         # sample_name_re = re.sub('_*1*.fastq.gz', '', sample_name_re)
         # sample_name_re = re.sub('_S.*', '', sample_name_re)
 
-        
         if sample_name_re == os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', '') or sample_name_re in os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''):
             vcf_header = "##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\n" % sample_name_re
             print_string = print_string + ">%s\n" % sample_name_re
@@ -268,34 +264,27 @@ def Generate_core_plus_noncore_alignment():
             filename = "%s/consensus_ref_allele_variant.sh" % args.filter2_only_snp_vcf_dir
 
             vcf_filename = "%s/%s_ref_allele_variants.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
-            f1 = open(filename, 'a+')
-            bgzip_cmd = "bgzip -f %s\n" % (vcf_filename)
-            f1.write(bgzip_cmd)
-            subprocess.call([bgzip_cmd], shell=True)
-            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename)
-            f1.write(tabix_cmd)
-            subprocess.call([tabix_cmd], shell=True)
-            base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
-            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, vcf_filename, sample_name_re)
-            f1.write(fasta_cmd)
-            subprocess.call([fasta_cmd], shell=True)
+            # f1 = open(filename, 'a+')
+            # bgzip_cmd = "bgzip -f %s\n" % (vcf_filename)
+            # f1.write(bgzip_cmd)
+            # subprocess.call([bgzip_cmd], shell=True)
+            # tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename)
+            # f1.write(tabix_cmd)
+            # subprocess.call([tabix_cmd], shell=True)
+            # base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
+            # fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, vcf_filename, sample_name_re)
+            # f1.write(fasta_cmd)
+            # subprocess.call([fasta_cmd], shell=True)
 
-            sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_variants.fa\n" % (sample_name_re, sample_name_re)
-            subprocess.call([sed_command], shell=True)
-            f1.write(sed_command)
+            # sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_variants.fa\n" % (sample_name_re, sample_name_re)
+            # subprocess.call([sed_command], shell=True)
+            # f1.write(sed_command)
 
-            #os.system("bash %s" % filename)
-            #sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
-            #os.system(sequence_lgth_cmd)
-            #call("%s" % sequence_lgth_cmd, logger)
-
-            
             unmapped_positions_file = "%s/%s_unmapped.bed_positions" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
             
             unmapped_vcf_file = "%s/%s_unmapped.vcf" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
             
-            unmapped_vcf = open(
-                "%s/%s_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
+            unmapped_vcf = open(unmapped_vcf_file, 'w+')
             unmapped_vcf.write(vcf_header)
             
             with open(unmapped_positions_file, 'r') as fpp:
@@ -307,7 +296,7 @@ def Generate_core_plus_noncore_alignment():
                     ref_id[0].split(' ')[0], lines, ref_allele)
                     unmapped_vcf.write(generate_vcf_string_unmapped)
             unmapped_vcf.close()
-
+            
             bgzip_cmd = "bgzip -f %s\n" % (unmapped_vcf_file)
             
             tabix_cmd = "tabix -f -p vcf %s.gz\n" % (unmapped_vcf_file)
@@ -329,7 +318,6 @@ def Generate_core_plus_noncore_alignment():
             fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
                 args.reference, vcf_filename_unmapped, sample_name_re)
 
-            #filename = "%s/consensus_ref_allele_unmapped_variant.sh" % args.filter2_only_snp_vcf_dir
             filename = "%s/%s_consensus_ref_allele_unmapped_variant.sh" % (args.filter2_only_snp_vcf_dir, sample_name_re)
             f1 = open(filename, 'w+')
             f1.write(bgzip_cmd)

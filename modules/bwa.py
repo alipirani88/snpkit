@@ -12,12 +12,12 @@ def align_bwa(base_cmd,forward_clean, reverse_clean, out_path, reference, split_
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
-        keep_logging('Error in Alignment step. Exiting.', 'Error in Alignment step. Exiting.', logger, 'exception')
+        keep_logging(' - Error in Alignment step. Exiting.', 'Error in Alignment step. Exiting.', logger, 'exception')
         sys.exit(1)
     out_sam = "%s/%s_aln.sam" % (out_path, analysis)
     files_to_delete.append(out_sam)
     if not os.path.isfile(out_sam):
-        keep_logging('Problem in BWA alignment. SAM file was not generated.', 'Problem in BWA alignment. SAM file was not generated', logger, 'exception')
+        keep_logging(' - Problem in BWA alignment. SAM file was not generated.', 'Problem in BWA alignment. SAM file was not generated', logger, 'exception')
         exit()
     else:
         return out_sam
