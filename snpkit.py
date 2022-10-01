@@ -785,25 +785,26 @@ if __name__ == '__main__':
             keep_logging('- Number of final variant call vcf files: %s' % len(list_of_vcf_files), '- Number of final variant call vcf files: %s' % len(list_of_vcf_files), logger, 'info')
             empty_files = []
             with open("%s/vcf_filenames" % core_temp_dir, 'w') as out_fp:
-                for file in list_of_files:
-                    with open(file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')) as fp:
+                for file in list_of_vcf_files:
+                    base = file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '')
+                    depth_file = "%s/%s/%s_stats_results/%s_depth_of_coverage.sample_summary" % (args.output, base, base, base)
+                    vcf_file = "%s/%s/%s_vcf_results/%s" % (args.output, base, base, file)
+                    with open(depth_file) as fp:
                         for line in fp:
                             line = line.strip()
                             if line.startswith('Total'):
                                 linesplit = line.split('\t')
                                 cov_depth = int(float(linesplit[2].strip()))
-                                print cov_depth
-
                                 if float(cov_depth) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
-                                    keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (
-                                    os.path.basename(file), float(cov_depth.strip())),
-                                                 'The coverage depth for Sample %s - %s is lower than the threshold' % (
-                                                 os.path.basename(file), float(cov_depth.strip())), logger, 'info')
+                                    keep_logging('- Warning: Read depth for Sample %s - %s is lower than the threshold' % (
+                                    os.path.basename(file), cov_depth),
+                                                 '- Warning: Read depth for Sample %s - %s is lower than the threshold' % (
+                                                 os.path.basename(file), cov_depth), logger, 'info')
                     fp.close()
                     out_fp.write(os.path.basename(file.replace('R1_001.fastq.gz', '_filter2_final.vcf_no_proximate_snp.vcf')) + '\n')
-
+                    
                     # Check if the vcf files are empty
-                    if os.stat(file).st_size == 0:
+                    if os.stat(vcf_file).st_size == 0:
                         empty_files.append(file)
             out_fp.close()
 
