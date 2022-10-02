@@ -171,11 +171,12 @@ def Generate_core_plus_noncore_alignment():
 
     # Read in the SNP Matrix file and seperate the columns.
     # print "Read in the SNP Matrix file and extract the number of columns"
-    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    core_temp = os.path.dirname(os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))) + "/core_temp_dir/"
+    c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % core_temp, 'r'), delimiter='\t')
     ncol = len(next(c_reader_2))
     del c_reader_2
     # print "Number of columns - %s" % ncol
-    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
+    c_reader = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % core_temp, 'r'), delimiter='\t')
     columns = list(zip(*c_reader))
     #columns = list(itertools.izip(*c_reader))
     del c_reader
@@ -263,22 +264,22 @@ def Generate_core_plus_noncore_alignment():
             allele_ref_variant_vcf.close()
             filename = "%s/consensus_ref_allele_variant.sh" % args.filter2_only_snp_vcf_dir
 
-            vcf_filename = "%s/%s_ref_allele_variants.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
-            # f1 = open(filename, 'a+')
-            # bgzip_cmd = "bgzip -f %s\n" % (vcf_filename)
-            # f1.write(bgzip_cmd)
-            # subprocess.call([bgzip_cmd], shell=True)
-            # tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename)
-            # f1.write(tabix_cmd)
-            # subprocess.call([tabix_cmd], shell=True)
-            # base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
-            # fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, vcf_filename, sample_name_re)
-            # f1.write(fasta_cmd)
-            # subprocess.call([fasta_cmd], shell=True)
+            vcf_filename = "%s/%s_ref_allele_variants.vcf" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
+            f1 = open(filename, 'a+')
+            bgzip_cmd = "bgzip -f %s\n" % (vcf_filename)
+            f1.write(bgzip_cmd)
+            subprocess.call([bgzip_cmd], shell=True)
+            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename)
+            f1.write(tabix_cmd)
+            subprocess.call([tabix_cmd], shell=True)
+            base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
+            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, vcf_filename, sample_name_re)
+            f1.write(fasta_cmd)
+            subprocess.call([fasta_cmd], shell=True)
 
-            # sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_variants.fa\n" % (sample_name_re, sample_name_re)
-            # subprocess.call([sed_command], shell=True)
-            # f1.write(sed_command)
+            sed_command = "sed -i 's/>.*/>%s/g' %s_ref_allele_variants.fa\n" % (sample_name_re, sample_name_re)
+            subprocess.call([sed_command], shell=True)
+            f1.write(sed_command)
 
             unmapped_positions_file = "%s/%s_unmapped.bed_positions" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
             
@@ -305,7 +306,7 @@ def Generate_core_plus_noncore_alignment():
             subprocess.call([tabix_cmd], shell=True)
             #allele_ref_variant_unmapped_vcf = open("%s/%s_ref_allele_variants_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re), 'w+')
 
-            vcf_filename_unmapped = "%s/%s_ref_allele_unmapped.vcf" % (args.filter2_only_snp_vcf_dir, sample_name_re)
+            vcf_filename_unmapped = "%s/%s_ref_allele_unmapped.vcf" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
             
             bcftools_merge_cmd =  "bcftools merge --merge snps --force-samples %s.gz %s.gz -O v -o %s" % (unmapped_vcf_file, vcf_filename, vcf_filename_unmapped)
 

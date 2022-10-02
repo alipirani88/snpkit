@@ -1437,7 +1437,6 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             # os.system("qsub %s" % i)
             call("qsub %s" % i, logger)
 
-
     elif jobrun == "parallel-local" or jobrun == "cluster":
         """
         Generate a Command list of each job and run it in parallel on different cores available on local system
@@ -1447,8 +1446,9 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
         f3 = open(command_file, 'w+')
         ### Great Lakes changes
         for i in vcf_filenames:
+            base = (os.path.basename(i)).replace('_filter2_final.vcf_no_proximate_snp.vcf', '')
             command = "python %s/extract_only_ref_variant_fasta_unique_positions.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -reference %s -out_core %s -config %s\n" % (
-            os.path.dirname(os.path.abspath(__file__)), args.filter2_only_snp_vcf_dir, i, args.reference,
+            os.path.dirname(os.path.abspath(__file__)), (args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (base, base)), i, args.reference,
             core_vcf_fasta_dir, config_file)
             job_file_name = "%s_ref_allele_variants_fasta.pbs" % (i)
             with open(job_file_name, 'w') as out:
@@ -1459,17 +1459,18 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
                 out.write("cd %s/" % args.filter2_only_snp_vcf_dir + '\n')
                 out.write(command + '\n')
             out.close()
-
+            #print job_file_name
+            command_array.append("bash %s" % job_file_name)
         pbs_dir = args.filter2_only_snp_vcf_dir + "/*_ref_allele_variants_fasta.pbs"
         pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
+        
+
+        # with open(command_file, 'r') as fpp:
+        #     for lines in fpp:
+        #         lines = lines.strip()
+        #         command_array.append(lines)
+        # fpp.close()
+        
         if args.numcores:
             num_cores = int(args.numcores)
         else:
@@ -1481,7 +1482,6 @@ def create_job_allele_variant_fasta(jobrun, vcf_filenames, core_vcf_fasta_dir, c
             elif args.scheduler == "PBS":
                 num_cores = multiprocessing.cpu_count()
 
-        
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     else:
@@ -1993,7 +1993,7 @@ def core_prep_indel():
     keep_logging('- Time taken to parse Indel VCFs: {}'.format(method_time_taken),
                  '- Time taken to parse Indel VCFs: {}'.format(method_time_taken), logger, 'info')
     return Only_ref_indel_positions_for_closely
-    
+
 """ Annotation methods"""
 
 def prepare_snpEff_db(reference_basename):
@@ -4620,12 +4620,10 @@ if __name__ == '__main__':
         # Get outgroup_Sample name
         outgroup = get_outgroup()
 
-        keep_logging('Step 3: Generate Results folder.', 'Step 3: Generate Results folder.',
+        keep_logging('- Moving files to Results folder: %s' % args.results_dir, '- Moving files to Results folder: %s' % args.results_dir,
                      logger, 'info')
 
         # Set up Report and results directories to transfer the final results.
-        keep_logging('Step 3: Setting up Result directory - %s' % args.results_dir, 'Step 3: Setting up Result directory - %s' % args.results_dir,
-                     logger, 'info')
         data_matrix_dir = args.results_dir + '/data_matrix'
         plots_dir = "%s/plots" % data_matrix_dir
         matrices_dir = "%s/matrices" % data_matrix_dir
@@ -4644,17 +4642,14 @@ if __name__ == '__main__':
 
         # Move results to the results directory
         # List of files to move
-        
-        keep_logging('Step 3: Copying data to - %s' % args.results_dir, 'Step 3: Copying data to - %s' % args.results_dir,
-                     logger, 'info')
 
         list_of_data_matrix_output_files = ['unique_positions_file', 'unique_indel_positions_file', 
         'All_label_final_ordered_sorted.txt', 'All_indel_label_final_ordered_sorted.txt',
         'SNP_matrix_allele_new.tsv', 'SNP_matrix_allele_unmasked.tsv', 'SNP_matrix_code.tsv', 'SNP_matrix_code_unmasked.tsv',
-        'Indel_matrix_allele.tsv', 'Indel_matrix_code.tsv', 'Indel_matrix_code_unmasked.tsv',
-        'mask_fq_mq_positions_outgroup_specific.txt', 'mask_fq_mq_positions.txt']
-
-        list_of_snpeff_results_output_files = ['*_aln_mpileup_raw.vcf_ANN.vcf', '*_filter2_final.vcf_no_proximate_snp.vcf_ANN.vcf', '*_filter2_indel_final.vcf_ANN.vcf']
+        'Indel_matrix_allele.tsv', 'Indel_matrix_code.tsv', 'Indel_matrix_code_unmasked.tsv']
+        
+        
+        list_of_snpeff_results_output_files = glob.glob((args.filter2_only_snp_vcf_dir).replace('core_temp_dir/', '*/*_vcf_results/*_ANN.vcf.gz'))
 
         list_of_functional_ann_output_files = ['Functional_class_filter_positions.txt', 'inexact_repeat_region_positions.txt', 'phage_region_positions.txt', 'repeat_region_positions.txt']
                 
@@ -4662,13 +4657,13 @@ if __name__ == '__main__':
             os.system("cp %s/%s %s/matrices" % (args.filter2_only_snp_vcf_dir, files, data_matrix_dir))
         
         for files in list_of_snpeff_results_output_files:
-            os.system("cp %s/%s %s" % (args.filter2_only_snp_vcf_dir, files, data_matrix_snpeff_dir))
+            os.system("cp %s %s" % (files, data_matrix_snpeff_dir))
         
         for files in list_of_functional_ann_output_files:
             os.system("cp %s/%s %s" % (args.filter2_only_snp_vcf_dir, files, functional_ann_dir))
 
         """ Generating Gubbins MFA files"""
-        keep_logging('Step 3: Generating Gubbins MFA files', 'Generating Gubbins MFA files',
+        keep_logging('- Generating Gubbins MFA files', '- Generating Gubbins MFA files',
                      logger, 'info')
         reference_base = os.path.basename(args.reference).split('.')[0]
         gubbins_dir = args.results_dir + '/gubbins'
@@ -4700,7 +4695,8 @@ if __name__ == '__main__':
                 # Get outgroup_Sample name
                 outgroup = get_outgroup()
                 gubbins_iqtree_script = gubbins_iqtree_script + " -o %s" % outgroup
-            print gubbins_iqtree_script
+            
+            
             with open(job_file_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(job_file_name))
                 out.write("#!/bin/sh" + '\n')
@@ -4734,8 +4730,9 @@ if __name__ == '__main__':
                 out.write(iqtree_command + '\n')
             out.close()
 
-        keep_logging('sbatch %s' % job_file_name, 'sbatch %s' % job_file_name, logger, 'info')
-
+        
+        keep_logging('- Submit Gubbins job: %s' % job_file_name, '- Submit Gubbins job: %s' % job_file_name,
+                     logger, 'info')
         call("cp %s %s/Logs/tree/" % (
             log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
 
@@ -4790,7 +4787,7 @@ if __name__ == '__main__':
             outgroup_specific_positions = []
 
         # Annotate core variants. Generate SNP and Indel matrix.
-        annotated_snp_matrix()
+        #annotated_snp_matrix()
 
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('- Generating Fasta from Variant Alleles.', '- Generating Fasta from Variant Alleles.', logger,
