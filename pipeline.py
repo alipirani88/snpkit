@@ -92,7 +92,6 @@ def pipeline(args, logger):
 
     """ INDIVIDUAL SUBPROCESS FOR EACH PIPELINE STEPS"""
     ## 1. Pre-Processing Raw reads using Trimmomatic
-    
     def clean():
         method_start_time = datetime.now()
         keep_logging(' - START: Pre-Processing Raw reads using Trimmomatic', 'START: Pre-Processing Raw reads using Trimmomatic', logger, 'info')
@@ -106,7 +105,6 @@ def pipeline(args, logger):
         keep_logging(' - Time taken to complete the method - clean: {}'.format(method_time_taken), 'Time taken to complete the method - clean: {}'.format(method_time_taken), logger, 'info')
 
     ## 2. Stages: Alignment using BWA
-    
     def align_reads():
         method_start_time = datetime.now()
         keep_logging(' - START: Mapping Reads using BWA', 'START: Mapping Reads using BWA', logger, 'info')
@@ -116,8 +114,6 @@ def pipeline(args, logger):
         method_time_taken = datetime.now() - method_start_time
         keep_logging(' - Time taken to complete the method - align_reads: {}'.format(method_time_taken), 'Time taken to complete the method - align_reads: {}'.format(method_time_taken), logger, 'info')
         return out_sam
-
-    # Run Depth of Coverage Module after read mapping and stop. Dont proceed to variant calling step.
     
     def coverage_depth_stats():
         method_start_time = datetime.now()
@@ -128,7 +124,6 @@ def pipeline(args, logger):
         return gatk_DepthOfCoverage_file
 
     ## 3. Stages: Post-Alignment using SAMTOOLS, PICARD etc
-    
     def post_align(out_sam):
         method_start_time = datetime.now()
         keep_logging(' - START: Post-Alignment using SAMTOOLS, PICARD etc...', 'START: Post-Alignment using SAMTOOLS, PICARD etc...', logger, 'info')
@@ -147,7 +142,6 @@ def pipeline(args, logger):
         return out_sorted_bam
 
     ## 4. Stages: Variant Calling
-    
     def varcall():
         method_start_time = datetime.now()
         keep_logging(' - START: Variant Calling', 'START: Variant Calling', logger, 'info')
@@ -183,7 +177,6 @@ def pipeline(args, logger):
         keep_logging(' - Time taken to complete the method - varcall: {}'.format(method_time_taken), 'Time taken to complete the method - varcall: {}'.format(method_time_taken), logger, 'info')
 
     ## 5. Stages: Variant Filteration
-    
     def filter(gatk_depth_of_coverage_file):
         method_start_time = datetime.now()
         keep_logging(' - START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
@@ -206,7 +199,6 @@ def pipeline(args, logger):
         keep_logging(' - Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
 
     ## 6. SNP annotation
-
     def annotation(vcf_file):
         logs_folder = (args.output_folder).replace(args.analysis_name, '') + "/Logs"
         vc_logs_folder = logs_folder + "/variant_calling"
@@ -223,7 +215,6 @@ def pipeline(args, logger):
         tabix(files_for_tabix, "vcf", logger, Config)
     
     ## 7. Stages: Statistics
-    
     def stats():
         method_start_time = datetime.now()
         keep_logging(' - START: Generating Statistics Reports', 'START: Generating Statistics Reports', logger, 'info')
@@ -238,8 +229,8 @@ def pipeline(args, logger):
         read1, read2 = downsample(args, logger)
         args.forward_raw = read1
         args.reverse_raw = read2
-        print "Using downsampled forward reads %s" % args.forward_raw
-        print "Using downsampled reverse reads %s" % args.reverse_raw
+        print "- Using downsampled forward reads %s" % args.forward_raw
+        print "- Using downsampled reverse reads %s" % args.reverse_raw
 
     if len(steps_list) == 1:
         if steps_list[0] == "All":
@@ -258,16 +249,13 @@ def pipeline(args, logger):
             stats()
 
 ## Sanity checks and directory structure maintenance methods
-def usage():
-    print "Usage: python pipeline.py [-h] -PE1 path-to-forward-PE-read -PE2 path-to-reverse-PE-read -o path-to-OUTPUT_FOLDER -analysis ANALYSIS_NAME -index INDEX_NAME_as_per_config_file \n"
-
 # Validate Filenames for any unsupported characters
 def Validate_filename( name ):
     pattern_strings = ['\.', '\&', '\>', 'aaa', '\*']
     pattern_string = '|'.join(pattern_strings)
     searchobj = re.search(pattern_string, name, flags=0)
     if searchobj:
-        print "The file " + name + " contains unsupported characters such as quotes, spaces, or &:%?*><\$. \nPlease Provide another file name.\n"
+        print "- The file " + name + " contains unsupported characters such as quotes, spaces, or &:%?*><\$. \nPlease Provide another file name.\n"
         exit()
 
 def file_exists(path1, path2, reference):
@@ -327,15 +315,14 @@ def java_check():
         keep_logging(' - Java Availability Check completed ...{}'.format(jd_version), 'Java Availability Check completed ...{}'.format(jd_version), logger, 'info')
 
 def fileformat(file1, file2, final_out):
-    print "Checking File format....\n"
+    print "- Checking File format....\n"
     if not file1.endswith('.fastq.gz'):
         base = os.path.basename(file1)
         os.path.splitext(base)
         file_1 = os.path.splitext(base)[0]
         cmdstring = "gzip -d " + file1 + " > " + final_out + file_1
-        print "Compressing input file " + base
+        print "- Compressing input file " + base
         os.system(cmdstring)
-
 
     if not file2.endswith('.fastq.gz'):
         base = os.path.basename(file2)
@@ -376,25 +363,24 @@ def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffi
                 sys.exit(1)
         if not os.path.isfile(ref_index_suffix1):
             keep_logging(' - The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), 'The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), logger, 'exception')
-
     else:
-        print "Different Aligner in config file"
+        print "- Different Aligner in config file"
 
 def create_fai_index(reference, ref_fai_index):
-    keep_logging(' - Creating FAI Index using Samtools.', 'Creating FAI Index using Samtools.', logger, 'info')
+    keep_logging('- Creating FAI Index using Samtools.', 'Creating FAI Index using Samtools.', logger, 'info')
     cmd = "%s %s %s" % (ConfigSectionMap("samtools", Config)['base_cmd'], ConfigSectionMap("samtools", Config)['faiindex'], reference)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
-        keep_logging(' - Error in Samtools FAI Indexing step. Exiting.', 'Error in Samtools FAI Indexing step. Exiting.', logger, 'exception')
+        keep_logging('- Error in Samtools FAI Indexing step. Exiting.', 'Error in Samtools FAI Indexing step. Exiting.', logger, 'exception')
         sys.exit(1)
 
 
     if not os.path.isfile(ref_fai_index):
-        keep_logging(' - The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), 'The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), logger, 'exception')
+        keep_logging('- The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), 'The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), logger, 'exception')
     else:
-        keep_logging(' - Samtools Fai Index file created.', 'Samtools Fai Index file created.', logger, 'info')
+        keep_logging('- Samtools Fai Index file created.', 'Samtools Fai Index file created.', logger, 'info')
 
 def picard_seqdict(dict_name, reference):
     #dict_name = os.path.splitext(os.path.basename(reference_filename))[0] + ".dict"
@@ -425,7 +411,6 @@ def downsample(args, logger):
     if args.coverage_depth:
         keep_logging(' - Downsampling Coverage Depth to: %s' % args.coverage_depth, 'Downsampling Coverage Depth to: %s' % args.coverage_depth, logger, 'info')
 
-
     # Run Mash to estimate Genome size
     keep_logging(' - Running: mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw,
                  'Running: mash sketch -o /tmp/sketch_out -k 32 -m 3 -r %s >& /tmp/sketch_stdout' % args.forward_raw, logger, 'info')
@@ -454,12 +439,8 @@ def downsample(args, logger):
                     est_cov = float(line.split(': ')[1].strip())
         file_open.close()
 
-
         keep_logging(' - Estimated Genome Size from Mash Sketch: %s' % gsize,
                      'Estimated Genome Size from Mash Sketch: %s' % gsize, logger, 'info')
-
-
-
 
     # Extract basic fastq reads stats with seqtk
     seqtk_check = "seqtk fqchk -q3 %s > /tmp/%s_fastqchk.txt" % (args.forward_raw, os.path.basename(args.forward_raw))
@@ -467,13 +448,11 @@ def downsample(args, logger):
     keep_logging(' - Running seqtk to extract Fastq statistics: %s' % seqtk_check,
                  'Running seqtk to extract Fastq statistics: %s' % seqtk_check, logger, 'info')
 
-
     try:
         call(seqtk_check, logger)
     except sp.CalledProcessError:
         keep_logging(' - Error running seqtk for extracting fastq statistics.', 'Error running seqtk for extracting fastq statistics.', logger, 'exception')
         sys.exit(1)
-
 
     with open("/tmp/%s_fastqchk.txt" % os.path.basename(args.forward_raw), 'rU') as file_open:
         for line in file_open:
@@ -486,7 +465,6 @@ def downsample(args, logger):
                 line_split = line.split('\t')
                 total_bases = int(line_split[1]) * 2
     file_open.close()
-
 
     keep_logging(' - Average Read Length: %s' % avg_len,
                  'Average Read Length: %s' % avg_len, logger, 'info')
@@ -545,7 +523,6 @@ def downsample(args, logger):
             r2_sub = args.reverse_raw
         else:
             r2_sub = "None"
-
 
     method_time_taken = datetime.now() - method_start_time
     keep_logging(' - Time taken to complete the method - downsample: {}'.format(method_time_taken), 'Time taken to complete the method - downsample: {}'.format(method_time_taken), logger, 'info')

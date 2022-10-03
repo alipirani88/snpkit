@@ -29,8 +29,8 @@ def parser():
     advanced = parser.add_argument_group('ADVANCED')
     optional = parser.add_argument_group('Optional')
     development = parser.add_argument_group('Development Phase')
-    input.add_argument('-type', action='store', dest="type", help='Type of illumina reads. Options: SE for single-end, PE for paired-end', required=True)
-    input.add_argument('-readsdir', action='store', dest="dir", help='path to input sequencing reads data folder.', required=True)
+    input.add_argument('-type', action='store', dest="type", help='Type of illumina reads. Options: SE for single-end, PE for paired-end', required=False)
+    input.add_argument('-readsdir', action='store', dest="dir", help='path to input sequencing reads data folder.', required=True, default="PE")
     input.add_argument('-index', action='store', dest="index", help='Reference genome index name (prefix) as described in -config file.', required=True)
     input.add_argument('-steps', action='store', dest="steps", help='Run this part of snpkit. Options: All, core_All\n'
     'All: run first part of snpkit - trimming, mapping, calling variants;\n'
