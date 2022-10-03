@@ -8,7 +8,7 @@ def align_bwa(base_cmd,forward_clean, reverse_clean, out_path, reference, split_
         cmd = "%s mem -M -R %s -t 8 %s %s %s > %s/%s_aln.sam" % (base_cmd,split_field, reference, forward_clean, reverse_clean, out_path, analysis)
     else:
         cmd = "%s mem -M -R %s -t 8 %s %s > %s/%s_aln.sam" % (base_cmd,split_field, reference, forward_clean, out_path, analysis)
-    keep_logging(cmd, cmd, logger, 'debug')
+    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:

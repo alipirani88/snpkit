@@ -99,7 +99,6 @@ def pipeline(args, logger):
         else:
             reverse_raw = "None"
             trimmomatic(args.forward_raw, reverse_raw, args.output_folder, args.croplength, logger, Config)
-        keep_logging('- END: Pre-Processing Raw reads using Trimmomatic', 'END: Pre-Processing Raw reads using Trimmomatic', logger, 'info')
         method_time_taken = datetime.now() - method_start_time
         keep_logging('- Completed cleaning reads in {}'.format(method_time_taken), 'Time taken to complete the method - clean: {}'.format(method_time_taken), logger, 'info')
 
@@ -109,7 +108,6 @@ def pipeline(args, logger):
         keep_logging('- Mapping Reads using BWA', 'Mapping Reads using BWA', logger, 'info')
         split_field = prepare_readgroup(args.forward_raw, ConfigSectionMap("pipeline", Config)['aligner'], logger)
         out_sam = align(args.output_folder, args.index, split_field, args.analysis_name, files_to_delete, logger, Config, args.type)
-        keep_logging('- END: Mapping Reads using BWA', 'END: Mapping Reads using BWA', logger, 'info')
         method_time_taken = datetime.now() - method_start_time
         keep_logging('- Completed read mapping in {}'.format(method_time_taken), 'Time taken to complete the method - align_reads: {}'.format(method_time_taken), logger, 'info')
         return out_sam
@@ -480,8 +478,8 @@ def downsample(args, logger):
 
         # Downsample using seqtk
         try:
-            keep_logging("Downsampling reads with seqtk",
-                         "/nfs/esnitkin/bin_group/seqtk/seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+            keep_logging("- Downsampling reads with seqtk",
+                         "seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                              args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
             call("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                 args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
@@ -494,10 +492,10 @@ def downsample(args, logger):
             r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
 
             try:
-                keep_logging("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                    args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
-                             "seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                                 args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
+                # keep_logging("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                #     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
+                #              "seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                #                  args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
                 call("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
             except sp.CalledProcessError:

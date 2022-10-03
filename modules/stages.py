@@ -16,7 +16,6 @@ from modules.bowtie import *
 
 """ Prepare ReadGroup option for BWA alignment """
 def prepare_readgroup(forward_read, aligner, logger):
-    keep_logging('Preparing ReadGroup Info', 'Preparing ReadGroup Info', logger, 'info')
     samplename = os.path.basename(forward_read)
     if forward_read.endswith(".gz"):
         #output = gzip.open(forward_read, 'rb')
