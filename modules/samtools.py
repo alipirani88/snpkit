@@ -43,7 +43,7 @@ def sort_bam(out_bam, out_path, analysis, logger, Config):
 def index_bam(out_sort_bam, out_path, logger, Config):
     base_cmd = ConfigSectionMap("samtools", Config)['base_cmd']
     cmd = "%s index %s" % (base_cmd, out_sort_bam)
-    keep_logging(cmd, cmd, logger, 'info')
+    # keep_logging(cmd, cmd, logger, 'info')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -64,7 +64,7 @@ def samtools(out_finalbam, out_path, reference_filename, analysis, logger, Confi
     reference = ConfigSectionMap(reference_filename, Config)['ref_path'] + "/" + ConfigSectionMap(reference_filename, Config)['ref_name']
     bcf_base_cmd = ConfigSectionMap("bcftools", Config)['base_cmd']
     cmd = "%s mpileup %s %s %s | %s call -O v -v -c -o %s/%s_aln_mpileup_raw.vcf" % (base_cmd, mpileup_parameters, reference, out_finalbam, bcf_base_cmd, out_path, analysis)
-    keep_logging(cmd, cmd, logger, 'debug')
+    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -76,7 +76,7 @@ def samtools(out_finalbam, out_path, reference_filename, analysis, logger, Confi
 def flagstat(out_sorted_bam, out_path, analysis, logger, Config):
     base_cmd = ConfigSectionMap("samtools", Config)['base_cmd']
     cmd = "%s flagstat %s > %s/%s_alignment_stats" % (base_cmd, out_sorted_bam, out_path, analysis)
-    keep_logging(cmd, cmd, logger, 'debug')
+    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:

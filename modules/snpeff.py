@@ -22,8 +22,8 @@ def make_sure_path_exists(out_path):
         os.makedirs(out_path)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
-            keep_logging('\nErrors in output folder path! please change the output path or analysis name\n',
-                         '\nErrors in output folder path! please change the output path or analysis name\n', logger,
+            keep_logging('- Errors in output folder path! please change the output path or analysis name',
+                         '- Errors in output folder path! please change the output path or analysis name', logger,
                          'info')
             exit()
 
@@ -56,8 +56,8 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
         #              "cp %s/snpEff.config %s" % (bin_dir, vc_logs_folder), logger, 'debug')
         call("cp %s/snpEff.config %s" % (bin_dir, vc_logs_folder), logger)
     else:
-        keep_logging("Error: %s/snpEff.config doesn't exists.\nExiting..." % bin_dir,
-                     "Error: %s/snpEff.config doesn't exists.\nExiting..." % bin_dir, logger, 'exception')
+        keep_logging("- Error: %s/snpEff.config doesn't exists.\nExiting..." % bin_dir,
+                     "- Error: %s/snpEff.config doesn't exists.\nExiting..." % bin_dir, logger, 'exception')
         exit()
     make_sure_path_exists("%s/data/%s" % (bin_dir, reference_basename[0]))
     make_sure_path_exists("%s/data/genomes/" % bin_dir)
@@ -87,9 +87,9 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
             os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]), logger)
     else:
         keep_logging(
-            "Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (
+            "- Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\n-Exiting..." % (
             os.path.dirname(reference), reference_basename[0]),
-            "Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (
+            "- Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\n-Exiting..." % (
             os.path.dirname(reference), reference_basename[0]), logger, 'exception')
         exit()
     # keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
@@ -118,7 +118,7 @@ def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
 
     if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
         if ConfigSectionMap("snpeff", Config)['db']:
-            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            print "- Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
             ## Great Lakes Changes
             proc = subprocess.Popen(["%s databases | grep %s" % (
             ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
@@ -127,11 +127,11 @@ def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
             if out2:
                 snpeffdb = ConfigSectionMap("snpeff", Config)['db']
             else:
-                print "The database name %s provided was not found. Check the name and try again" % \
+                print "- The database name %s provided was not found. Check the name and try again" % \
                       ConfigSectionMap("snpeff", Config)['db']
                 exit()
         else:
-            print "snpEff db section is not set in config file"
+            print "- snpEff db section is not set in config file"
             exit()
     
     else:
@@ -150,9 +150,6 @@ def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
                                 ConfigSectionMap("snpeff", Config)['snpeff_parameters'],
                                 vc_logs_folder, snpeffdb, final_vcf, final_vcf)
     
-    print annotate_vcf_cmd
-    print annotate_final_vcf_cmd
-
     call(annotate_vcf_cmd, logger)
     call(annotate_final_vcf_cmd, logger)
     files_for_tabix = ['%s_ANN.vcf' % raw_vcf, '%s_ANN.vcf' % final_vcf]
@@ -168,7 +165,7 @@ def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
 
     if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
         if ConfigSectionMap("snpeff", Config)['db']:
-            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            print "- Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
             proc = subprocess.Popen(["%s databases | grep %s" % (
             ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
                                     stdout=subprocess.PIPE, shell=True)
@@ -176,11 +173,11 @@ def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
             if out2:
                 snpeffdb = ConfigSectionMap("snpeff", Config)['db']
             else:
-                print "The database name %s provided was not found. Check the name and try again" % \
+                print "- The database name %s provided was not found. Check the name and try again" % \
                       ConfigSectionMap("snpeff", Config)['db']
                 exit()
         else:
-            print "snpEff db section is not set in config file"
+            print "- snpEff db section is not set in config file"
             exit()
     else:
         snpeffdb = reference_basename[0]
@@ -190,7 +187,6 @@ def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
                                 (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, bin_dir,
                                 ConfigSectionMap("snpeff", Config)['snpeff_parameters'],
                                 vc_logs_folder, snpeffdb, final_vcf, final_vcf)
-    print annotate_final_vcf_cmd
     call(annotate_final_vcf_cmd, logger)
 
     files_for_tabix = ['%s_ANN.vcf' % final_vcf]
