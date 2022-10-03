@@ -7,9 +7,9 @@ from config_settings import ConfigSectionMap
 def markduplicates(out_sorted_bam, out_path, analysis, files_to_delete, logger, Config):
     # Updated for Great Lakes and Conda Integration
     base_cmd = ConfigSectionMap("picard", Config)['base_cmd']
-    keep_logging('Removing PCR duplicates using PICARD', 'Removing PCR duplicates using PICARD', logger, 'info')
+    # keep_logging('Removing PCR duplicates using PICARD', 'Removing PCR duplicates using PICARD', logger, 'info')
     cmd = "%s MarkDuplicates REMOVE_DUPLICATES=true INPUT=%s OUTPUT=%s/%s_aln_marked.bam METRICS_FILE=%s/%s_markduplicates_metrics CREATE_INDEX=true VALIDATION_STRINGENCY=LENIENT" % (base_cmd, out_sorted_bam, out_path, analysis, out_path, analysis)
-    keep_logging(cmd, cmd, logger, 'debug')
+    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -29,8 +29,6 @@ def picard_seqdict(reference_filename, reference, logger, Config):
     base_cmd = ConfigSectionMap("picard", Config)['base_cmd']
     cmd = "%s CreateSequenceDictionary REFERENCE=%s OUTPUT=%s/%s" % (base_cmd, reference_filename, ConfigSectionMap(reference, Config)['ref_path'],dict_name)
     os.system(cmd)
-
-
 
 def picardstats(out_sorted_bam, out_path, analysis, reference, logger, Config):
     # Updated for Great Lakes and Conda Integration

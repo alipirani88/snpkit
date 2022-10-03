@@ -14,7 +14,6 @@ from modules.logging_subprocess import *
 
 def trim(input1, input2, out_path, crop, logger, Config):
     if input2 != "None":
-        keep_logging(' - Pre-processing PE reads using Trimmomatic.', 'Pre-processing PE reads using Trimmomatic.', logger, 'info')
         adapter_file = ConfigSectionMap("Trimmomatic", Config)['adaptor_filepath']
         clean_filenames = out_path + ConfigSectionMap("Trimmomatic", Config)['f_p'] + " " + out_path + ConfigSectionMap("Trimmomatic", Config)['f_up'] + " " + out_path + ConfigSectionMap("Trimmomatic", Config)['r_p'] + " " + out_path + ConfigSectionMap("Trimmomatic", Config)['r_up']
         illumina_string = 'ILLUMINACLIP:' + adapter_file + ConfigSectionMap("Trimmomatic", Config)['colon'] + ConfigSectionMap("Trimmomatic", Config)['seed_mismatches'] + ConfigSectionMap("Trimmomatic", Config)['colon'] + ConfigSectionMap("Trimmomatic", Config)['palindrome_clipthreshold'] + ConfigSectionMap("Trimmomatic", Config)['colon'] + ConfigSectionMap("Trimmomatic", Config)['simple_clipthreshold'] + ConfigSectionMap("Trimmomatic", Config)['colon'] +  ConfigSectionMap("Trimmomatic", Config)['minadapterlength'] + ConfigSectionMap("Trimmomatic", Config)['colon'] + ConfigSectionMap("Trimmomatic", Config)['keep_both_reads']
@@ -29,7 +28,6 @@ def trim(input1, input2, out_path, crop, logger, Config):
             except sp.CalledProcessError:
                     keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                     sys.exit(1)
-            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
         else:
             crop_string = 'CROP:' + crop
             cmdstring = "trimmomatic PE " + input1 + " " + input2 + " " + clean_filenames + " " + crop_string + " " + illumina_string + " " + sliding_string + " " + minlen_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
@@ -38,9 +36,7 @@ def trim(input1, input2, out_path, crop, logger, Config):
             except sp.CalledProcessError:
                 keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                 sys.exit(1)
-            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
     else:
-        keep_logging(' - Pre-processing SE reads using Trimmomatic.', 'Pre-processing SE reads using Trimmomatic.', logger, 'info')
         adapter_file = ConfigSectionMap("Trimmomatic", Config)['adaptor_filepath']
         clean_filenames = out_path + ConfigSectionMap("Trimmomatic", Config)['f_p']
         illumina_string = 'ILLUMINACLIP:' + adapter_file + ConfigSectionMap("Trimmomatic", Config)['colon'] + ConfigSectionMap("Trimmomatic", Config)['seed_mismatches'] + ConfigSectionMap("Trimmomatic", Config)['colon'] + ConfigSectionMap("Trimmomatic", Config)['palindrome_clipthreshold'] + ConfigSectionMap("Trimmomatic", Config)['colon'] + ConfigSectionMap("Trimmomatic", Config)['simple_clipthreshold']
@@ -55,7 +51,6 @@ def trim(input1, input2, out_path, crop, logger, Config):
             except sp.CalledProcessError:
                 keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                 sys.exit(1)
-            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')
 
         else:
             crop_string = 'CROP:' + crop
@@ -66,4 +61,3 @@ def trim(input1, input2, out_path, crop, logger, Config):
             except sp.CalledProcessError:
                     keep_logging(' - Error in Trimming step. Exiting.', 'Error in Trimming step. Exiting.', logger, 'exception')
                     sys.exit(1)
-            keep_logging(' - End: Data Pre-processing', 'End: Data Pre-processing', logger, 'info')

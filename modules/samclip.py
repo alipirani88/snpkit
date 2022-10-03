@@ -5,7 +5,6 @@ from modules.logging_subprocess import *
 from config_settings import ConfigSectionMap
 
 def samclip(out_sam, out_path, analysis, reference, logger, Config):
-    keep_logging('Filter SAM file for soft and hard clipped alignments using samclip', 'Filter SAM file for soft and hard clipped alignments using samclip', logger, 'info')
     cmd = "samclip --ref %s --max 10 < %s > %s/%s_clipped.sam" % (reference, out_sam, out_path, analysis)
     keep_logging(cmd, cmd, logger, 'debug')
     try:
