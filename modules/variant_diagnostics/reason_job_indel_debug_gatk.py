@@ -12,11 +12,11 @@ import multiprocessing
 from cyvcf2 import VCF
 import timeit
 import time
-import ConfigParser
+import configparser
 from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
-from memory_profiler import profile
+# from memory_profiler import profile
 
 parser = argparse.ArgumentParser(description='Creating Label files individual jobs')
 parser.add_argument('-filter2_only_snp_vcf_dir', action='store', dest="filter2_only_snp_vcf_dir",
@@ -93,7 +93,7 @@ def generate_dicts():
     global unmapped_array
     unmapped_array = "unmapped_" + str(array_name)
     unmapped_array = {}
-    with open(current_unmapped_file, 'rU') as fp1:
+    with open(current_unmapped_file, 'r') as fp1:
         for line in fp1:
             line = line.strip()
             unmapped_array[line] = ""
@@ -106,7 +106,7 @@ def generate_dicts():
     global proximate_array
     proximate_array = "proximate_" + str(array_name)
     proximate_array = {}
-    with open(current_proximate_file, 'rU') as fp2:
+    with open(current_proximate_file, 'r') as fp2:
         for liness in fp2:
             liness = liness.strip()
             proximate_array[liness] = ""
@@ -138,44 +138,62 @@ def generate_dicts():
         #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
 
     now = time.time()
-    #print "Time taken to load raw vcf data array - {0} seconds".format(now - program_starts)
+    #print ("Time taken to load raw vcf data array - {0} seconds".format(now - program_starts))
 
 """ Generate label files and check why the positions were filtered out from the final vcf file """
 def get_reason():
     generate_dicts()
     #print "Time taken to generate dictionaries: %s" % (timeit.timeit(generate_dicts, number=1))
     f1=open(out_file_name, 'w')
+    # print (out_file_name)
     for j in position_array_sort:
         """ Check if the unique position is present in the final no_proximate_snp.vcf file """
         #if int(j) not in positions_final_vcf.keys():
-        if not positions_final_vcf.has_key(int(j)):
+        # if not positions_final_vcf.has_key(int(j)):
+        if int(j) not in positions_final_vcf.keys():
             #if int(j) not in positions_mpileup_vcf.keys():
-            if not positions_mpileup_vcf.has_key(int(j)):
+            if int(j) not in positions_mpileup_vcf.keys():
                 #if j in unmapped_array.keys():
-                if unmapped_array.has_key(j):
+                if j in unmapped_array.keys():
                     st = "reference_unmapped_position\n"
                     f1.write(st)
                 else:
                     st = "reference_allele\n"
                     f1.write(st)
             else:
-                #if j in proximate_array.keys():
-                if proximate_array.has_key(j):
+                if j in proximate_array.keys():
+                # if proximate_array.has_key(j):
                     pst = "_proximate_SNP"
                 else:
                     pst = ""
-                if positions_mpileup_vcf[int(j)][3] < 0.9:
-                    st = "LowAF"
-                    if positions_mpileup_vcf[int(j)][1] < 2.00:
-                        st = st + "_QUAL"
-                    if positions_mpileup_vcf[int(j)][0] < 10:
-                        st = st + "_DP"
+                # print (j)
+                # print (positions_mpileup_vcf[int(j)])
+                if type(positions_mpileup_vcf[int(j)][3]) is tuple:
+                    if positions_mpileup_vcf[int(j)][3][0] < 0.9:
+                        st = "LowAF"
+                        if positions_mpileup_vcf[int(j)][1] < 2.00:
+                            st = st + "_QUAL"
+                        if positions_mpileup_vcf[int(j)][0] < 10:
+                            st = st + "_DP"
+                    else:
+                        st = "HighAF"
+                        if positions_mpileup_vcf[int(j)][1] < 2.00:
+                            st = st + "_QUAL"
+                        if positions_mpileup_vcf[int(j)][0] < 15:
+                            st = st + "_DP"
                 else:
-                    st = "HighAF"
-                    if positions_mpileup_vcf[int(j)][1] < 2.00:
-                        st = st + "_QUAL"
-                    if positions_mpileup_vcf[int(j)][0] < 15:
-                        st = st + "_DP"
+                    if positions_mpileup_vcf[int(j)][3] < 0.9:
+                        st = "LowAF"
+                        if positions_mpileup_vcf[int(j)][1] < 2.00:
+                            st = st + "_QUAL"
+                        if positions_mpileup_vcf[int(j)][0] < 10:
+                            st = st + "_DP"
+                    else:
+                        st = "HighAF"
+                        if positions_mpileup_vcf[int(j)][1] < 2.00:
+                            st = st + "_QUAL"
+                        if positions_mpileup_vcf[int(j)][0] < 15:
+                            st = st + "_DP"
                 st = st + pst + "\n"
                 f1.write(st)
         else:

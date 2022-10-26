@@ -8,8 +8,6 @@ import subprocess
 from collections import OrderedDict
 from collections import defaultdict
 
-
-
 # Parse Command line Arguments
 parser = argparse.ArgumentParser(description='Downsample Raw reads data to specified Depth or default')
 required = parser.add_argument_group('Required arguments')

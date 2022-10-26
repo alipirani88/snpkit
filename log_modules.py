@@ -4,11 +4,11 @@ import logging
 from datetime import datetime
 
 def keep_logging(pmessage, lmessage, logger, mode):
-    #print(pmessage)
+    print(pmessage)
     if mode == 'warning':
         logger.warning(lmessage)
     elif mode == 'info':
-        logger.info(lmessage)
+        logger.info(pmessage)
     elif mode == 'exception':
         logger.exception(lmessage)
     elif mode == 'debug':

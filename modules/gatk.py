@@ -29,8 +29,8 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
         else:
             gatk_filter2_command = "%s VariantFiltration -R %s -O %s/%s_filter2_gatk.vcf --variant %s.gz --filter-expression \"%s\" --filter-name PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (out_path, analysis, out_path, analysis)
-        # keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
-        # keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
+        keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
+        keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
         try:
             call(gatk_filter2_command, logger)
             call(filter_flag_command, logger)
@@ -64,8 +64,8 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
             base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (
         out_path, analysis, out_path, analysis)
-        # keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
-        # keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
+        keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
+        keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
         try:
             call(gatk_filter2_command, logger)
             call(filter_flag_command, logger)
@@ -136,8 +136,8 @@ def gatk_filter_contamination(final_raw_vcf, out_path, analysis, reference, logg
         call(combine_file_cmd, logger)
         return gatk_filter2_final_contamination_vcf
     elif ConfigSectionMap("pipeline", Config)['variant_caller'] == "gatkhaplotypecaller":
-        print "filter"
-
+        filter_criteria = "contamination_filters"
+        
 def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp):
     # if ConfigSectionMap("pipeline", Config)['variant_caller'] == "samtools":
     #     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
@@ -217,8 +217,7 @@ def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, log
     base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
     # cmd = "java -Xmx8G -jar %s/GenomeAnalysisTK.jar -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites --fix_misencoded_quality_scores" % (os.path.dirname(os.path.dirname(os.path.abspath(__file__))), reference, out_path, analysis_name, out_sorted_bam)
 
-    cmd = "java -Xmx5G -jar %s/GenomeAnalysisTK.jar -T DepthOfCoverage -R %s -o %s/%s_depth_of_coverage -I %s --summaryCoverageThreshold 1 --summaryCoverageThreshold 5 --summaryCoverageThreshold 9 --summaryCoverageThreshold 10 --summaryCoverageThreshold 15 --summaryCoverageThreshold 20 --summaryCoverageThreshold 25 --ignoreDeletionSites" % (
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), reference, out_path, analysis_name, out_sorted_bam)
+    cmd = "gatk DepthOfCoverage -R %s -O %s/%s_depth_of_coverage -I %s --summary-coverage-threshold 1 --summary-coverage-threshold 5 --summary-coverage-threshold 9 --summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 25 --ignore-deletion-sites --intervals %s" % (reference, out_path, analysis_name, out_sorted_bam, reference.replace('.fasta', '.bed'))
 
     # keep_logging(cmd, cmd, logger, 'debug')
     try:

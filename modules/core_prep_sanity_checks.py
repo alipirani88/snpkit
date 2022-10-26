@@ -87,9 +87,9 @@ def make_sure_label_files_exists(vcf_file_array, uniq_snp_positions, uniq_indel_
             if num_snps_label_lines == uniq_snp_positions and num_indel_label_lines == uniq_indel_positions:
                 continue
             else:
-                print num_indel_label_lines
-                print uniq_indel_positions
-                print files
+                print (num_indel_label_lines)
+                print (uniq_indel_positions)
+                print (files)
                 found_incomplete.append(files)
         else:
             not_found_files.append(files)

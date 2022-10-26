@@ -7,18 +7,11 @@ import subprocess
 from collections import OrderedDict
 from collections import defaultdict
 from joblib import Parallel, delayed
-import multiprocessing
-import thread
-import glob
-import readline
 import pandas as pd
-import errno
-import itertools
 from pyfasta import Fasta
 from datetime import datetime
-import threading
 from cyvcf2 import VCF
-import ConfigParser
+import configparser
 from config_settings import ConfigSectionMap
 
 parser = argparse.ArgumentParser(description='Extract Only reference and variant positions and generate a fasta file out of it.')
@@ -42,15 +35,16 @@ if args.config:
 else:
     config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
 global Config
-Config = ConfigParser.ConfigParser()
+Config = configparser.ConfigParser()
 Config.read(config_file)
 
 def Generate_core_plus_noncore_alignment():
     # Get reference genome ID from reference fasta file
     get_reference = Fasta(args.reference)
-    if len(get_reference.keys()) == 1:
-        ref_id = get_reference.keys()
-
+    if len(list(get_reference.index.keys())) == 1:
+        ref_id = str(list(get_reference.index.keys())[0])
+        #ref_id = get_reference.keys()
+    
     # Read in the SNP Matrix file and seperate the columns.
     core_temp = os.path.dirname(os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))) + "/core_temp_dir/"
     c_reader_2 = csv.reader(open('%s/SNP_matrix_allele_new.tsv' % core_temp, 'r'), delimiter='\t')
@@ -73,7 +67,7 @@ def Generate_core_plus_noncore_alignment():
     end = ncol
     
     # Loop over each column, check if the column name matches the sample name provided with argument args.filter2_only_snp_vcf_filename
-    for i in xrange(1, end, 1):
+    for i in range(1, end, 1):
         print_string = ""
         ref_print_string = ""
         grab_vcf_filename = len(os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''))
@@ -101,7 +95,7 @@ def Generate_core_plus_noncore_alignment():
 
             count_index = 0
             end_index = len(unique_position_array) + 1
-            for start_count in xrange(1, end_index, 1):
+            for start_count in range(1, end_index, 1):
                 pos = columns[0][start_count]
                 get_positions_string = pos.split(' ')
                 if get_positions_string[0] != "None":
@@ -118,8 +112,9 @@ def Generate_core_plus_noncore_alignment():
                     allele_var = str(variant_allele_array_dict[positions][0])
                 else:
                     allele_var = str(variant_allele_array_dict[positions])
-                ref_allele = str(get_reference.sequence({'chr': str(get_reference.keys()[0]), 'start': int(positions), 'stop': int(positions)}))
-                generate_vcf_string = "%s\t%s\t.\t%s\t%s\t221.999\t.\t.\t.\t.\n" % (ref_id[0].split(' ')[0], positions, ref_allele, allele_var)
+                ref_allele = str(get_reference.sequence({'chr': str(list(get_reference.index.keys())[0]), 'start': int(positions), 'stop': int(positions)}))
+                
+                generate_vcf_string = "%s\t%s\t.\t%s\t%s\t221.999\t.\t.\t.\t.\n" % (ref_id.split(' ')[0], positions, ref_allele, allele_var)
                 allele_ref_variant_vcf.write(generate_vcf_string)
             allele_ref_variant_vcf.close()
             
@@ -127,14 +122,14 @@ def Generate_core_plus_noncore_alignment():
             vcf_filename = "%s/%s_ref_allele_variants.vcf" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
             
             f1 = open(filename, 'a+')
-            bgzip_cmd = "bgzip -f %s\n" % (vcf_filename)
+            bgzip_cmd = "bgzip -f %s 2>/dev/null\n" % (vcf_filename)
             f1.write(bgzip_cmd)
             subprocess.call([bgzip_cmd], shell=True)
-            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename)
+            tabix_cmd = "tabix -f -p vcf %s.gz 2>/dev/null\n" % (vcf_filename)
             f1.write(tabix_cmd)
             subprocess.call([tabix_cmd], shell=True)
             base_vcftools_bin = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("vcftools", Config)['vcftools_bin']
-            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa\n" % (args.reference, vcf_filename, sample_name_re)
+            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_variants.fa 2>/dev/null\n" % (args.reference, vcf_filename, sample_name_re)
             f1.write(fasta_cmd)
             subprocess.call([fasta_cmd], shell=True)
 
@@ -151,30 +146,30 @@ def Generate_core_plus_noncore_alignment():
                 for lines in fpp:
                     lines = lines.strip()
                     ref_allele = str(get_reference.sequence(
-                        {'chr': str(get_reference.keys()[0]), 'start': int(lines), 'stop': int(lines)}))
+                        {'chr': str(list(get_reference.index.keys())[0]), 'start': int(lines), 'stop': int(lines)}))
                     generate_vcf_string_unmapped = "%s\t%s\t.\t%s\t-\t221.999\t.\t.\t.\t.\n" % (
-                    ref_id[0].split(' ')[0], lines, ref_allele)
+                    ref_id.split(' ')[0], lines, ref_allele)
                     unmapped_vcf.write(generate_vcf_string_unmapped)
             unmapped_vcf.close()
             
-            bgzip_cmd = "bgzip -f %s\n" % (unmapped_vcf_file)
+            bgzip_cmd = "bgzip -f %s 2>/dev/null\n" % (unmapped_vcf_file)
             
-            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (unmapped_vcf_file)
+            tabix_cmd = "tabix -f -p vcf %s.gz 2>/dev/null\n" % (unmapped_vcf_file)
             
             subprocess.call([bgzip_cmd], shell=True)
             subprocess.call([tabix_cmd], shell=True)
 
             vcf_filename_unmapped = "%s/%s_ref_allele_unmapped.vcf" % ((args.filter2_only_snp_vcf_dir).replace('core_temp_dir', '%s/%s_vcf_results' % (sample_name_re, sample_name_re)), sample_name_re)
             
-            bcftools_merge_cmd =  "bcftools merge --merge snps --force-samples %s.gz %s.gz -O v -o %s" % (unmapped_vcf_file, vcf_filename, vcf_filename_unmapped)
+            bcftools_merge_cmd =  "bcftools merge --merge snps --force-samples %s.gz %s.gz -O v -o %s 2>/dev/null" % (unmapped_vcf_file, vcf_filename, vcf_filename_unmapped)
 
-            bgzip_cmd = "bgzip -f %s\n" % (vcf_filename_unmapped)
+            bgzip_cmd = "bgzip -f %s 2>/dev/null\n" % (vcf_filename_unmapped)
 
             subprocess.call([bcftools_merge_cmd], shell=True)
 
-            tabix_cmd = "tabix -f -p vcf %s.gz\n" % (vcf_filename_unmapped)
+            tabix_cmd = "tabix -f -p vcf %s.gz 2>/dev/null\n" % (vcf_filename_unmapped)
 
-            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa\n" % (
+            fasta_cmd = "cat %s | vcf-consensus %s.gz > %s_ref_allele_unmapped_variants.fa 2>/dev/null\n" % (
                 args.reference, vcf_filename_unmapped, sample_name_re)
 
             filename = "%s/%s_consensus_ref_allele_unmapped_variant.sh" % (args.filter2_only_snp_vcf_dir, sample_name_re)
@@ -194,6 +189,6 @@ def Generate_core_plus_noncore_alignment():
             f1.close()
 
         else:
-            print "- Sample name %s does not match with column name %s" % (os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''), sample_name_re)
+            print ("- Sample name %s does not match with column name %s" % (os.path.basename(args.filter2_only_snp_vcf_filename).replace('_filter2_final.vcf_no_proximate_snp.vcf', ''), sample_name_re))
 
 Generate_core_plus_noncore_alignment()

@@ -28,6 +28,7 @@ def picard_seqdict(reference_filename, reference, logger, Config):
     dict_name = os.path.splitext(os.path.basename(reference_filename))[0] + ".dict"
     base_cmd = ConfigSectionMap("picard", Config)['base_cmd']
     cmd = "%s CreateSequenceDictionary REFERENCE=%s OUTPUT=%s/%s" % (base_cmd, reference_filename, ConfigSectionMap(reference, Config)['ref_path'],dict_name)
+    # keep_logging(cmd, cmd, logger, 'debug')
     os.system(cmd)
 
 def picardstats(out_sorted_bam, out_path, analysis, reference, logger, Config):

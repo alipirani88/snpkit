@@ -64,7 +64,7 @@ def samtools(out_finalbam, out_path, reference_filename, analysis, logger, Confi
     reference = ConfigSectionMap(reference_filename, Config)['ref_path'] + "/" + ConfigSectionMap(reference_filename, Config)['ref_name']
     bcf_base_cmd = ConfigSectionMap("bcftools", Config)['base_cmd']
     cmd = "%s mpileup %s %s %s | %s call -O v -v -c -o %s/%s_aln_mpileup_raw.vcf" % (base_cmd, mpileup_parameters, reference, out_finalbam, bcf_base_cmd, out_path, analysis)
-    # keep_logging(cmd, cmd, logger, 'debug')
+    keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -80,7 +80,7 @@ def flagstat(out_sorted_bam, out_path, analysis, logger, Config):
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
-        keep_logging('Error in Samtools Alignment Stats step. Exiting.', 'Error in Samtools Alignment Stats step. Exiting.', logger, 'exception')
+        keep_logging('- Error in Samtools Alignment Stats step. Exiting.', 'Error in Samtools Alignment Stats step. Exiting.', logger, 'exception')
         sys.exit(1)
     alignment_stats_file = "%s/%s_alignment_stats" % (out_path, analysis)
     return alignment_stats_file

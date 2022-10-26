@@ -5,7 +5,7 @@ __author__ = 'alipirani'
 def ConfigSectionMap(section, Config):
     dict1 = {}
     if not Config.has_section(section):
-        print "ERROR: Please Check the section name: %s in config file" % section
+        print ("ERROR: Please Check the section name: %s in config file" % section)
         exit()
     options = Config.options(section)
     for option in options:

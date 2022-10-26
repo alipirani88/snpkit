@@ -7,16 +7,16 @@ import csv
 import subprocess
 from collections import OrderedDict
 from collections import defaultdict
-from joblib import Parallel, delayed
+# from joblib import Parallel, delayed
 import multiprocessing
 from cyvcf2 import VCF
 import timeit
 import time
-import ConfigParser
+import configparser
 from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
-from memory_profiler import profile
+# from memory_profiler import profile
 
 parser = argparse.ArgumentParser(description='Creating Label files individual jobs')
 parser.add_argument('-filter2_only_snp_vcf_dir', action='store', dest="filter2_only_snp_vcf_dir",
@@ -91,7 +91,7 @@ def generate_dicts():
     global unmapped_array
     unmapped_array = "unmapped_" + str(array_name)
     unmapped_array = {}
-    with open(current_unmapped_file, 'rU') as fp1:
+    with open(current_unmapped_file, 'r') as fp1:
         for line in fp1:
             line = line.strip()
             unmapped_array[line] = ""
@@ -104,7 +104,7 @@ def generate_dicts():
     global proximate_array
     proximate_array = "proximate_" + str(array_name)
     proximate_array = {}
-    with open(current_proximate_file, 'rU') as fp2:
+    with open(current_proximate_file, 'r') as fp2:
         for liness in fp2:
             liness = liness.strip()
             proximate_array[liness] = ""
@@ -133,7 +133,7 @@ def generate_dicts():
         positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('MQ'))
         positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
     now = time.time()
-    #print "Time taken to load raw vcf data array - {0} seconds".format(now - program_starts)
+    #print ("Time taken to load raw vcf data array - {0} seconds".format(now - program_starts))
 
 # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
 def extract_indel_proximates():
@@ -223,9 +223,12 @@ def get_reason():
         """ Check if the unique position is present in the final no_proximate_snp.vcf file """
 
 
-        if not positions_final_vcf.has_key(int(j)):
-            if not positions_mpileup_vcf.has_key(int(j)):
-                if unmapped_array.has_key(j):
+        # if not positions_final_vcf.has_key(int(j)):
+        if int(j) not in positions_final_vcf.keys():
+            # if not positions_mpileup_vcf.has_key(int(j)):
+            if int(j) not in positions_mpileup_vcf.keys():
+                # if unmapped_array.has_key(j):
+                if j in unmapped_array.keys():
                     st = "reference_unmapped_position\n"
                     f1.write(st)
                 else:
@@ -236,7 +239,8 @@ def get_reason():
                         st = "reference_allele\n"
                     f1.write(st)
             else:
-                if proximate_array.has_key(j):
+                # if proximate_array.has_key(j):
+                if j in proximate_array.keys():
                     pst = "_proximate_SNP"
                 else:
                     pst = ""

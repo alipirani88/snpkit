@@ -6,7 +6,7 @@ import argparse
 import errno
 import glob
 from datetime import datetime
-import ConfigParser
+import configparser
 from config_settings import ConfigSectionMap
 if sys.version_info < (3, 2):
     import subprocess32 as sp
@@ -19,7 +19,6 @@ from modules.gatk import gatk_DepthOfCoverage
 from modules.logging_subprocess import *
 from modules.log_modules import *
 from argparse import RawTextHelpFormatter
-from memory_profiler import profile
 from modules.samclip import samclip
 from modules.snpeff import variant_annotation
 from modules.snpeff import indel_annotation
@@ -72,7 +71,7 @@ def pipeline(args, logger):
         reverse_raw = "None"
         file_exists(args.forward_raw, args.forward_raw, reference)
     elif args.type != "PE" and args.type != "SE":
-        print "BAM type... Not Integrated... continue"
+        keep_logging('BAM type... Not Integrated... continue', 'BAM type... Not Integrated... continue', logger, 'exception')
     else:
         file_exists(args.forward_raw, args.reverse_raw, reference)
 
@@ -151,6 +150,7 @@ def pipeline(args, logger):
             return final_raw_vcf, final_raw_indel_vcf
 
         elif caller == "samtools":
+            keep_logging('- SNP Calling using Samtools and Indel Calling using GATK4.', 'SNP Calling using Samtools and Indel Calling using GATK4.', logger, 'info')
             final_raw_indel_vcf = prepare_indel_gatk(out_sorted_bam, args.output_folder, args.analysis_name, args.index, logger, Config)
             final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
             #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
@@ -175,11 +175,11 @@ def pipeline(args, logger):
             file_basename = os.path.basename(gatk_depth_of_coverage_file)
             keep_logging('- The input file {} does not exists. Please provide another file with full path or check the files path.\n'.format(file_basename), 'The input file {} does not exists. Please provide another file or check the files path.\n'.format(file_basename), logger, 'exception')
             exit()
-        Avg_dp_cmd = "grep \'^Total\' %s | awk -F\'\t\' \'{print $3}\'" % gatk_depth_of_coverage_file
+        Avg_dp_cmd = "grep \'^Total\' %s | awk -F\',\' \'{print $3}\'" % gatk_depth_of_coverage_file
         proc = sp.Popen([Avg_dp_cmd], stdout=sp.PIPE, shell=True)
         (out, err) = proc.communicate()
         Avg_dp = float(out)
-        print "- The Average Depth per reference genome base is: %s" % Avg_dp
+        keep_logging('- The Average Depth per reference genome base is: %s' % Avg_dp, '- The Average Depth per reference genome base is: %s' % Avg_dp, logger, 'info')
         filter_variants(final_raw_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
         final_raw_indel_vcf = final_raw_vcf_mpileup + "_indel.vcf"
         filter_indels(final_raw_indel_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
@@ -205,7 +205,7 @@ def pipeline(args, logger):
     def stats():
         method_start_time = datetime.now()
         alignment_stats_file = alignment_stats(out_sorted_bam, args.output_folder, args.analysis_name, logger, Config)
-        vcf_stats_file = vcf_stats(final_raw_vcf, args.output_folder, args.analysis_name, logger, Config)
+        #vcf_stats_file = vcf_stats(final_raw_vcf, args.output_folder, args.analysis_name, logger, Config)
         picard_stats_file = picardstats(out_sorted_bam, args.output_folder, args.analysis_name, args.index, logger, Config)
         method_time_taken = datetime.now() - method_start_time
         keep_logging('- Completed generating Alignment and variant statistics in {}'.format(method_time_taken), 'Time taken to complete the method - stats: {}'.format(method_time_taken), logger, 'info')
@@ -238,7 +238,7 @@ def Validate_filename( name ):
     pattern_string = '|'.join(pattern_strings)
     searchobj = re.search(pattern_string, name, flags=0)
     if searchobj:
-        print "- The file " + name + " contains unsupported characters such as quotes, spaces, or &:%?*><\$. \nPlease Provide another file name.\n"
+        keep_logging('- The file %s contains unsupported characters such as quotes, spaces, or &:%?*><\$. \nPlease Provide another file name.' % name, '- The file %s contains unsupported characters such as quotes, spaces, or &:%?*><\$. \nPlease Provide another file name.' % name, logger, 'info')
         exit()
 
 def file_exists(path1, path2, reference):
@@ -290,6 +290,7 @@ def file_exists(path1, path2, reference):
 
 def java_check():
     jd = sp.check_output(["java", "-version"], stderr=sp.STDOUT)
+    jd = jd.decode("utf-8")
     jd_version = jd.split('\n', 1)[0]
     if len(jd) < 1:
         keep_logging('- Unable to find a java runtime environment. The pipeline requires java 6 or later.', 'Unable to find a java runtime environment. The pipeline requires java 6 or later.', logger, 'exception')
@@ -297,13 +298,13 @@ def java_check():
         keep_logging('- Java Availability Check {}'.format(jd_version), 'Java Availability Check {}'.format(jd_version), logger, 'info')
 
 def fileformat(file1, file2, final_out):
-    print "- Checking File format....\n"
+    keep_logging('- Checking File format', '- Checking File format', logger, 'exception')
     if not file1.endswith('.fastq.gz'):
         base = os.path.basename(file1)
         os.path.splitext(base)
         file_1 = os.path.splitext(base)[0]
         cmdstring = "gzip -d " + file1 + " > " + final_out + file_1
-        print "- Compressing input file " + base
+        keep_logging('- Compressing input file %s' % base, '- Compressing input file %s' % base, logger, 'info')
         os.system(cmdstring)
 
     if not file2.endswith('.fastq.gz'):
@@ -311,7 +312,7 @@ def fileformat(file1, file2, final_out):
         os.path.splitext(base)
         file_2 = os.path.splitext(base)[0]
         cmdstring = "gzip -d " + file2 + " > " + final_out + file_2
-        print "Compressing input file " + base
+        keep_logging('- Compressing input file %s' % base, '- Compressing input file %s' % base, logger, 'info')
         os.system(cmdstring)
 
 def make_sure_path_exists(out_path):
@@ -346,7 +347,7 @@ def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffi
         if not os.path.isfile(ref_index_suffix1):
             keep_logging('- The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), 'The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), logger, 'exception')
     else:
-        print "- Different Aligner in config file"
+        keep_logging('- Different Aligner in config file', '- Different Aligner in config file', logger, 'info')
 
 def create_fai_index(reference, ref_fai_index):
     keep_logging('- Creating FAI Index using Samtools.', 'Creating FAI Index using Samtools.', logger, 'info')
@@ -387,7 +388,6 @@ def cleanup(args, logger):
         make_sure_path_exists("%s/%s_vcf_results" % (args.output_folder, args.analysis_name))
         os.system("mv %s/*_unmapped.bed_positions %s/header.txt %s/*.vcf* %s/%s_vcf_results 2>/dev/null" % (args.output_folder, args.output_folder, args.output_folder, args.output_folder, args.analysis_name))
 
-
 def downsample(args, logger):
     method_start_time = datetime.now()
     if args.coverage_depth:
@@ -410,7 +410,7 @@ def downsample(args, logger):
             keep_logging('- Error running Mash for estimating genome size.', 'Error running Mash for estimating genome size', logger, 'exception')
             sys.exit(1)
 
-        with open("/tmp/sketch_stdout", 'rU') as file_open:
+        with open("/tmp/sketch_stdout", 'r') as file_open:
             for line in file_open:
                 if line.startswith('Estimated genome size:'):
                     gsize = float(line.split(': ')[1].strip())
@@ -433,7 +433,7 @@ def downsample(args, logger):
         keep_logging('- Error running seqtk for extracting fastq statistics.', 'Error running seqtk for extracting fastq statistics.', logger, 'exception')
         sys.exit(1)
 
-    with open("/tmp/%s_fastqchk.txt" % os.path.basename(args.forward_raw), 'rU') as file_open:
+    with open("/tmp/%s_fastqchk.txt" % os.path.basename(args.forward_raw), 'r') as file_open:
         for line in file_open:
             if line.startswith('min_len'):
                 line_split = line.split(';')
@@ -459,7 +459,7 @@ def downsample(args, logger):
 
     proc = sp.Popen(["nproc"], stdout=sp.PIPE, shell=True)
     (nproc, err) = proc.communicate()
-    nproc = nproc.strip()
+    nproc = int(nproc.strip())
 
     if ori_coverage_depth > 100:
         # Downsample to 100
@@ -472,6 +472,8 @@ def downsample(args, logger):
             keep_logging("- Downsampling reads with seqtk",
                          "seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                              args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger, 'info')
+            print("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
+                             args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)))
             call("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                 args.forward_raw, factor, nproc, os.path.basename(args.forward_raw)), logger)
         except sp.CalledProcessError:
@@ -525,7 +527,7 @@ if __name__ == '__main__':
     global Config
     global files_to_delete
     files_to_delete = []
-    Config = ConfigParser.ConfigParser()
+    Config = configparser.ConfigParser()
     Config.read(config_file)
     pipeline(args, logger)
     cleanup(args, logger)

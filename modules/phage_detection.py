@@ -105,10 +105,10 @@ def parse_phaster(reference_genome, outdir, logger, Config):
         get_phage_regions = "sed -n -e '/REGION/,$p' %s/summary.txt | awk 'NR>2' | awk -F' ' '{print $5}'" % os.path.dirname(reference_genome)
         proc = subprocess.Popen([get_phage_regions], stdout=subprocess.PIPE, shell=True)
         (out, err) = proc.communicate()
-        out = (out.strip()).split('\n')
-        #print out
+        #out = (out.strip()).split('\n')
+        out = (out.decode("utf-8")).strip()
         phage_positions = []
-        for i in out:
+        for i in out.split('\n'):
             i_range = i.split('-')
             end_range = int(i_range[1]) + 1
             phage_positions.extend(list(range(int(i_range[0]), end_range)))

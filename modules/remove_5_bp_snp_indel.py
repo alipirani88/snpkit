@@ -204,7 +204,9 @@ def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, refer
 
 
     elif ConfigSectionMap("pipeline", Config)['variant_caller'] == "gatkhaplotypecaller":
-        print "GATK Haplotype caller: Removing proximate SNPs"
+        
+        keep_logging('GATK Haplotype caller: Removing proximate SNPs', 'GATK Haplotype caller: Removing proximate SNPs', logger, 'info')
+
         filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
 
 

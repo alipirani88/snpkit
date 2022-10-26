@@ -11,9 +11,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """ Hacky way to append. Instead Add this path to PYTHONPATH Variable """
 from collections import OrderedDict
 from collections import defaultdict
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 import multiprocessing
-import thread
+#import thread
 import glob
 import readline
 import pandas as pd
@@ -25,7 +25,7 @@ import time
 import threading
 import json
 from cyvcf2 import VCF
-import ConfigParser
+import configparser
 from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
@@ -41,7 +41,7 @@ from pyfasta import Fasta
 from core_prep_sanity_checks import *
 from core_prep_functions import *
 from iqtree import iqtree
-from memory_profiler import profile
+# from memory_profiler import profile
 
 # Parse Command line Arguments
 parser = argparse.ArgumentParser(
@@ -206,7 +206,7 @@ def run_command(i):
     :return:
         done: string variable with completion status of command.
     """
-    print "Running: %s" % i
+    # print ("Running: %s" % i)
     call("%s" % i, logger)
     # A subprocess exception is raised if the command finish abnormally.
     # An exception is raised in call method.
@@ -725,7 +725,7 @@ def generate_position_label_data_matrix():
                 print_string_header = print_string_header + os.path.basename(i) + "\t"
 
             with open("%s/All_label_final_sorted_header_outgroup.txt" % args.filter2_only_snp_vcf_dir,
-                      'rU') as csv_file:
+                      'r') as csv_file:
                 keep_logging(
                     '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
                     '- Reading All label positions file: %s/All_label_final_sorted_header.txt \n' % args.filter2_only_snp_vcf_dir,
@@ -798,7 +798,7 @@ def generate_position_label_data_matrix():
 
         phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
         if os.path.isfile(phage_region_positions):
-            with open(phage_region_positions, 'rU') as fphage:
+            with open(phage_region_positions, 'r') as fphage:
                 for line in fphage:
                     phage_positions.append(line.strip())
             fphage.close()
@@ -876,7 +876,7 @@ def generate_position_label_data_matrix():
             f33.close()
             f_open_temp_Only_filtered_positions_for_closely_matrix.close()
             now = time.time()
-            print "Time taken to iterate the loop once - {0} seconds".format(now - program_starts)
+            print ("Time taken to iterate the loop once - {0} seconds".format(now - program_starts))
         
 
     def barplot_stats():
@@ -889,11 +889,11 @@ def generate_position_label_data_matrix():
         This will give a visual explanation of how many positions in each samples were filtered out because of different reason
         """
 
-        print "Exluding Phage regions from temp_Only_filtered_positions_for_closely_matrix.txt file. The results will be outputed to temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt"
+        print ("Exluding Phage regions from temp_Only_filtered_positions_for_closely_matrix.txt file. The results will be outputed to temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt")
 
         # temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix_exclude_phage.txt" % args.filter2_only_snp_vcf_dir
         temp_Only_filtered_positions_for_closely_matrix_exclude_phage = "%s/temp_Only_filtered_positions_for_closely_matrix.txt" % args.filter2_only_snp_vcf_dir
-        print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
+        #print temp_Only_filtered_positions_for_closely_matrix_exclude_phage
         # c_reader = csv.reader(open('%s/temp_Only_filtered_positions_for_closely_matrix.txt' % args.filter2_only_snp_vcf_dir, 'r'), delimiter='\t')
         c_reader_2 = csv.reader(
             open(temp_Only_filtered_positions_for_closely_matrix_exclude_phage, 'r'), delimiter='\t')
@@ -1661,13 +1661,13 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 def generate_vcf_files(Only_ref_variant_positions_for_closely):
     method_start_time = datetime.now()
     functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
-    functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
+    functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, header=None)
     functional_filter_pos_array = functional_filter_pos_array.squeeze()
     exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values,functional_filter_pos_array.values))
     Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
     Only_ref_variant_positions_for_closely_without_functional_filtered_positions.to_csv('Only_ref_variant_positions_for_closely_without_functional_filtered_positions', index=False, sep='\n')
 
-    print "- No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely_without_functional_filtered_positions)
+    print ("- No. of core SNPs: %s" % len(Only_ref_variant_positions_for_closely_without_functional_filtered_positions))
     filter2_files_array = []
     for i in vcf_filenames:
         filter2_file = i.replace('_no_proximate_snp.vcf', '')
@@ -1708,7 +1708,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
         fasta_cmd = "cat %s | vcf-consensus %s.gz > %s.fa\n" % (
         args.reference, file, file.replace('_filter2_final.vcf_core.vcf', ''))
         f1.write(fasta_cmd)
-        subprocess.call([fasta_cmd], shell=True)
+        #subprocess.call([fasta_cmd], shell=True)
         base = os.path.basename(file)
         header = base.replace('_filter2_final.vcf_core.vcf', '')
         sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
@@ -1721,7 +1721,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
 
 def gatk_filter2(final_raw_vcf, out_path, analysis, reference):
     gatk_filter2_parameter_expression = "MQ > 50 && QUAL > 100 && DP > 9"
-    gatk_filter2_command = "java -jar %s/%s/GenomeAnalysisTK.jar -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (
+    gatk_filter2_command = "gatk3 -T VariantFiltration -R %s -o %s/%s_filter2_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (
     ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("gatk", Config)['gatk_bin'], reference, out_path,
     analysis, final_raw_vcf, gatk_filter2_parameter_expression)
     keep_logging('Running Command: [%s]' % gatk_filter2_command, 'Running Command: [%s]' % gatk_filter2_command, logger,
@@ -1738,7 +1738,7 @@ def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, refer
     all_position = []
     remove_proximate_position_array = []
     gatk_filter2_final_vcf_file_no_proximate_snp = gatk_filter2_final_vcf_file + "_no_proximate_snp.vcf"
-    with open(gatk_filter2_final_vcf_file, 'rU') as csv_file:
+    with open(gatk_filter2_final_vcf_file, 'r') as csv_file:
         for line in csv_file:
             if not line.startswith('#'):
                 line_array = line.split('\t')
@@ -1756,7 +1756,7 @@ def remove_proximate_snps(gatk_filter2_final_vcf_file, out_path, analysis, refer
                     remove_proximate_position_array.append(int(position))
                     remove_proximate_position_array.append(int(all_position[next_position_index]))
     f1 = open(gatk_filter2_final_vcf_file_no_proximate_snp, 'w+')
-    with open(gatk_filter2_final_vcf_file, 'rU') as csv_file2:
+    with open(gatk_filter2_final_vcf_file, 'r') as csv_file2:
         for line in csv_file2:
             if line.startswith('gi') or line.startswith('MRSA_8058'):  ##change this!
                 line_array = line.split('\t')
@@ -2007,7 +2007,7 @@ def prepare_snpEff_db(reference_basename):
     if out2:
         snpeff_config = (str(out2)).strip()
     else:
-        print "Unable to find snpEff config file in conda Environment share directory"
+        print ("Unable to find snpEff config file in conda Environment share directory")
         exit()
 
     # os.system("cp %s $CONDA_PREFIX/bin/" % snpeff_config)
@@ -2134,7 +2134,7 @@ def indel_annotation():
 
     if ConfigSectionMap("snpeff", Config)['prebuild'] == "yes":
         if ConfigSectionMap("snpeff", Config)['db']:
-            print "Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db']
+            print ("Using pre-built snpEff database: %s" % ConfigSectionMap("snpeff", Config)['db'])
             proc = subprocess.Popen(["%s databases | grep %s" % (
             ConfigSectionMap("snpeff", Config)['base_cmd'], ConfigSectionMap("snpeff", Config)['db'])],
                                     stdout=subprocess.PIPE, shell=True)
@@ -2142,11 +2142,11 @@ def indel_annotation():
             if out2:
                 snpeffdb = ConfigSectionMap("snpeff", Config)['db']
             else:
-                print "The database name %s provided was not found. Check the name and try again" % \
-                      ConfigSectionMap("snpeff", Config)['db']
+                print ("The database name %s provided was not found. Check the name and try again" % \
+                      ConfigSectionMap("snpeff", Config)['db'])
                 exit()
         else:
-            print "snpEff db section is not set in config file"
+            print ("snpEff db section is not set in config file")
             exit()
     else:
         reference_basename = (os.path.basename(args.reference)).split(".")
@@ -2201,8 +2201,8 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
     #              logger, 'debug')
     merge_gatk_commands_file = "%s/gatk_merge.sh" % args.filter2_only_snp_vcf_dir
     with open(merge_gatk_commands_file, 'w+') as fopen:
-        fopen.write("java -jar %s/GenomeAnalysisTK.jar -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s --log_to_file %s/gatk_combinevariants.log 2> /dev/null 1> %s/gatkoutput.txt" % (
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), reference, files_gatk, out_path,
+        fopen.write("gatk3 -T CombineVariants -R %s %s -o %s/Final_vcf_gatk%s --log_to_file %s/gatk_combinevariants.log 2> /dev/null 1> %s/gatkoutput.txt" % (
+        reference, files_gatk, out_path,
         merged_file_suffix, out_path, out_path) + '\n')
     fopen.close()
     # Commenting out calling gatk combine variants with a custom logging call method, problem with python subprocess, OSError: [Errno 7] Argument list too long
@@ -2227,7 +2227,7 @@ def extract_locus_tag_from_genbank():
                  logger, 'info')
     reference_basename = (os.path.basename(args.reference)).split(".")
     if os.path.isfile("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0])):
-        handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'rU')
+        handle = open("%s/%s.gbf" % (os.path.dirname(args.reference), reference_basename[0]), 'r')
     else:
         raise IOError('%s/%s.gbf does not exist.' % (os.path.dirname(args.reference), reference_basename[0]))
         exit()
@@ -2440,7 +2440,7 @@ def extract_functional_class_positions():
     method_start_time = datetime.now()
     """ Read in functional class filter positions. """
     functional_filter_pos_array = []
-    with open(functional_class_filter_positions, 'rU') as f_functional:
+    with open(functional_class_filter_positions, 'r') as f_functional:
         for line_func in f_functional:
             functional_filter_pos_array.append(line_func.strip())
 
@@ -2452,7 +2452,7 @@ def extract_functional_class_positions():
         if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
             phage_region_positions = "%s/phage_region_positions.txt" % args.filter2_only_snp_vcf_dir
             if os.path.isfile(phage_region_positions):
-                with open(phage_region_positions, 'rU') as fphage:
+                with open(phage_region_positions, 'r') as fphage:
                     for line in fphage:
                         phage_positions.append(line.strip())
                 fphage.close()
@@ -2463,7 +2463,7 @@ def extract_functional_class_positions():
         if ConfigSectionMap("functional_filters", Config)['find_repetitive_region'] == "yes":
             repetitive_positions_file = "%s/repeat_region_positions.txt" % args.filter2_only_snp_vcf_dir
             if os.path.isfile(repetitive_positions_file):
-                with open(repetitive_positions_file, 'rU') as frep:
+                with open(repetitive_positions_file, 'r') as frep:
                     for line in frep:
                         repetitive_positions.append(line.strip())
                 frep.close()
@@ -2474,7 +2474,7 @@ def extract_functional_class_positions():
         if ConfigSectionMap("functional_filters", Config)['mask_region'] == "yes":
             mask_positions_file = "%s/mask_positions.txt" % args.filter2_only_snp_vcf_dir
             if os.path.isfile(mask_positions_file):
-                with open(mask_positions_file, 'rU') as fmask:
+                with open(mask_positions_file, 'r') as fmask:
                     for line in fmask:
                         mask_positions.append(line.strip())
                 fmask.close()
@@ -2605,7 +2605,7 @@ def generate_position_label_dict(final_merge_anno_file):
 
     """ Generate a position_label and position_indel_label dictionary that will contain information about each unique variant position that passed variant filters in any sample and reasons for being filtered out in any sample """
     position_label = OrderedDict()
-    with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+    with open("%s/All_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
         keep_logging(
             '- Loading %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
             '- Loading %s/All_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -2617,7 +2617,7 @@ def generate_position_label_dict(final_merge_anno_file):
 
     # #Commented for debugging
     position_indel_label = OrderedDict()
-    with open("%s/All_indel_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'rU') as csv_file:
+    with open("%s/All_indel_label_final_ordered_sorted.txt" % args.filter2_only_snp_vcf_dir, 'r') as csv_file:
         keep_logging(
             '- Loading %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
             '- Loading %s/All_indel_label_final_ordered_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -2652,7 +2652,7 @@ def get_low_fq_mq_positions(position_label):
     if args.outgroup:
         position_label_exclude_outgroup = OrderedDict()
         with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
+                  'r') as csv_file:
             # keep_logging(
             #     '- Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
             #     '- Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -2665,7 +2665,7 @@ def get_low_fq_mq_positions(position_label):
         # Commented for debugging
         position_indel_label_exclude_outgroup = OrderedDict()
         with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
+                  'r') as csv_file:
             # keep_logging(
             #     '- Reading All label Indel positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
             #     '- Reading All label Indel positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -2716,8 +2716,8 @@ def get_low_fq_mq_positions(position_label):
         fp.write(i + '\n')
     fp.close()
 
-    print "Length of mask_fq_mq_positions:%s" % len(mask_fq_mq_positions)
-    print "Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific)
+    print ("Length of mask_fq_mq_positions:%s" % len(mask_fq_mq_positions))
+    print ("Length of mask_fq_mq_positions specific to outgroup:%s" % len(mask_fq_mq_positions_outgroup_specific))
 
     """ End: Generate mask_fq_mq_positions array """
     return mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific
@@ -2730,7 +2730,7 @@ def get_low_fq_mq_positions_indel(position_label, position_indel_label):
     if args.outgroup:
         position_label_exclude_outgroup = OrderedDict()
         with open("%s/All_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
+                  'r') as csv_file:
             # keep_logging(
             #     'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
             #     'Reading All label positions file: %s/All_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -2742,7 +2742,7 @@ def get_low_fq_mq_positions_indel(position_label, position_indel_label):
 
         position_indel_label_exclude_outgroup = OrderedDict()
         with open("%s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt" % args.filter2_only_snp_vcf_dir,
-                  'rU') as csv_file:
+                  'r') as csv_file:
             # keep_logging(
             #     'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
             #     'Reading All label positions file: %s/All_indel_label_final_ordered_exclude_outgroup_sorted.txt' % args.filter2_only_snp_vcf_dir,
@@ -2948,10 +2948,10 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
 
                 elif len(tag_list) == 3:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
-                    print "Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    print ("Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list))
                     # exit()
                 elif len(tag_list) > 3:
-                    print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    print ("Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list))
                     tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2]) + "-" + str(tag_list[3])
                 tag = tag.replace('CHR_START-', '')
                 tag = tag.replace('-CHR_END', '')
@@ -2994,13 +2994,13 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
 
                 # Changing SNP type: Date 28/05/2019
                 elif tag == "":
-                    print "ERROR: Issues with this locus tag. Check this tag in genbank file"
-                    print list(set(ann_array))
+                    print ("ERROR: Issues with this locus tag. Check this tag in genbank file")
+                    print (list(set(ann_array)))
                     # Adding this so that Ann string is not empty: 30/05/2019
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
                         extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
                     else:
-                        print "tag key not found: %s" % tag
+                        print ("tag key not found: %s" % tag)
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
                     # Added 2019-31-05
@@ -3022,7 +3022,7 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
                         extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
                     else:
-                        print "tag key not found: %s" % tag
+                        print ("tag key not found: %s" % tag)
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
@@ -3054,10 +3054,10 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
                     tag = str(tag_list[0]) + "-" + str(tag_list[1])
                 elif len(tag_list) == 3:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
-                    print "Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    print ("Error: More than 2 Locus Tags were found at %s - %s" % (variants.POS, tag_list))
                     # exit()
                 elif len(tag_list) > 3:
-                    print "Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list)
+                    print ("Error: More than 3 Locus Tags were found at %s - %s" % (variants.POS, tag_list))
                     tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2]) + "-" + str(tag_list[3])
 
             else:
@@ -3644,10 +3644,10 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
 
                 elif len(tag_list) == 3:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
-                    print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print ("Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list))
                     
                 elif len(tag_list) > 3:
-                    print "Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list)
+                    print ("Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list))
                     
                     exit()
                 tag = tag.replace('CHR_START-', '')
@@ -3694,13 +3694,13 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
 
                 # Changing SNP type: Date 28/05/2019
                 elif tag == "":
-                    print "ERROR: Issues with this locus tag. Check this tag in genbank file"
-                    print list(set(ann_array))
+                    print ("ERROR: Issues with this locus tag. Check this tag in genbank file")
+                    print (list(set(ann_array)))
                     # Adding this so that Ann string is not empty: 30/05/2019
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
                         extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
                     else:
-                        print "tag key not found: %s" % tag
+                        print ("tag key not found: %s" % tag)
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
                     # Added 2019-31-05
@@ -3723,7 +3723,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
                     if tag in locus_tag_to_gene_name.keys() and tag in locus_tag_to_product.keys():
                         extra_tags = str(locus_tag_to_gene_name[tag]) + "|" + str(locus_tag_to_product[tag])
                     else:
-                        print "tag key not found: %s" % tag
+                        print ("tag key not found: %s" % tag)
                         extra_tags = "NULL" + "|" + "NULL"
                     # ann_string = ann_string + '|'.join([i_split[0],i_split[1],i_split[2],i_split[3],i_split[9], i_split[10], i_split[11], i_split[13], extra_tags]) + ";"
                     # ann_string = ann_string + '|'.join(
@@ -3761,11 +3761,11 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
 
                 elif len(tag_list) == 3:
                     tag = str(tag_list[0]) + "-" + str(tag_list[1]) + "-" + str(tag_list[2])
-                    print "Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list)
-                    print tag_list
+                    print ("Error: More than two locus tags were found at %s - %s" % (variants.POS, tag_list))
+                    print (tag_list)
                 elif len(tag_list) > 3:
-                    print "Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list)
-                    print tag_list
+                    print ("Error: More than three locus tags were found at %s - %s" % (variants.POS, tag_list))
+                    print (tag_list)
                     exit()
 
                 # if len(set(snp_var_ann_dict[variants.POS].split(','))) > 2:
@@ -4136,7 +4136,7 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
         for i in ann_string_split:
             ann_string_array_split_columns = i.split('|')
             if len(ann_string_array_split_columns) > 10:
-                print "Warning: More than 10 field - %s %s" % (variants.POS, i)
+                print ("Warning: More than 10 field - %s %s" % (variants.POS, i))
                 # print variants.POS
                 # ann_string = ann_string.replace('||WARNING_TRANSCRIPT_NO_START_CODON||WARNING_TRANSCRIPT_NO_START_CODON', '|WARNING_TRANSCRIPT_NO_START_CODON|WARNING_TRANSCRIPT_NO_START_CODON')
                 # ann_string = ann_string + str('|'.join(ann_string_array_split_columns[: -2 or None])) + ";"
@@ -4408,7 +4408,7 @@ if __name__ == '__main__':
     else:
         config_file = os.path.dirname(os.path.abspath(__file__)) + "/config"
     global Config
-    Config = ConfigParser.ConfigParser()
+    Config = configparser.ConfigParser()
     Config.read(config_file)
     keep_logging('- Path to config file: %s' % config_file, '- Path to config file: %s' % config_file, logger, 'info')
 
@@ -4476,7 +4476,7 @@ if __name__ == '__main__':
             'info')
 
         
-        with open(functional_class_filter_positions, 'rU') as f_functional:
+        with open(functional_class_filter_positions, 'r') as f_functional:
             for line_func in f_functional:
                 functional_filter_pos_array.append(line_func.strip())
 
@@ -4578,8 +4578,8 @@ if __name__ == '__main__':
                 outgroup_specific_positions.append(int(i))
             f_outgroup.close()
 
-            print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
-            print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
+            print ("No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions))
+            print ("No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions))
         else:
             outgroup_indel_specific_positions = []
             outgroup_specific_positions = []
@@ -4779,8 +4779,8 @@ if __name__ == '__main__':
                 outgroup_specific_positions.append(int(i))
             f_outgroup.close()
 
-            print "No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions)
-            print "No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions)
+            print ("No. of outgroup specific variant positions: %s" % len(outgroup_specific_positions))
+            print ("No. of outgroup specific Indel variant positions: %s" % len(outgroup_indel_specific_positions))
         else:
 
             outgroup_indel_specific_positions = []

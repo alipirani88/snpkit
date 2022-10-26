@@ -26,7 +26,8 @@ def prepare_readgroup(forward_read, aligner, logger):
         #split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
         #return split_field
         output = gzip.open(forward_read, 'rb')
-        firstLine = output.readline()
+        firstLine = (output.readline()).decode("utf-8")
+        
         if ":" in firstLine:
             split_field = re.split(r":",firstLine)
             id_name = split_field[1].rstrip()
@@ -86,7 +87,7 @@ def align(out_path, ref_index, split_field, analysis, files_to_delete, logger, C
         out_file = align_bwa(base_cmd,forward_clean, reverse_clean, out_path, reference, split_field, analysis, files_to_delete, logger, Config, type)
         return out_file
     elif aligner == "smalt":
-        print "- Smalt addition pending"
+        keep_logging('- Smalt addition pending', '- Smalt addition pending', logger, 'exception')
         exit()
         usage()
     elif aligner == "bowtie":
@@ -179,7 +180,7 @@ def remove_files(analysis, out_path, out_sam, out_sorted_bam):
 def post_align_bam(out_sorted_bam, out_path, reference, analysis):
     out_marked_bam = markduplicates(out_sorted_bam, out_path, analysis)
     if not os.path.isfile(out_marked_bam):
-        print "- Problem in Picard mark Duplicate\n"
+        keep_logging('- Problem in Picard mark Duplicate', '- Problem in Picard mark Duplicate', logger, 'exception')
         exit()
         usage()
     out_marked_sort_bam = sort_bam(out_marked_bam, out_path, analysis)
@@ -189,7 +190,7 @@ def post_align_bam(out_sorted_bam, out_path, reference, analysis):
     index_bam(out_marked_sort_bam_rename, out_path)
     out_indel_realign_bam = indel_realign(out_marked_sort_bam_rename, reference, out_path, analysis)
     if not os.path.isfile(out_indel_realign_bam):
-        print "- Problem in Indel Realignment\n"
+        keep_logging('- Problem in Indel Realignment', '- Problem in Indel Realignment', logger,'exception')
         exit()
         usage()
     else:

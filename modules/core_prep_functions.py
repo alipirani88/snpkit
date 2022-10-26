@@ -11,7 +11,7 @@ from collections import OrderedDict
 from collections import defaultdict
 from joblib import Parallel, delayed
 import multiprocessing
-import thread
+# import thread
 import glob
 import readline
 #import pandas as pd
@@ -20,7 +20,7 @@ from datetime import datetime
 import time
 import threading
 import json
-import ConfigParser
+import configparser
 from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
@@ -47,7 +47,8 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
 
     filter2_only_snp_position_files_array = []
     for file in vcf_filenames:
-        with open(file, 'rU') as csv_file:
+        #print (file)
+        with open(file, 'r') as csv_file:
             file_name = temp_dir + "/" + os.path.basename(file) + "_positions"
             addpositionfilenametoarray = file_name
             filter2_only_snp_position_files_array.append(addpositionfilenametoarray)
@@ -92,8 +93,8 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
         f_outgroup.close()
 
         # Print Checks
-        print "No. of variant positions in outgroup: %s" % len(outgroup_position_array)
-        print "No. of variant positions specific to outgroup: %s" % len(outgroup_specific_positions)
+        print ("No. of variant positions in outgroup: %s" % len(outgroup_position_array))
+        print ("No. of variant positions specific to outgroup: %s" % len(outgroup_specific_positions))
 
         position_array = []
         for filess in filter2_only_snp_position_files_array:
@@ -181,7 +182,7 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
     if outgroup:
         outgroup_indel_vcf_filename = str(outgroup.replace('R1_001.fastq.gz', '')) + "_filter2_indel_final.vcf"
         outgroup_position_indel_file_name = temp_dir + "/" + outgroup_indel_vcf_filename + "_positions"
-        print outgroup_position_indel_file_name
+        print (outgroup_position_indel_file_name)
         outgroup_position_indel_array = []
         f1 = open(outgroup_position_indel_file_name, 'r+')
         for lines in f1:
@@ -208,8 +209,8 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
         f_outgroup.close()
 
         # Print Checks
-        print "No. of indel variant positions in outgroup: %s" % len(outgroup_position_indel_array)
-        print "No. of indel variant positions specific to outgroup: %s" % len(outgroup_indel_specific_positions)
+        print ("No. of indel variant positions in outgroup: %s" % len(outgroup_position_indel_array))
+        print ("No. of indel variant positions specific to outgroup: %s" % len(outgroup_indel_specific_positions))
 
         position_array = []
         for filess in filter2_only_indel_position_files_array:
@@ -367,7 +368,7 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 out.write(command + '\n')
             out.close()
             os.system("mv %s %s" % (job_file_name, tmp_dir))
-            
+        #print (temp_dir)
         pbs_dir = "%s/*vcf.sbat" % temp_dir
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
