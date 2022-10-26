@@ -41,11 +41,10 @@ from pyfasta import Fasta
 from core_prep_sanity_checks import *
 from core_prep_functions import *
 from iqtree import iqtree
-# from memory_profiler import profile
 
 # Parse Command line Arguments
 parser = argparse.ArgumentParser(
-    description='Parsing filtered VCF files and investigating Variants to determine the reason why it was filtered out from the final list')
+    description='Parse SNPKIT VCF files and generate SNP/Indel Matrices')
 required = parser.add_argument_group('Required arguments')
 optional = parser.add_argument_group('Optional arguments')
 required.add_argument('-filter2_only_snp_vcf_dir', action='store', dest="filter2_only_snp_vcf_dir",

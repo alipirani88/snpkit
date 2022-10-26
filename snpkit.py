@@ -30,11 +30,11 @@ def parser():
     optional = parser.add_argument_group('Optional')
     development = parser.add_argument_group('Development Phase')
     input.add_argument('-type', action='store', dest="type", help='Type of illumina reads. Options: SE for single-end, PE for paired-end', required=False)
-    input.add_argument('-readsdir', action='store', dest="dir", help='path to input sequencing reads data folder.', required=True, default="PE")
-    input.add_argument('-index', action='store', dest="index", help='Reference genome index name (prefix) as described in -config file.', required=True)
-    input.add_argument('-steps', action='store', dest="steps", help='Run this part of snpkit. Options: All, core_All\n'
-    'All: run first part of snpkit - trimming, mapping, calling variants;\n'
-    'core_All: run second part of snpkit - filter variants, generate core/non-core multi-fasta alignments, SNP/Indel Matrices.')
+    input.add_argument('-readsdir', action='store', dest="dir", help='Path to Sequencing reads folder.', required=True, default="PE")
+    input.add_argument('-index', action='store', dest="index", help='Reference genome index name (prefix) as described in config file.', required=True)
+    input.add_argument('-steps', action='store', dest="steps", help='Type of Analysis to run. Options: call, parse\n'
+    'call: Run first part of SNPKIT pipeline - Clean sequencing reads followed by mapping to reference genome and calling variants;\n'
+    'parse: Run second part of SNPKIT pipeline - Perform functional class filtering on SNPKIT called variants, generate SNP/Indel Matrices and core/non-core multi-fasta alignments')
     input.add_argument('-analysis', action='store', dest="prefix", help='prefix for output files.', required=True)
     output.add_argument('-outdir', action='store', dest="output", help='output directory path ending with output directory name.', required=True)
     
@@ -684,7 +684,7 @@ if __name__ == '__main__':
     Config.read(config_file)
     
     # Run pipeline steps
-    if "core_All" not in args.steps and "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps and "2" not in args.steps:
+    if "parse" not in args.steps and "core" not in args.steps and "core_prep" not in args.steps and "report" not in args.steps and "tree" not in args.steps and "2" not in args.steps:
         """ Set Up variant calling logs folder/logger object, cluster mode and copy config files to it"""
         vc_logs_folder = logs_folder + "/variant_calling"
         make_sure_path_exists(vc_logs_folder)
@@ -721,7 +721,7 @@ if __name__ == '__main__':
         keep_logging('- Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
         
 
-    elif "core_All" in args.steps or "2" in args.steps:
+    elif "parse" in args.steps or "2" in args.steps:
         # Add Core_All step Commands to this array
         core_All_cmds = []
 
@@ -753,7 +753,7 @@ if __name__ == '__main__':
         # call(cp_command_1, logger)
         # call(cp_command_2, logger)
         # call(cp_command_3, logger)
-        # call(cp_command_4, logger)
+        # call(cp_command_4, logger)``
         # call(cp_command_5, logger)
         # call(cp_command_6, logger)
         # call(cp_command_7, logger)
