@@ -1,4 +1,4 @@
-name: snpkit_py3
+name: snpkit
 channels:
   - bioconda
   - conda-forge
