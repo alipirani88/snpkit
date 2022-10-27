@@ -232,13 +232,6 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                 first_part = first_part_split[0].replace('_L001', '')
                 first_part = re.sub("_S[0-9].*_", "", first_part)
 
-            """ Have a standard filename preparation step"""
-            # else:
-            #     print "Using Standard second file naming convention"
-            #     second_part = filename_base.replace("_R1_", "_R2_")
-            #     first_part_split = filename_base.split('_R1.fastq.gz')
-            #     first_part = first_part_split[0].replace('_L001', '')
-            #     first_part = re.sub("_S.*_", "", first_part)
             second_file = args.dir + "/" + second_part
             if args.scheduler == "SLURM":
                 job_name = jobs_temp_dir + "/" + first_part + ".sbat"
@@ -352,7 +345,7 @@ def generate_custom_vcf_file_list(filenames_array, logger):
     return list_of_vcf_files
 
 def run_command(job):
-    keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
+    keep_logging('- Running Job: bash %s' % job, '- Running Job: bash %s' % job, logger, 'info')
     call("bash %s" % job, logger)
     done = "Job Run completed: %s" % job
     return done
@@ -374,38 +367,20 @@ def run_varcall_jobs(list_of_jobs, cluster, log_unique_time, analysis_name, outp
         keep_logging('- Running Jobs in cluster mode', '- Running Jobs in cluster mode', logger, 'info')
         keep_logging('- Generating Jobs in %s' % os.path.dirname(job), '- Generating Jobs in %s' % os.path.dirname(job), logger, 'info')
         for job in command_list_qsub:
-            #keep_logging('Submitting Job: %s' % job, 'Submitting Job: %s' % job, logger, 'info')
             if args.scheduler == "SLURM":
-                #call("sbatch %s" % job, logger)
-                # keep_logging("sbatch %s" % job, "sbatch %s" % job, logger, 'info')
                 if not args.dryrun:
                     proc = subprocess.Popen(["sbatch %s" % job], stdout=subprocess.PIPE, shell=True)
                     (out, err) = proc.communicate()
-                    # job_id_array.append(out.split(' ')[3].strip())
-                    # job_id_array.append('123xx')
-                    # break
             elif args.scheduler == "PBS":
-                #call("qsub %s" % job, logger)
                 keep_logging("qsub %s" % job, "qsub %s" % job, logger, 'info')
                 if not args.dryrun:
                     proc = subprocess.Popen(["qsub %s" % job], stdout=subprocess.PIPE, shell=True)
                     (out, err) = proc.communicate()
 
-    elif cluster == "parallel-local":
-        keep_logging('Running Jobs in parallel-local mode', 'Running Jobs in parallel-local mode', logger, 'info')
-        cluster_job_dir = output_folder + "/temp_jobs/parallel-local/"
-        make_sure_path_exists(cluster_job_dir)
-        job_name = cluster_job_dir + log_unique_time + "_" + analysis_name + ".sh"
-        with open(job_name, 'w') as out:
-            out.write(command_list+'\n')
-        num_cores = multiprocessing.cpu_count()
-        keep_logging('Number of cores available: %s' % num_cores, 'Number of cores available: %s' % num_cores, logger, 'info')
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(i) for i in command_list_qsub)
-
     elif cluster == "local":
-        keep_logging('Running Jobs in local mode', 'Running Jobs in local mode', logger, 'info')
+        keep_logging('- Running Jobs in local mode', '- Running Jobs in local mode', logger, 'info')
         for job in command_list_qsub:
-            keep_logging('Running Job: bash %s' % job, 'Running Job: bash %s' % job, logger, 'info')
+            keep_logging('- Running Job: bash %s' % job, '- Running Job: bash %s' % job, logger, 'info')
             if not args.dryrun:
                 call("bash %s" % job, logger)
     return job_id_array
@@ -556,10 +531,8 @@ def create_fai_index(reference, ref_fai_index):
         keep_logging('The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), 'The reference fai index file {} was not created properly.\n Please try to create the samtools fai index files manually. \n'.format(ref_fai_index), logger, 'exception')
 
 def picard_seqdict(dict_name, reference):
-    #dict_name = os.path.splitext(os.path.basename(reference_filename))[0] + ".dict"
-    keep_logging('', 'Creating Sequence Dictionary using Picard.', logger, 'info')
+    keep_logging('- Creating Sequence Dictionary using Picard.', '- Creating Sequence Dictionary using Picard.', logger, 'info')
     cmd = "%s CreateSequenceDictionary R=%s O=%s/%s" % (ConfigSectionMap("picard", Config)['base_cmd'], reference, ConfigSectionMap(args.index, Config)['ref_path'], dict_name)
-    keep_logging('', cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -568,7 +541,7 @@ def picard_seqdict(dict_name, reference):
 
 def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffix3, ref_index_suffix4, ref_index_suffix5):
     aligner = ConfigSectionMap("pipeline", Config)['aligner']
-    keep_logging('Creating Reference Genome Index for {} aligner.'.format(aligner), 'Creating Reference Genome Index for {} aligner'.format(aligner), logger, 'info')
+    keep_logging('- Creating Reference Genome Index for {} aligner.'.format(aligner), '- Creating Reference Genome Index for {} aligner'.format(aligner), logger, 'info')
     if aligner == "bwa":
         cmd = "%s %s %s" % (ConfigSectionMap("bwa", Config)['base_cmd'], ConfigSectionMap("bwa", Config)['index'], reference)
         keep_logging('', cmd, logger, 'debug')
@@ -591,7 +564,7 @@ def create_index(reference,ref_index_suffix1, ref_index_suffix2, ref_index_suffi
             keep_logging('The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), 'The {} reference index files were not created properly. Please try to create the index files again or manually.'.format(aligner), logger, 'exception')
 
     else:
-        print ("Different Aligner in config file")
+        print ("Aligner not supported by SNPKIT. Check config file for correct specifications.")
 
 def generate_index(reference):
     if not os.path.isfile(reference):
@@ -739,46 +712,7 @@ if __name__ == '__main__':
         logger = generate_logger(core_prep_logs_folder, args.prefix, log_unique_time)
         call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_prep_logs_folder, log_unique_time, args.prefix), logger)
         make_sure_path_exists(core_temp_dir)
-        
-        
-        # Remove Copying data files step. THis is redundant.
-        # keep_logging('\nCopying vcf files to %s\n' % core_temp_dir, '\nCopying vcf files to %s\n' % core_temp_dir, logger, 'info')
-        # cp_command = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf %s/*/*_vcf_results/*_aln_mpileup_raw.vcf %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s/*/*_vcf_results/*filter2_final.vcf* %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s/*/*_vcf_results/*array %s/*/*unmapped.bed_positions %s/*/*_vcf_results/*_indel_gatk.vcf %s/*/*_stats_results/*_depth_of_coverage.sample_summary %s" % (args.output, args.output, args.output, args.output, args.output, args.output, args.output, args.output, args.output, core_temp_dir)
-
-        # cp_command_1 = "cp %s/*/*_vcf_results/*_filter2_indel_final.vcf* %s" % (args.output, core_temp_dir)
-        # cp_command_2 = "cp %s/*/*_vcf_results/*_aln_mpileup_raw.vcf* %s" % (args.output, core_temp_dir)
-        # cp_command_3 = "cp %s/*/*_vcf_results/*_raw.vcf_5bp_indel_removed.vcf* %s" % (args.output, core_temp_dir)
-        # cp_command_4 = "cp %s/*/*_vcf_results/*filter2_final.vcf* %s" % (args.output, core_temp_dir)
-        # cp_command_5 = "cp %s/*/*_vcf_results/*array %s" % (args.output, core_temp_dir)
-        # cp_command_6 = "cp %s/*/*_vcf_results/*vcf_no_proximate_snp.vcf* %s" % (args.output, core_temp_dir)
-        # cp_command_7 = "cp %s/*/*unmapped.bed_positions %s" % (args.output, core_temp_dir)
-        # cp_command_8 = "cp %s/*/*_vcf_results/*_indel_gatk.vcf* %s" % (args.output, core_temp_dir)
-        # cp_command_9 = "cp %s/*/*_stats_results/*_depth_of_coverage.sample_summary %s" % (args.output, core_temp_dir)
-
-        # #call(cp_command, logger)
-        # call(cp_command_1, logger)
-        # call(cp_command_2, logger)
-        # call(cp_command_3, logger)
-        # call(cp_command_4, logger)``
-        # call(cp_command_5, logger)
-        # call(cp_command_6, logger)
-        # call(cp_command_7, logger)
-        # call(cp_command_8, logger)
-        # call(cp_command_9, logger)
-
-        # No need to decompress the files. THis is redundant.
-        """ Decompress zipped files in core temp folder"""
-        # list_of_gzipped_files = glob.glob("%s/*.gz" % core_temp_dir)
-        # keep_logging('Decompressing gzipped files in %s\n' % core_temp_dir, 'Decompressing gzipped files in %s\n' % core_temp_dir, logger, 'info')
-        # gzipped_command_list = []
-        # for i in list_of_gzipped_files:
-        #     gzipped_command_list.append("gzip -df %s" % i)
-
-        """ Set the number of cores variable for Parallel-local mode """
-        #THis is redundant.
-        # num_cores = multiprocessing.cpu_count()
-        # results = Parallel(n_jobs=num_cores)(delayed(run_command_list)(i) for i in gzipped_command_list)
-        
+         
         # Get the filter criteria name from config file.
         filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
 
@@ -822,12 +756,7 @@ if __name__ == '__main__':
                 exit()
         else:
             keep_logging('- Checking if all the variant calling results exists in %s' % args.output, '- Checking if all the variant calling results exists in %s' % args.output, logger, 'info')
-            #call("ls -1a %s/*.vcf_no_proximate_snp.vcf > %s/vcf_filenames" % (core_temp_dir, core_temp_dir), logger)
-            try:
-                # Not checking the files in core_temp_dir. This is redundant.
-                # list_cmd = "ls -1a %s/*.vcf_no_proximate_snp.vcf" % core_temp_dir
-                # list_of_files = subprocess.check_output(list_cmd, shell=True)
-                
+            try:                
                 list_of_files = glob.glob("%s/*/*_vcf_results/*.vcf_no_proximate_snp.vcf" % args.output)
                 list_of_GATK_depth_files = glob.glob("%s/*/*_stats_results/*_depth_of_coverage.sample_summary" % args.output)
 
@@ -839,7 +768,6 @@ if __name__ == '__main__':
                         depth = "grep -vE '^sample|Total' %s | awk -F',' '{print $3}'"
                         proc = subprocess.Popen(["grep -vE '^sample|Total' %s | awk -F',' '{print $3}'" % file.replace('_filter2_final.vcf_no_proximate_snp.vcf', '_depth_of_coverage.sample_summary')], stdout=subprocess.PIPE, shell=True)
                         (out2, err2) = proc.communicate()
-                        #print file
                         cov_depth = int(float(out2.strip()))
                         out_fp.write(os.path.basename(file.replace('_depth_of_coverage.sample_summary', '_filter2_final.vcf_no_proximate_snp.vcf ')) + '\n')
                         if float(out2.strip()) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
@@ -850,8 +778,6 @@ if __name__ == '__main__':
                         # Check if the vcf files are empty
                         if os.stat(file).st_size == 0:
                             empty_files.append(file)
-                        # if float(out2.strip()) > float(ConfigSectionMap(filter_criteria, Config)['dp']):
-                        #     out_fp.write(os.path.basename(file)+'\n')
                 out_fp.close()
 
                 # Check if the vcf files are empty
@@ -879,13 +805,11 @@ if __name__ == '__main__':
         core_logs_folder = logs_folder + "/core"
         make_sure_path_exists(core_logs_folder)
         logger = generate_logger(core_logs_folder, args.prefix, log_unique_time)
-        #keep_logging('START: Extract core snps and generate diagnostic plots','START: Extract core snps and generate diagnostic plots', logger, 'info')
         call("cp %s %s/%s_%s_config_copy.txt" % (config_file, core_logs_folder, log_unique_time, args.prefix),
              logger)
         core_temp_dir = args.output + "/core_temp_dir/"
         
         core_results_dir = args.output + "/%s_core_results/" % log_unique_time
-        #make_sure_path_exists(core_results_dir)
 
         reference = ConfigSectionMap(args.index, Config)['ref_path'] + "/" + ConfigSectionMap(args.index, Config)[
             'ref_name']
@@ -898,8 +822,6 @@ if __name__ == '__main__':
                 if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
                     # Submit Phaster jobs to find ProPhage region in reference genome.
                     run_phaster(reference, os.path.dirname(reference), logger, Config)
-
-
 
         # Parse Phaster results file to extract phage region.
         if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
@@ -932,7 +854,6 @@ if __name__ == '__main__':
                             '- Mask positions in this file %s will be filtered out' % mask_positions_file,
                             logger, 'info')
                     else:
-                        # mask_positions_file = mask_file
                         os.system("cp %s %s/mask_positions.txt" % (mask_file, core_temp_dir))
                         mask_positions_file = "%s/mask_positions.txt" % core_temp_dir
                         keep_logging(
@@ -1001,13 +922,6 @@ if __name__ == '__main__':
              logger)
         core_temp_dir = args.output + "/core_temp_dir/"
 
-        # This code snippet is not working, Commenting it for now. Test it later.
-        # proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output], stdout=subprocess.PIPE,
-        #                         shell=True)
-        # (out2, err2) = proc.communicate()
-        # core_results_dir = out2.strip()
-
-        #print core_results_dir
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []
         with open("%s/vcf_filenames" % core_temp_dir, 'r') as out_fp:
