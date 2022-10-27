@@ -52,7 +52,7 @@ python snpkit/snpkit.py \
 -outdir /Path/test_output_core/ \
 -analysis output_prefix \
 -index KPNIH1 \
--steps All \
+-steps call \
 -cluster cluster \
 -scheduler SLURM \
 -clean
@@ -75,7 +75,7 @@ python snpkit/snpkit.py \
 -outdir /Path/test_output_core/ \
 -analysis output_prefix \
 -index reference.fasta \
--steps core_All \
+-steps parse \
 -cluster cluster \
 -gubbins yes \
 -scheduler SLURM
