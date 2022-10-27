@@ -38,7 +38,7 @@ def parser():
     required.add_argument('-index', action='store', dest="index", help='Reference Index Name. Change this argument in config file and mention the reference header name such as KP_NTUH_chr/KPNIH1/KPNIH32.', required=True)
     #optional.add_argument('-coverage_depth_stats', action='store', dest="coverage_depth_stats", help='Run Only Depth of Coverage Stats module after read mapping')
     optional.add_argument('-c', action='store', dest="croplength", help='Crop Length in case needed')
-    required.add_argument('-steps', action='store', dest="steps", help='Variant Calling Steps in sequential order.\n'
+    required.add_argument('-steps', action='store', dest="steps", help='Individual Variant Calling Steps.\n'
                                                                      '1.   All : This will run all the steps starting from cleaning the reads to variant calling;\n'
                                                                      '2.   clean,align,post-align,varcall,filter,stats : This will also run all steps starting from cleaning to variant calling. \nYou can also run part of the pipeline by giving "align,post-align,varcall,filter,stats" which will skip the cleaning part.\nThe order is required to be sequential. Also, while skipping any of the step make sure you have results already present in your output folder.\n'
                                                                      '3.   coverage_depth_stats: Run Only Depth of Coverage Stats module after cleaning and read mapping steps')
@@ -141,7 +141,6 @@ def pipeline(args, logger):
         if caller == "gatkhaplotypecaller":
             keep_logging('- Variant Calling using GATK haplotyper.', 'START: Variant Calling using GATK haplotyper.', logger, 'info')
             final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
-            #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
             final_raw_vcf = remove_5_bp_snp_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             keep_logging('- Raw unfiltered GATK haplotyper VCF file: {}'.format(final_raw_vcf), '- Raw unfiltered GATK  haplotyper VCF file: {}'.format(final_raw_vcf), logger, 'debug')
@@ -153,7 +152,6 @@ def pipeline(args, logger):
             keep_logging('- SNP Calling using Samtools and Indel Calling using GATK4.', 'SNP Calling using Samtools and Indel Calling using GATK4.', logger, 'info')
             final_raw_indel_vcf = prepare_indel_gatk(out_sorted_bam, args.output_folder, args.analysis_name, args.index, logger, Config)
             final_raw_vcf_mpileup = variant_calling(out_sorted_bam, args.output_folder, args.index, args.analysis_name, logger, Config)
-            #final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
             final_raw_vcf = remove_5_bp_snp_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             # GATK indel calling integration
             #final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
@@ -168,7 +166,7 @@ def pipeline(args, logger):
     ## 5. Stages: Variant Filteration
     def filter(gatk_depth_of_coverage_file):
         method_start_time = datetime.now()
-        # keep_logging('- START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
+        keep_logging('- START: Variant Filteration', 'START: Variant Filteration', logger, 'info')
         final_raw_vcf_mpileup = "%s/%s_aln_mpileup_raw.vcf" % (args.output_folder, args.analysis_name)
         #final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
         if not os.path.isfile(gatk_depth_of_coverage_file):
@@ -183,9 +181,9 @@ def pipeline(args, logger):
         filter_variants(final_raw_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
         final_raw_indel_vcf = final_raw_vcf_mpileup + "_indel.vcf"
         filter_indels(final_raw_indel_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
-        # keep_logging('- END: Variant Filteration', 'END: Variant Filteration', logger, 'info')
+        keep_logging('- END: Variant Filteration', 'END: Variant Filteration', logger, 'info')
         method_time_taken = datetime.now() - method_start_time
-        # keep_logging('- Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
+        keep_logging('- Time taken to complete the method - filter: {}'.format(method_time_taken), 'Time taken to complete the method - filter: {}'.format(method_time_taken), logger, 'info')
 
     ## 6. SNP annotation
     def annotation(vcf_file):
@@ -464,7 +462,6 @@ def downsample(args, logger):
     if ori_coverage_depth > 100:
         # Downsample to 100
         factor = float(100 / float(ori_coverage_depth))
-        # print factor
         r1_sub = "/tmp/%s" % os.path.basename(args.forward_raw)
 
         # Downsample using seqtk
@@ -485,10 +482,6 @@ def downsample(args, logger):
             r2_sub = "/tmp/%s" % os.path.basename(args.reverse_raw)
 
             try:
-                # keep_logging("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                #     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)),
-                #              "seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
-                #                  args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger, 'info')
                 call("seqtk sample %s %s | pigz --fast -c -p %s > /tmp/%s" % (
                     args.reverse_raw, factor, nproc, os.path.basename(args.reverse_raw)), logger)
             except sp.CalledProcessError:
@@ -534,4 +527,3 @@ if __name__ == '__main__':
     keep_logging('- End: Pipeline', 'End: Pipeline', logger, 'info')
     time_taken = datetime.now() - start_time_2
     keep_logging('- Total Time taken for the pipeline: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
-
