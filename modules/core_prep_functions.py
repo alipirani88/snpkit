@@ -347,7 +347,6 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
     elif jobrun == "cluster":
-
         command_array = []
         command_file = "%s/commands_list.sh" % temp_dir
         f3 = open(command_file, 'w+')

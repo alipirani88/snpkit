@@ -48,9 +48,9 @@ parser = argparse.ArgumentParser(
 required = parser.add_argument_group('Required arguments')
 optional = parser.add_argument_group('Optional arguments')
 required.add_argument('-filter2_only_snp_vcf_dir', action='store', dest="filter2_only_snp_vcf_dir",
-                      help='Directory where all the filter2 only SNP vcf files are saved.')
+                      help='SNPKIT - Variant Calling output directory.')
 required.add_argument('-filter2_only_snp_vcf_filenames', action='store', dest="filter2_only_snp_vcf_filenames",
-                      help='Names of filter2 only SNP vcf files with name per line.')
+                      help='SNPKIT filtered vcf filenames to be used for parsing and matrix generation.')
 optional.add_argument('-jobrun', action='store', dest="jobrun",
                       help='Running a job on Cluster, Running Parallel jobs, Run jobs/commands locally (default): cluster, local, parallel-local, parallel-single-cluster')
 optional.add_argument('-scheduler', action='store', dest="scheduler",
@@ -1711,7 +1711,7 @@ def generate_vcf_files(Only_ref_variant_positions_for_closely):
         base = os.path.basename(file)
         header = base.replace('_filter2_final.vcf_core.vcf', '')
         sed_command = "sed -i 's/>.*/>%s/g' %s.fa\n" % (header, file.replace('_filter2_final.vcf_core.vcf', ''))
-        subprocess.call([sed_command], shell=True)
+        #subprocess.call([sed_command], shell=True)
         f1.write(sed_command)
     # sequence_lgth_cmd = "for i in %s/*.fa; do %s/%s/bioawk -c fastx \'{ print $name, length($seq) }\' < $i; done" % (args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("bioawk", Config)['bioawk_bin'])
     # #os.system(sequence_lgth_cmd)
@@ -4398,7 +4398,9 @@ if __name__ == '__main__':
     # Create temporary Directory /tmp/snpkit_temp for storing temporary intermediate files. Check if core_temp_dir contains all the required files to run these pipeline.
     global temp_dir
     temp_dir = "/tmp/snpkit_temp"
-    make_sure_path_exists(temp_dir)
+    if not os.path.exists("/tmp/snpkit_temp"):
+        make_sure_path_exists(temp_dir)
+        
 
     # Read Config file into Config object that will be used to extract configuration settings set up in config file.
     global config_file
@@ -4502,9 +4504,9 @@ if __name__ == '__main__':
                                                                      args.filter2_only_snp_vcf_dir, num_cores)
 
         # bgzip and tabix all the vcf files in core_temp_dir.
-        files_for_tabix = glob.glob((args.filter2_only_snp_vcf_dir).replace('core_temp_dir/', '*/*_vcf_results/*.vcf'))
-        tabix(files_for_tabix, "vcf", logger, Config)
-
+        # files_for_tabix = glob.glob((args.filter2_only_snp_vcf_dir).replace('core_temp_dir/', '*/*_vcf_results/*.vcf'))
+        # tabix(files_for_tabix, "vcf", logger, Config)
+        
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
         make_sure_path_exists(tmp_dir)
@@ -4525,7 +4527,7 @@ if __name__ == '__main__':
                 if ConfigSectionMap("functional_filters", Config)['find_phage_region'] == "yes":
                     # Submit Phaster jobs to find ProPhage region in reference genome.
                     run_phaster(args.reference, args.filter2_only_snp_vcf_dir, logger, Config)
-
+    
         call("cp %s %s/Logs/core_prep/" % (
         log_file_handle, os.path.dirname(os.path.dirname(args.filter2_only_snp_vcf_dir))), logger)
         method_time_taken = datetime.now() - method_start_time

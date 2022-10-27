@@ -9,6 +9,7 @@ import re
 import multiprocessing
 import subprocess as subprocess
 from datetime import datetime
+import shutil
 # from joblib import Parallel, delayed
 from config_settings import ConfigSectionMap
 from modules.logging_subprocess import *
@@ -34,7 +35,7 @@ def parser():
     input.add_argument('-index', action='store', dest="index", help='Reference genome index name (prefix) as described in config file.', required=True)
     input.add_argument('-steps', action='store', dest="steps", help='Type of Analysis to run. Options: call, parse\n'
     'call: Run first part of SNPKIT pipeline - Clean sequencing reads followed by mapping to reference genome and calling variants;\n'
-    'parse: Run second part of SNPKIT pipeline - Perform functional class filtering on SNPKIT called variants, generate SNP/Indel Matrices and core/non-core multi-fasta alignments')
+    'parse: Run second part of SNPKIT pipeline - Perform functional class filtering on called variants, generate SNP/Indel Matrices and core/non-core multi-fasta alignments')
     input.add_argument('-analysis', action='store', dest="prefix", help='prefix for output files.', required=True)
     output.add_argument('-outdir', action='store', dest="output", help='output directory path ending with output directory name.', required=True)
     
@@ -720,8 +721,13 @@ if __name__ == '__main__':
         keep_logging('- Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, 'Logs were recorded in file with extension log.txt in %s' % vc_logs_folder, logger, 'info')
         keep_logging('- Total Time taken: {}'.format(time_taken), 'Total Time taken: {}'.format(time_taken), logger, 'info')
         
-
     elif "parse" in args.steps or "2" in args.steps:
+        if os.path.exists("/tmp/snpkit_temp"):
+            shutil.rmtree("/tmp/snpkit_temp")
+            make_sure_path_exists("/tmp/snpkit_temp")
+        else:
+            make_sure_path_exists("/tmp/snpkit_temp")
+
         # Add Core_All step Commands to this array
         core_All_cmds = []
 
@@ -837,9 +843,9 @@ if __name__ == '__main__':
                         cov_depth = int(float(out2.strip()))
                         out_fp.write(os.path.basename(file.replace('_depth_of_coverage.sample_summary', '_filter2_final.vcf_no_proximate_snp.vcf ')) + '\n')
                         if float(out2.strip()) < float(ConfigSectionMap(filter_criteria, Config)['dp']):
-                            keep_logging('The coverage depth for Sample %s - %s is lower than the threshold' % (
+                            keep_logging('- WARNING: The coverage depth for Sample %s - %s is lower than the threshold' % (
                             os.path.basename(file), float(out2.strip())),
-                                         'The coverage depth for Sample %s - %s is lower than the threshold' % (
+                                         '- WARNING: The coverage depth for Sample %s - %s is lower than the threshold' % (
                                          os.path.basename(file), float(out2.strip())), logger, 'info')
                         # Check if the vcf files are empty
                         if os.stat(file).st_size == 0:

@@ -216,7 +216,7 @@ def pipeline(args, logger):
         args.reverse_raw = read2
 
     if len(steps_list) == 1:
-        if steps_list[0] == "All":
+        if steps_list[0] == "call":
             clean()
             out_sam = align_reads()
             out_sorted_bam = post_align(out_sam)
