@@ -17,27 +17,13 @@ from modules.bowtie import *
 """ Prepare ReadGroup option for BWA alignment """
 def prepare_readgroup(forward_read, aligner, logger):
     samplename = os.path.basename(forward_read)
-    if forward_read.endswith(".gz"):
-        #output = gzip.open(forward_read, 'rb')
-        #firstLine = output.readline()
-        #split_field = re.split(r":",firstLine)
-        #id_name = split_field[1]
-        #id_name = id_name.strip()
-        #split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
-        #return split_field
+    if forward_read.endswith("fastq.gz"):
         output = gzip.open(forward_read, 'rb')
         firstLine = (output.readline()).decode("utf-8")
-        
         if ":" in firstLine:
             split_field = re.split(r":",firstLine)
             id_name = split_field[1].rstrip()
             id_name = id_name.rstrip()
-        # if aligner == "bowtie":
-        #     split_field = "--rg-id %s --rg SM:%s --rg LB:1 --rg PL:Illumina" % (split_field[1], samplename)
-        # elif aligner == "bwa":
-        #     split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
-
-        ###Pending
         elif "/" in firstLine:
             split_field = re.split(r"/",firstLine)
             id_name = split_field[1].rstrip()
@@ -48,26 +34,15 @@ def prepare_readgroup(forward_read, aligner, logger):
         else:
             id_name = "1"
             split_field = "\"" + "@RG" + "\\tID:" + id_name + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
+        
         if aligner == "bowtie":
             split_field = "--rg-id %s --rg SM:%s --rg LB:1 --rg PL:Illumina" % (split_field[1], samplename)
         elif aligner == "bwa":
             split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
         return split_field
-
-    elif forward_read.endswith(".fastq"):
-        output = open(forward_read, 'r')
-        firstLine = output.readline()
-        split_field = re.split(r":",firstLine)
-        split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
-        return split_field
-
-    elif forward_read.endswith(".fq"):
-        ###
-        output = open(forward_read, 'r')
-        firstLine = output.readline()
-        split_field = re.split(r":",firstLine)
-        split_field = "\"" + "@RG" + "\\tID:" + split_field[1] + "\\tSM:" + samplename + "\\tLB:1\\tPL:Illumina" + "\""
-        return split_field
+    else:
+        keep_logging('- Sequence read file extension not recognized.', '- Sequence read file extension not recognized.', logger,'exception')
+        exit()
 
 """ Raw data Pre-processing using Trimmomatic """
 def trimmomatic(input1, input2, out_path, crop, logger, Config):
@@ -162,8 +137,6 @@ def filter1_variants(final_raw_vcf, out_path, analysis, ref_index):
     reference = ConfigSectionMap(ref_index)['ref_path'] + "/" + ConfigSectionMap(ref_index)['ref_name']
     gatk_filter1_final_vcf_file = gatk_filter1(final_raw_vcf, out_path, analysis, reference)
     gatk_filter1_final_vcf_file_no_proximate_snp = remove_proximate_snps(gatk_filter1_final_vcf_file, out_path, analysis, reference)
-    #only_snp_filter1_vcf_file = only_snp_filter1_vcf(gatk_filter1_final_vcf_file, out_path, analysis, reference)
-    #print only_snp_filter1_vcf_file
     gatk_vcf2fasta_filter1_file = gatk_vcf2fasta_filter1(gatk_filter1_final_vcf_file, out_path, analysis, reference)
     gatk_vcf2fasta_filter1_file_no_proximate = gatk_vcf2fasta_filter1(gatk_filter1_final_vcf_file_no_proximate_snp, out_path, analysis, reference)
     vcftools_vcf2fasta_filter1_file = vcftools_vcf2fasta_filter1(gatk_vcf2fasta_filter1_file, out_path, analysis, reference)
