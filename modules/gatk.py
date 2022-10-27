@@ -133,41 +133,6 @@ def gatk_filter_contamination(final_raw_vcf, out_path, analysis, reference, logg
         filter_criteria = "contamination_filters"
         
 def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Config, Avg_dp):
-    # if ConfigSectionMap("pipeline", Config)['variant_caller'] == "samtools":
-    #     base_cmd = ConfigSectionMap("bin_path", Config)['binbase'] + "/" + ConfigSectionMap("gatk", Config)['gatk_bin'] + "/" + ConfigSectionMap("gatk", Config)['base_cmd']
-    #     filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
-    #     if ConfigSectionMap(filter_criteria, Config)['avg_depth'] == "yes":
-    #         keep_logging("Using variant filter parameters from: %s" % filter_criteria,
-    #                      "Using variant filter parameters from: %s" % filter_criteria, logger, 'info')
-    #         low_Dp = float(Avg_dp) / 2
-    #         high_Dp = float(Avg_dp) * 5
-    #         DP_filter = "DP > %s && DP < %s" % (int(low_Dp), int(high_Dp))
-    #     else:
-    #         DP_filter = "DP > %s" % ConfigSectionMap(filter_criteria, Config)['dp']
-    #     MQ_filter = "MQ > %s" % ConfigSectionMap(filter_criteria, Config)['mq']
-    #     FQ_filter = "FQ < %s" % ConfigSectionMap(filter_criteria, Config)['fq']
-    #     FQ_filter2 = "FQ < %s" % ConfigSectionMap(filter_criteria, Config)['fq2']
-    #     QUAL_filter = "QUAL > %s" % ConfigSectionMap(filter_criteria, Config)['qual']
-    #     AF_filter = "AF1 > %s" % float(ConfigSectionMap(filter_criteria, Config)['af'])
-    #
-    #     gatk_filter2_parameter_expression = "%s && %s && %s && %s && %s && %s" % (FQ_filter, MQ_filter, QUAL_filter, DP_filter, FQ_filter2, AF_filter)
-    #     if os.path.exists(final_raw_vcf):
-    #         gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_indel_gatk.vcf --variant %s --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
-    #     else:
-    #         gatk_filter2_command = "java -jar %s -T VariantFiltration -R %s -o %s/%s_filter2_indel_gatk.vcf --variant %s.gz --filterExpression \"%s\" --filterName PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
-    #
-    #     filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_indel_gatk.vcf > %s/%s_filter2_indel_final.vcf" % (out_path, analysis, out_path, analysis)
-    #     keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
-    #     keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
-    #     try:
-    #         call(gatk_filter2_command, logger)
-    #         call(filter_flag_command, logger)
-    #     except sp.CalledProcessError:
-    #         keep_logging(' - Error in GATK filter step. Exiting.', 'Error in GATK filter step. Exiting.', logger, 'exception')
-    #         sys.exit(1)
-    #     gatk_filter2_final_vcf = "%s/%s_filter2_indel_final.vcf" % (out_path, analysis)
-    #     return gatk_filter2_final_vcf
-    # elif ConfigSectionMap("pipeline", Config)['variant_caller'] == "gatkhaplotypecaller":
     base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
     filter_criteria = ConfigSectionMap("SNP_filters", Config)['filter_criteria']
     keep_logging("- Using variant filter parameters from config section: %s" % filter_criteria, "- Using variant filter parameters from: %s" % filter_criteria, logger, 'info')
@@ -209,20 +174,17 @@ def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Conf
 def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, logger, Config):
     base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
     cmd = "gatk DepthOfCoverage -R %s -O %s/%s_depth_of_coverage -I %s --summary-coverage-threshold 1 --summary-coverage-threshold 5 --summary-coverage-threshold 9 --summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 25 --ignore-deletion-sites --intervals %s" % (reference, out_path, analysis_name, out_sorted_bam, reference.replace('.fasta', '.bed'))
-    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
         keep_logging(' - Error in GATK Depth of Coverage step. Exiting.', 'Error in GATK Depth of Coverage step. Exiting.', logger, 'exception')
         sys.exit(1)
     gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (out_path, analysis_name)
-    # keep_logging('- GATK Depth of Coverage file: {}'.format(gatk_depth_of_coverage_file), '- GATK Depth of Coverage file: {}'.format(gatk_depth_of_coverage_file), logger, 'debug')
     return gatk_depth_of_coverage_file
 
 def gatk_vcf2fasta_filter2(only_snp_filter2_vcf_file, out_path, analysis, reference, logger, Config):
     base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
     vcf2fasta_filter2_cmd = "%s FastaAlternateReferenceMaker -R %s -O %s_filter2.fasta --variant %s" % (base_cmd, reference, only_snp_filter2_vcf_file, only_snp_filter2_vcf_file)
-    # keep_logging(vcf2fasta_filter2_cmd, vcf2fasta_filter2_cmd, logger, 'debug')
     try:
         call(vcf2fasta_filter2_cmd, logger)
     except sp.CalledProcessError:
@@ -249,8 +211,6 @@ def gatkhaplotypecaller(out_finalbam, out_path, reference, analysis, logger, Con
     base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
     reference_filename = ConfigSectionMap(reference, Config)['ref_path'] + "/" + ConfigSectionMap(reference, Config)['ref_name']
     cmd = "%s %s -R %s -I %s -O %s/%s_aln_mpileup_raw.vcf" % (base_cmd, ConfigSectionMap("gatk", Config)['haplotype_parameters'], reference_filename, out_finalbam, out_path, analysis)
-    # keep_logging(' - Running Command: [%s]' % cmd, 'Running Command: [%s]' % cmd, logger, 'info')
-    #os.system(cmd)
     call(cmd, logger)
     final_raw_vcf =  "%s/%s_aln_mpileup_raw.vcf" % (out_path, analysis)
     return final_raw_vcf

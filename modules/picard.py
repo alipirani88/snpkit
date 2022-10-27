@@ -5,18 +5,14 @@ from modules.logging_subprocess import *
 from config_settings import ConfigSectionMap
 
 def markduplicates(out_sorted_bam, out_path, analysis, files_to_delete, logger, Config):
-    # Updated for Great Lakes and Conda Integration
     base_cmd = ConfigSectionMap("picard", Config)['base_cmd']
-    # keep_logging('Removing PCR duplicates using PICARD', 'Removing PCR duplicates using PICARD', logger, 'info')
     cmd = "%s MarkDuplicates REMOVE_DUPLICATES=true INPUT=%s OUTPUT=%s/%s_aln_marked.bam METRICS_FILE=%s/%s_markduplicates_metrics CREATE_INDEX=true VALIDATION_STRINGENCY=LENIENT" % (base_cmd, out_sorted_bam, out_path, analysis, out_path, analysis)
-    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
             keep_logging('- Error in Picard Duplicates Removal step. Exiting.', '- Error in Picard Duplicates Removal step. Exiting.', logger, 'exception')
             sys.exit(1)
     out_marked_bam = "%s/%s_aln_marked.bam" % (out_path, analysis)
-    #files_to_delete.append(out_marked_bam)
     if not os.path.isfile(out_marked_bam):
         keep_logging('- Problem in Picard MarkDuplicate Step', '- Problem in Picard MarkDuplicate Step', logger, 'exception')
         exit()
@@ -24,21 +20,16 @@ def markduplicates(out_sorted_bam, out_path, analysis, files_to_delete, logger, 
         return out_marked_bam
 
 def picard_seqdict(reference_filename, reference, logger, Config):
-    # Updated for Great Lakes and Conda Integration
     dict_name = os.path.splitext(os.path.basename(reference_filename))[0] + ".dict"
     base_cmd = ConfigSectionMap("picard", Config)['base_cmd']
     cmd = "%s CreateSequenceDictionary REFERENCE=%s OUTPUT=%s/%s" % (base_cmd, reference_filename, ConfigSectionMap(reference, Config)['ref_path'],dict_name)
-    # keep_logging(cmd, cmd, logger, 'debug')
-    os.system(cmd)
+    call(cmd, logger)
 
 def picardstats(out_sorted_bam, out_path, analysis, reference, logger, Config):
-    # Updated for Great Lakes and Conda Integration
     reference_filename = ConfigSectionMap(reference, Config)['ref_path'] + "/" + ConfigSectionMap(reference, Config)['ref_name']
     base_cmd = ConfigSectionMap("picard", Config)['base_cmd']
-
     cmd = "%s CollectWgsMetrics I=%s O=%s/%s_collect_wgs_metrics.txt R=%s" % (
     base_cmd, out_sorted_bam, out_path, analysis, reference_filename)
-    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -48,7 +39,6 @@ def picardstats(out_sorted_bam, out_path, analysis, reference, logger, Config):
 
     cmd = "%s CollectAlignmentSummaryMetrics I=%s O=%s/%s_collect_alignment_metrics.txt R=%s" % (
         base_cmd, out_sorted_bam, out_path, analysis, reference_filename)
-    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -58,7 +48,6 @@ def picardstats(out_sorted_bam, out_path, analysis, reference, logger, Config):
 
     cmd = "%s CollectGcBiasMetrics I=%s O=%s/%s_gc_bias_metrics.txt R=%s S=%s/%s_summary_metrics.txt CHART=%s/%s_gc_bias_metrics.pdf " % (
         base_cmd, out_sorted_bam, out_path, analysis, reference_filename, out_path, analysis, out_path, analysis)
-    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:

@@ -7,8 +7,6 @@ from log_modules import *
 
 def raxml(tree_dir, input_fasta, jobrun, logger, Config):
     keep_logging('Running RAXML on input: %s' % input_fasta, 'Running RAXML on input: %s' % input_fasta, logger, 'info')
-    #raxml_cmd = "%s/%s/%s %s -s %s -n %s_raxML" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'], ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta, (os.path.basename(input_fasta)).replace('.fa', ''))
-
     raxml_cmd = "%s/%s/mpirun -np 2 %s/%s/%s -T 6 %s -s %s -n %s_raxML" % (
         ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['openmpi_bin'], ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("raxml", Config)['raxml_bin'],
     ConfigSectionMap("raxml", Config)['base_cmd'], ConfigSectionMap("raxml", Config)['parameters'], input_fasta,
@@ -28,5 +26,4 @@ def raxml(tree_dir, input_fasta, jobrun, logger, Config):
         f1=open(job_file_name, 'w+')
         f1.write(job_print_string)
         f1.close()
-        #os.system("qsub %s" % job_file_name)
         call("qsub %s" % job_file_name, logger)

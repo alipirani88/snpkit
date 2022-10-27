@@ -6,7 +6,6 @@ from config_settings import ConfigSectionMap
 
 def samclip(out_sam, out_path, analysis, reference, logger, Config):
     cmd = "samclip --ref %s --max 10 < %s > %s/%s_clipped.sam" % (reference, out_sam, out_path, analysis)
-    # keep_logging(cmd, cmd, logger, 'debug')
     try:
         call(cmd, logger)
     except sp.CalledProcessError:

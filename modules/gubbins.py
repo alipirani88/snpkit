@@ -4,29 +4,17 @@ from config_settings import ConfigSectionMap
 from logging_subprocess import *
 from log_modules import *
 
-
-
-
 def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
     keep_logging('\nRunning Gubbins on input: %s\n' % input_fasta, '\nRunning Gubbins on input: %s\n' % input_fasta,
                  logger,
                  'info')
-
     call("module load bioperl python-anaconda2/201607 biopython dendropy reportlab fasttree RAxML fastml/gub gubbins",logger)
-    #os.system("module load bioperl python-anaconda2/201607 biopython dendropy reportlab fasttree RAxML fastml/gub gubbins")
-
-    #gubbins_cmd = "%s/%s --prefix %s/%s %s" % (
-    # ConfigSectionMap("gubbins", Config)['gubbins_bin'], ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir,
-    # (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
-
-
     gubbins_cmd = "%s --threads 6 --prefix %s/%s %s" % (
     ConfigSectionMap("gubbins", Config)['base_cmd'], gubbins_dir,
     (os.path.basename(input_fasta)).replace('.fa', ''), input_fasta)
     keep_logging('\nRunning Gubbins on: %s' % input_fasta, '\nRunning Gubbins: %s\n' % input_fasta,
                  logger,
                  'info')
-
     keep_logging('Running: %s' % gubbins_cmd, '%s' % gubbins_cmd, logger, 'info')
     if jobrun == "parallel-local" or jobrun == "local":
         call("cd %s" % gubbins_dir, logger)
@@ -41,5 +29,4 @@ def gubbins(gubbins_dir, input_fasta, jobrun, logger, Config):
         f1=open(job_file_name, 'w+')
         f1.write(job_print_string)
         f1.close()
-        #os.system("qsub %s" % job_file_name)
         call("qsub %s" % job_file_name, logger)

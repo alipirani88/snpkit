@@ -4,7 +4,6 @@ import os
 from modules.log_modules import keep_logging
 from modules.logging_subprocess import *
 
-#################################################### Bowtie Alignment ############################################
 def align_bowtie(base_cmd, forward_clean, reverse_clean, forward_unpaired, reverse_unpaired, out_path, reference, split_field, analysis, files_to_delete, logger, Config, type, parameters):
     if type == "PE":
         cmd = "%s -x %s -1 %s -2 %s -S %s/%s_PE_aln.sam -t -p 8 %s %s" % (base_cmd, reference, forward_clean, reverse_clean, out_path, analysis, parameters, split_field)

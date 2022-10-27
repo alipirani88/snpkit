@@ -93,8 +93,8 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
         f_outgroup.close()
 
         # Print Checks
-        print ("No. of variant positions in outgroup: %s" % len(outgroup_position_array))
-        print ("No. of variant positions specific to outgroup: %s" % len(outgroup_specific_positions))
+        print ("- No. of variant positions in outgroup: %s" % len(outgroup_position_array))
+        print ("- No. of variant positions specific to outgroup: %s" % len(outgroup_specific_positions))
 
         position_array = []
         for filess in filter2_only_snp_position_files_array:
@@ -108,8 +108,8 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
         keep_logging('- Sorting unique variant positions.', '- Sorting unique variant positions.', logger, 'info')
         position_array_unique = set(position_array)
         position_array_sort = sorted(position_array_unique)
-        keep_logging('\nThe number of unique variant positions:%s' % len(position_array_sort),
-                     '\nThe number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
+        keep_logging('- The number of unique variant positions:%s' % len(position_array_sort),
+                     '- The number of unique variant positions:%s' % len(position_array_sort), logger, 'info')
         unique_position_file = "%s/unique_positions_file" % filter2_only_snp_vcf_dir
         f = open(unique_position_file, 'w+')
         for i in position_array_sort:
@@ -118,8 +118,8 @@ def create_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, filter2
         f.close()
 
         if len(position_array_sort) == 0:
-            keep_logging('ERROR: No unique positions found. Check if vcf files are empty?',
-                         'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
+            keep_logging('- ERROR: No unique positions found.',
+                         '- ERROR: No unique positions found.', logger, 'info')
             exit()
 
         return unique_position_file
@@ -209,8 +209,8 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
         f_outgroup.close()
 
         # Print Checks
-        print ("No. of indel variant positions in outgroup: %s" % len(outgroup_position_indel_array))
-        print ("No. of indel variant positions specific to outgroup: %s" % len(outgroup_indel_specific_positions))
+        print ("- No. of indel variant positions in outgroup: %s" % len(outgroup_position_indel_array))
+        print ("- No. of indel variant positions specific to outgroup: %s" % len(outgroup_indel_specific_positions))
 
         position_array = []
         for filess in filter2_only_indel_position_files_array:
@@ -235,7 +235,6 @@ def create_indel_positions_filestep(vcf_filenames, temp_dir, outgroup, logger, f
                          'ERROR: No unique positions found. Check if vcf files are empty?', logger, 'info')
             exit()
         return unique_indel_position_file
-
 
     else:
 
@@ -297,55 +296,6 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
             keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
             call("qsub %s" % i, logger)
 
-    elif jobrun == "parallel-local":
-        """
-        Generate a Command list of each job and run it in parallel on different cores available on local system
-        """
-        command_array = []
-        command_file = "%s/commands_list.sh" % filter2_only_snp_vcf_dir
-        f3 = open(command_file, 'w+')
-
-        ### Great Lakes changes
-        for i in vcf_filenames:
-            command = "python %s/variant_diagnostics/reason_job_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
-            os.path.dirname(os.path.abspath(__file__)), filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
-            job_file_name = "%s.pbs" % (i)
-
-            with open(job_file_name, 'w') as out:
-                job_title = "%s %s%s" % (script_Directive, job_name_flag, os.path.basename(i))
-                out.write("#!/bin/sh" + '\n')
-                out.write(job_title + '\n')
-                out.write(scheduler_directives + '\n')
-                out.write("cd %s/" % filter2_only_snp_vcf_dir + '\n')
-                out.write(command + '\n')
-            out.close()
-
-        pbs_dir = filter2_only_snp_vcf_dir + "/*vcf.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            f3.write("bash %s\n" % i)
-        f3.close()
-        with open(command_file, 'r') as fpp:
-            for lines in fpp:
-                lines = lines.strip()
-                command_array.append(lines)
-        fpp.close()
-        if numcores:
-            num_cores = int(numcores)
-        else:
-            # Great Lakes Integration here.
-            if args.scheduler == "SLURM":
-                proc = subprocess.Popen(["echo $SLURM_CPUS_PER_TASK"], stdout=subprocess.PIPE, shell=True)
-                (out, err) = proc.communicate()
-                num_cores = int(out.strip())
-            elif args.scheduler == "PBS":
-                num_cores = multiprocessing.cpu_count()
-            else:
-                num_cores = 1
-
-        
-        results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
-
     elif jobrun == "cluster":
         command_array = []
         command_file = "%s/commands_list.sh" % temp_dir
@@ -367,7 +317,6 @@ def create_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, scheduler_d
                 out.write(command + '\n')
             out.close()
             os.system("mv %s %s" % (job_file_name, tmp_dir))
-        #print (temp_dir)
         pbs_dir = "%s/*vcf.sbat" % temp_dir
         pbs_scripts = glob.glob(pbs_dir)
         for i in pbs_scripts:
@@ -442,31 +391,8 @@ def create_indel_job(jobrun, vcf_filenames, unique_position_file, tmp_dir, sched
     :param vcf_filenames:
     :return:
     """
-    if jobrun == "parallel-cluster":
-        """ Deprecated """
-        """
-        Supports only PBS clusters for now.
-        """
-        for i in vcf_filenames:
-            job_name = os.path.basename(i)
-            job_print_string = "#PBS -N %s\n#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l %s\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n\npython %s/reason_job_indel_debug.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s -unique_position_file %s -tmp_dir %s\n" % (
-            job_name, ConfigSectionMap("scheduler", Config)['email'],
-            ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['resources'],
-            ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'],
-            os.path.dirname(os.path.abspath(__file__)), filter2_only_snp_vcf_dir, i, unique_position_file, tmp_dir)
-            job_file_name = "%s_indel.pbs" % (i)
-            f1 = open(job_file_name, 'w+')
-            f1.write(job_print_string)
-            f1.close()
-        # os.system("mv %s/*.pbs %s/temp" % (filter2_only_snp_vcf_dir, filter2_only_snp_vcf_dir))
-        pbs_dir = filter2_only_snp_vcf_dir + "/*vcf_indel.pbs"
-        pbs_scripts = glob.glob(pbs_dir)
-        for i in pbs_scripts:
-            keep_logging('Running: qsub %s' % i, 'Running: qsub %s' % i, logger, 'info')
-            # os.system("qsub %s" % i)
-            call("qsub %s" % i, logger)
-
-    elif jobrun == "parallel-local" or jobrun == "cluster":
+    
+    if jobrun == "parallel-local" or jobrun == "cluster":
         """
         Generate a Command list of each job and run it in parallel on different cores available on local system
         """
@@ -564,8 +490,6 @@ def run_command(i):
     :return:
         done: string variable with completion status of command.
     """
-
-    #call("%s" % i, logger)
     os.system(i)
     done = "Completed: %s" % i
     return done

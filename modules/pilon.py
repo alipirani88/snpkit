@@ -11,4 +11,4 @@ def pilon(bam, reference, out_path, analysis, logger, Config):
     cmd = "pilon --genome %s --bam %s --output %s --outdir %s --changes --vcf --tracks --variant --dumpreads --verbose 2>%s/pilon.log" % (reference_path, bam, analysis, out_path, out_path)
     keep_logging('Running Pilon: [%s]' % cmd, 'Running Pilon: [%s]' % cmd, logger, 'info')
     call(cmd, logger)
-    keep_logging('Finished Running Pilon: [%s]' % cmd, 'Finished Running Pilon: [%s]' % cmd, logger, 'info')
+    keep_logging('- Finished Running Pilon: [%s]' % cmd, '- Finished Running Pilon: [%s]' % cmd, logger, 'info')

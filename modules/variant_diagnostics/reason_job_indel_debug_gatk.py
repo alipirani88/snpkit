@@ -73,18 +73,6 @@ os.system("cp %s %s/" % (ori_variant_position_file, args.tmp_dir))
 os.system("cp %s %s/" % (ori_mpileup_file, args.tmp_dir))
 
 
-
-# #variant position array
-# variant_position_array = "variant_" + str(array_name)
-# variant_position_array = []
-# with open(current_variant_position_file, 'rU') as csv_file:
-#     csv_reader = csv.reader(csv_file, delimiter='\t')
-#     for row in csv_reader:
-#         position = row[0]
-#         if not position.startswith('#'):
-#             variant_position_array.append(row[1])
-# csv_file.close()
-
 # Optimization changes
 # @profile
 def generate_dicts():

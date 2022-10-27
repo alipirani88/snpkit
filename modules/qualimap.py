@@ -11,7 +11,6 @@ def bamqc(out_sorted_bam, out_path, analysis, logger, Config):
     keep_logging(qualimap_bam_qc_cmd, qualimap_bam_qc_cmd, logger, 'debug')
     try:
         call(qualimap_bam_qc_cmd, logger)
-        #print ""
     except sp.CalledProcessError:
         keep_logging('Error in Qualimap step. Exiting.', 'Error in Qualimap step. Exiting.', logger, 'exception')
         sys.exit(1)

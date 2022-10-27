@@ -205,7 +205,6 @@ def run_command(i):
     :return:
         done: string variable with completion status of command.
     """
-    # print ("Running: %s" % i)
     call("%s" % i, logger)
     # A subprocess exception is raised if the command finish abnormally.
     # An exception is raised in call method.

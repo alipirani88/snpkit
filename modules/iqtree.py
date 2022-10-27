@@ -30,6 +30,4 @@ def iqtree(tree_dir, input_fasta, jobrun, logger, Config):
         f1 = open(job_file_name, 'w+')
         f1.write(job_print_string)
         f1.close()
-        # os.system("qsub %s" % job_file_name)
         keep_logging('qsub %s' % job_file_name, 'qsub %s' % job_file_name, logger, 'info')
-	#call("qsub %s" % job_file_name, logger)

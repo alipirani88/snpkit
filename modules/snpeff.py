@@ -93,17 +93,6 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
             "- Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\n-Exiting..." % (
             os.path.dirname(reference), reference_basename[0]), logger, 'exception')
         exit()
-    # keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
-    # keep_logging("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
-    ## Great Lakes Changes
-    # keep_logging("%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/data" % (
-    # ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder, bin_dir),
-    #              "%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/data" % (
-    #              ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder,
-    #              bin_dir), logger, 'debug')
-
-    # call("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger)
-    ## Great Lakes Changes
     
     call("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (
     ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder, bin_dir),
