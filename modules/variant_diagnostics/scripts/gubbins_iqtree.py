@@ -67,7 +67,7 @@ else:
     else:
         fasta = args.alignment
     # run gubbins
-    gub = 'run_gubbins.py --prefix ' + pref + ' --threads 8 --verbose --no-cleanup --first-tree-builder fasttree ' + fasta
+    gub = 'run_gubbins.py --prefix ' + pref + ' --threads 1 --verbose --no-cleanup --first-tree-builder fasttree ' + fasta
     print('Gubbins command: ' + gub)
     os.system(gub)
     # mask recombinant variants in whole genome alignment

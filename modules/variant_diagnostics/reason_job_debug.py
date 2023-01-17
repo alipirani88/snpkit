@@ -46,7 +46,7 @@ f.close()
 
 """ Prepare output label file """
 file = args.tmp_dir + "/" + os.path.basename(args.filter2_only_snp_vcf_file)
-#print "Processing %s" % file
+print ("Processing %s" % file)
 out_file_name = args.filter2_only_snp_vcf_file + "_positions_label"
 
 """ Get the prefix for all the arrays """
@@ -70,18 +70,6 @@ os.system("cp -f %s %s/" % (ori_proximate_file, args.tmp_dir))
 os.system("cp -f %s %s/" % (ori_variant_position_file, args.tmp_dir))
 os.system("cp -f %s %s/" % (ori_mpileup_file, args.tmp_dir))
 os.system("cp -f %s %s/" % (ori_raw_vcf_file, args.tmp_dir))
-
-# Optimization changes
-# #variant position array
-# variant_position_array = "variant_" + str(array_name)
-# variant_position_array = []
-# with open(current_variant_position_file, 'rU') as csv_file:
-#     csv_reader = csv.reader(csv_file, delimiter='\t')
-#     for row in csv_reader:
-#         position = row[0]
-#         if not position.startswith('#'):
-#             variant_position_array.append(row[1])
-# csv_file.close()
 
 # Optimization changes
 def generate_dicts():
@@ -182,42 +170,6 @@ def get_reason():
     #program_starts = time.time()
     f1=open(out_file_name, 'w')
 
-    # Older chunk of code -slower
-    # for j in position_array_sort:
-    #     """ Check if the unique position is present in the final no_proximate_snp.vcf file """
-    #     if int(j) not in positions_final_vcf.keys():
-    #         if int(j) not in positions_mpileup_vcf.keys():
-    #             if j in unmapped_array.keys():
-    #                 st = "reference_unmapped_position\n"
-    #                 f1.write(st)
-    #             else:
-    #                 st = "reference_allele\n"
-    #                 f1.write(st)
-    #         else:
-    #             if j in proximate_array.keys():
-    #                 pst = "_proximate_SNP"
-    #             else:
-    #                 pst = ""
-    #             if positions_mpileup_vcf[int(j)][1] < -40:
-    #                 st = "HighFQ"
-    #                 if positions_mpileup_vcf[int(j)][2] < 100.00:
-    #                     st = st + "_QUAL"
-    #                 if positions_mpileup_vcf[int(j)][0] < 15:
-    #                     st = st + "_DP"
-    #             else:
-    #                 st = "LowFQ"
-    #                 if positions_mpileup_vcf[int(j)][2] < 100.00:
-    #                     st = st + "_QUAL"
-    #                 if positions_mpileup_vcf[int(j)][0] < 15:
-    #                     st = st + "_DP"
-    #             st = st + pst + "\n"
-    #             f1.write(st)
-    #     else:
-    #         st = "VARIANT" + "\n"
-    #         f1.write(st)
-    #     now = time.time()
-    #     print "Time taken to iterate the loop once - {0} seconds".format(now - program_starts)
-
     # Newer chunk of code -faster
     for j in position_array_sort:
         """ Check if the unique position is present in the final no_proximate_snp.vcf file """
@@ -266,42 +218,5 @@ def get_reason():
     f1.close()
 
 #print "Time taken to execute this code block: %s" % (timeit.timeit(get_reason, number=1))
-
-# """ Generate label files and check why the positions were filtered out from the final vcf file """
-# def get_reason():
-#     f1=open(out_file_name, 'w+')
-#     for j in position_array_sort:
-#         """ Check if the unique position is present in the final no_proximate_snp.vcf file """
-#         if int(j) not in positions_final_vcf.keys():
-#             if int(j) not in positions_mpileup_vcf.keys():
-#                 if j in unmapped_array.keys():
-#                     st = "reference_unmapped_position\n"
-#                     f1.write(st)
-#                 else:
-#                     st = "reference_allele\n"
-#                     f1.write(st)
-#             else:
-#                 if j in proximate_array.keys():
-#                     pst = "_proximate_SNP"
-#                 else:
-#                     pst = ""
-#                 if positions_mpileup_vcf[int(j)][1] < -40:
-#                     st = "HighFQ"
-#                     if positions_mpileup_vcf[int(j)][2] < 100.00:
-#                         st = st + "_QUAL"
-#                     if positions_mpileup_vcf[int(j)][0] < 15:
-#                         st = st + "_DP"
-#                 else:
-#                     st = "LowFQ"
-#                     if positions_mpileup_vcf[int(j)][2] < 100.00:
-#                         st = st + "_QUAL"
-#                     if positions_mpileup_vcf[int(j)][0] < 15:
-#                         st = st + "_DP"
-#                 st = st + pst + "\n"
-#                 f1.write(st)
-#         else:
-#             st = "VARIANT" + "\n"
-#             f1.write(st)
-#     f1.close()
 
 get_reason()

@@ -1,6 +1,7 @@
 from __future__ import division
 __author__ = 'alipirani'
 import os
+import re
 from config_settings import ConfigSectionMap
 from modules.picard import *
 from modules.log_modules import keep_logging
@@ -29,8 +30,8 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
         else:
             gatk_filter2_command = "%s VariantFiltration -R %s -O %s/%s_filter2_gatk.vcf --variant %s.gz --filter-expression \"%s\" --filter-name PASS_filter2" % (base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (out_path, analysis, out_path, analysis)
-        keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
-        keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
+        # keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
+        # keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
         try:
             call(gatk_filter2_command, logger)
             call(filter_flag_command, logger)
@@ -64,8 +65,8 @@ def gatk_filter(final_raw_vcf, out_path, analysis, reference, logger, Config, Av
             base_cmd, reference, out_path, analysis, final_raw_vcf, gatk_filter2_parameter_expression)
         filter_flag_command = "grep '#\|PASS_filter2' %s/%s_filter2_gatk.vcf > %s/%s_filter2_final.vcf" % (
         out_path, analysis, out_path, analysis)
-        keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
-        keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
+        # keep_logging(gatk_filter2_command, gatk_filter2_command, logger, 'debug')
+        # keep_logging(filter_flag_command, filter_flag_command, logger, 'debug')
         try:
             call(gatk_filter2_command, logger)
             call(filter_flag_command, logger)
@@ -173,7 +174,11 @@ def gatk_filter_indel(final_raw_vcf, out_path, analysis, reference, logger, Conf
 
 def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, logger, Config):
     base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
-    cmd = "gatk DepthOfCoverage -R %s -O %s/%s_depth_of_coverage -I %s --summary-coverage-threshold 1 --summary-coverage-threshold 5 --summary-coverage-threshold 9 --summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 25 --ignore-deletion-sites --intervals %s" % (reference, out_path, analysis_name, out_sorted_bam, reference.replace('.fasta', '.bed'))
+    rep = {"fasta": "bed", "fna": "bed"}
+    rep = dict((re.escape(k), v) for k, v in rep.items()) 
+    pattern = re.compile("|".join(rep.keys()))
+    interval = pattern.sub(lambda m: rep[re.escape(m.group(0))], reference)
+    cmd = "gatk DepthOfCoverage -R %s -O %s/%s_depth_of_coverage -I %s --summary-coverage-threshold 1 --summary-coverage-threshold 5 --summary-coverage-threshold 9 --summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 25 --ignore-deletion-sites --intervals %s" % (reference, out_path, analysis_name, out_sorted_bam, interval)
     try:
         call(cmd, logger)
     except sp.CalledProcessError:
@@ -210,9 +215,18 @@ def gatk_vcf2fasta_filter2(only_snp_filter2_vcf_file, out_path, analysis, refere
 def gatkhaplotypecaller(out_finalbam, out_path, reference, analysis, logger, Config):
     base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
     reference_filename = ConfigSectionMap(reference, Config)['ref_path'] + "/" + ConfigSectionMap(reference, Config)['ref_name']
-    cmd = "%s %s -R %s -I %s -O %s/%s_aln_mpileup_raw.vcf" % (base_cmd, ConfigSectionMap("gatk", Config)['haplotype_parameters'], reference_filename, out_finalbam, out_path, analysis)
+    cmd = "%s %s -R %s -I %s -O %s/%s_aln_mpileup_raw.vcf --native-pair-hmm-threads 8" % (base_cmd, ConfigSectionMap("gatk", Config)['haplotype_parameters'], reference_filename, out_finalbam, out_path, analysis)
     call(cmd, logger)
     final_raw_vcf =  "%s/%s_aln_mpileup_raw.vcf" % (out_path, analysis)
+    return final_raw_vcf
+
+def gatkhaplotypecaller_GVCF(out_finalbam, out_path, reference, analysis, logger, Config):
+    base_cmd = ConfigSectionMap("gatk", Config)['base_cmd']
+    reference_filename = ConfigSectionMap(reference, Config)['ref_path'] + "/" + ConfigSectionMap(reference, Config)['ref_name']
+    cmd = "%s %s -R %s -I %s -O %s/%s_raw_gatk_gVCF.vcf --native-pair-hmm-threads 8 -ERC GVCF --sample-ploidy 1" % (base_cmd, ConfigSectionMap("gatk", Config)['haplotype_parameters'], reference_filename, out_finalbam, out_path, analysis)
+    print (cmd)
+    call(cmd, logger)
+    final_raw_vcf =  "%s/%s_raw_gatk_gVCF.vcf" % (out_path, analysis)
     return final_raw_vcf
 
 """ Unused methods """
@@ -254,11 +268,3 @@ def gatk_vcf2fasta_filter1(only_snp_filter1_vcf_file, out_path, analysis, refere
         os.system(change_header_cmd)
     gatk_vcf2fasta_filter1_file = "%s_filter1.fasta" % (only_snp_filter1_vcf_file)
     return gatk_vcf2fasta_filter1_file
-
-
-
-
-
-
-
-

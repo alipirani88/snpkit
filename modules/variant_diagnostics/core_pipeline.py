@@ -241,6 +241,7 @@ def generate_paste_command():
     """
 
     """ Paste/Generate and sort SNP Filter Label Matrix """
+    f4 = open("%s/paste_label_files.sh" % args.filter2_only_snp_vcf_dir, 'w+')
     # Initialize Paste command. First column should be unique positions. 
     paste_command = "paste %s/unique_positions_file" % args.filter2_only_snp_vcf_dir
     
@@ -258,17 +259,22 @@ def generate_paste_command():
     call("%s" % header_awk_cmd, logger)
     call("%s" % sed_header, logger)
     call("%s" % sed_header_2, logger)
-
+    f4.write(header_awk_cmd + '\n')
+    f4.write(sed_header + '\n')
+    f4.write(sed_header_2 + '\n')
     
     paste_command = paste_command + " > %s/temp_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
-    call(paste_command, logger)
-    
+    #call(paste_command, logger)
+    f4.write(paste_command + '\n')
+
     paste_command_header = "cat %s/header.txt %s/temp_label_final_raw.txt > %s/All_label_final_sorted_header.txt" % (
     args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
     
-    call("%s" % paste_command_header, logger)
-
+    #call("%s" % paste_command_header, logger)
+    f4.write(paste_command_header + '\n')
+    f4.close()
+    os.system("bash %s/paste_label_files.sh" % args.filter2_only_snp_vcf_dir)
     """ Assign numeric code to each variant filter reason"""
     subprocess.call([
                         "sed -i 's/reference_unmapped_position/0/g' %s/All_label_final_sorted_header.txt" % args.filter2_only_snp_vcf_dir],
@@ -467,6 +473,7 @@ def generate_indel_paste_command():
     """
 
     """ Paste/Generate and sort SNP Filter Label Matrix """
+    f4 = open("%s/paste_indel_label_files.sh" % args.filter2_only_snp_vcf_dir, 'w+')
     paste_command = "paste %s/unique_indel_positions_file" % args.filter2_only_snp_vcf_dir
     for i in vcf_filenames:
         label_file = i.replace('_filter2_final.vcf_no_proximate_snp.vcf',
@@ -480,16 +487,23 @@ def generate_indel_paste_command():
     call("%s" % header_awk_cmd, logger)
     call("%s" % sed_header, logger)
     call("%s" % sed_header_2, logger)
-
+    f4.write(header_awk_cmd + '\n')
+    f4.write(sed_header + '\n')
+    f4.write(sed_header_2 + '\n')
+    
     
     paste_command = paste_command + " > %s/temp_indel_label_final_raw.txt" % args.filter2_only_snp_vcf_dir
-
-    call(paste_command, logger)
+    
+    f4.write(paste_command + '\n')
+    #call(paste_command, logger)
 
     paste_command_header = "cat %s/header.txt %s/temp_indel_label_final_raw.txt > %s/All_indel_label_final_sorted_header.txt" % (
     args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir)
 
-    call("%s" % paste_command_header, logger)
+    #call("%s" % paste_command_header, logger)
+    f4.write(paste_command_header + '\n')
+    f4.close()
+    os.system("bash %s/paste_indel_label_files.sh" % args.filter2_only_snp_vcf_dir)
 
     """ Assign numeric code to each variant filter reason"""
     subprocess.call([
@@ -1114,6 +1128,11 @@ def generate_indel_position_label_data_matrix():
             Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions.write(str(pos) + '\n')
         Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions.close()
 
+        Only_ref_indel_variant_positions = open('%s/Only_ref_indel_variant_positions' % args.filter2_only_snp_vcf_dir, 'w')
+        for pos in Only_ref_indel_positions_for_closely:
+            Only_ref_indel_variant_positions.write(str(pos) + '\n')
+        Only_ref_indel_variant_positions.close()
+
         return Only_ref_indel_positions_for_closely
     
     def barplot_indel_stats():
@@ -1659,9 +1678,12 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
 def generate_vcf_files(Only_ref_variant_positions_for_closely):
     method_start_time = datetime.now()
     functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
-    functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, header=None)
-    functional_filter_pos_array = functional_filter_pos_array.squeeze()
-    exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values,functional_filter_pos_array.values))
+    if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+        functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, header=None)
+        functional_filter_pos_array = functional_filter_pos_array.squeeze()
+    else:
+        functional_filter_pos_array = pd.DataFrame()
+    exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values, functional_filter_pos_array.values))
     Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
     Only_ref_variant_positions_for_closely_without_functional_filtered_positions.to_csv('Only_ref_variant_positions_for_closely_without_functional_filtered_positions', index=False, sep='\n')
 
@@ -1959,6 +1981,7 @@ def extract_only_ref_variant_fasta_from_reference_allele_variant():
 def core_prep_snp():
     method_start_time = datetime.now()
     """ Generate SNP Filter Label Matrix """
+    # Debug 2022/12/21
     generate_paste_command()
 
     generate_paste_command_outgroup()
@@ -2207,8 +2230,8 @@ def gatk_combine_variants(files_gatk, reference, out_path, merged_file_suffix, l
     os.system("bash %s" % merge_gatk_commands_file)
     method_time_taken = datetime.now() - method_start_time
 
-    # keep_logging('- Time taken to complete GATK combine variants method: {}'.format(method_time_taken),
-    #              '- Time taken to complete GATK combine variants method: {}'.format(method_time_taken), logger, 'info')
+    keep_logging('- Time taken to complete GATK combine variants method: {}'.format(method_time_taken),
+                 '- Time taken to complete GATK combine variants method: {}'.format(method_time_taken), logger, 'info')
     return "%s/Final_vcf_gatk%s" % (out_path, merged_file_suffix)
 
 def extract_locus_tag_from_genbank():
@@ -2420,7 +2443,8 @@ def extract_core_positions():
     if ConfigSectionMap("functional_filters", Config)['apply_to_calls'] == "yes":
         core_positions_file = "%s/Only_ref_indel_variant_positions_for_closely_without_functional_filtered_positions" % args.filter2_only_snp_vcf_dir
     else:
-        core_positions_file = "%s/Only_ref_indel_positions_for_closely" % args.filter2_only_snp_vcf_dir
+        # Changes 2022/12. Updating this file name.
+        core_positions_file = "%s/Only_ref_indel_variant_positions" % args.filter2_only_snp_vcf_dir
     with open(core_positions_file) as fp:
         for line in fp:
             line = line.strip()
@@ -2836,36 +2860,46 @@ def generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phag
         # unmapped = -1,
         # True but non-core = 3
 
-        code_string = position_label[str(variants.POS)]
-        
-        # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
-        code_string = code_string.replace('reference_allele_indel_proximate', '4')
-        code_string = code_string.replace('reference_allele', '0')
-        code_string = code_string.replace('reference_unmapped_position', '-1')
-        # Changing LowFQ code from 2 to -3
-        # Changing HighFQ but LowMQ code from 2 to -4
-        code_string = code_string.replace('LowFQ_QUAL_DP_proximate_SNP', '-3')
-        code_string = code_string.replace('LowFQ_DP_QUAL_proximate_SNP', '-3')
-        code_string = code_string.replace('LowFQ_QUAL_proximate_SNP', '-3')
-        code_string = code_string.replace('LowFQ_DP_proximate_SNP', '-3')
-        code_string = code_string.replace('LowFQ_proximate_SNP', '-3')
-        code_string = code_string.replace('LowFQ_QUAL_DP', '-3')
-        code_string = code_string.replace('LowFQ_DP_QUAL', '-3')
-        code_string = code_string.replace('LowFQ_QUAL', '-3')
-        code_string = code_string.replace('LowFQ_DP', '-3')
-        code_string = code_string.replace('HighFQ_QUAL_DP_proximate_SNP', '2')
-        code_string = code_string.replace('HighFQ_DP_QUAL_proximate_SNP', '2')
-        code_string = code_string.replace('HighFQ_QUAL_proximate_SNP', '2')
-        code_string = code_string.replace('HighFQ_DP_proximate_SNP', '2')
-        code_string = code_string.replace('HighFQ_proximate_SNP', '2')
-        code_string = code_string.replace('HighFQ_QUAL_DP', '2')
-        code_string = code_string.replace('HighFQ_DP_QUAL', '2')
-        code_string = code_string.replace('HighFQ_QUAL', '2')
-        code_string = code_string.replace('HighFQ_DP', '2')
-        code_string = code_string.replace('LowFQ', '-3')
-        code_string = code_string.replace('HighFQ', '-4')
-        code_string_unmasked =code_string
-
+        # Adding a new condition to check. 2022-12-12
+        if str(variants.POS) in position_label.keys():
+            code_string = position_label[str(variants.POS)]
+            # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
+            code_string = code_string.replace('reference_allele_indel_proximate', '4')
+            code_string = code_string.replace('reference_allele', '0')
+            code_string = code_string.replace('reference_unmapped_position', '-1')
+            # Changing LowFQ code from 2 to -3
+            # Changing HighFQ but LowMQ code from 2 to -4
+            code_string = code_string.replace('LowFQ_QUAL_DP_proximate_SNP', '-3')
+            code_string = code_string.replace('LowFQ_DP_QUAL_proximate_SNP', '-3')
+            code_string = code_string.replace('LowFQ_QUAL_proximate_SNP', '-3')
+            code_string = code_string.replace('LowFQ_DP_proximate_SNP', '-3')
+            code_string = code_string.replace('LowFQ_proximate_SNP', '-3')
+            code_string = code_string.replace('LowFQ_QUAL_DP', '-3')
+            code_string = code_string.replace('LowFQ_DP_QUAL', '-3')
+            code_string = code_string.replace('LowFQ_QUAL', '-3')
+            code_string = code_string.replace('LowFQ_DP', '-3')
+            code_string = code_string.replace('HighFQ_QUAL_DP_proximate_SNP', '2')
+            code_string = code_string.replace('HighFQ_DP_QUAL_proximate_SNP', '2')
+            code_string = code_string.replace('HighFQ_QUAL_proximate_SNP', '2')
+            code_string = code_string.replace('HighFQ_DP_proximate_SNP', '2')
+            code_string = code_string.replace('HighFQ_proximate_SNP', '2')
+            code_string = code_string.replace('HighFQ_QUAL_DP', '2')
+            code_string = code_string.replace('HighFQ_DP_QUAL', '2')
+            code_string = code_string.replace('HighFQ_QUAL', '2')
+            code_string = code_string.replace('HighFQ_DP', '2')
+            code_string = code_string.replace('LowFQ', '-3')
+            code_string = code_string.replace('HighFQ', '-4')
+            code_string_unmasked =code_string
+        else:
+            code_string_array_temp = []
+            for x in range(len(vcf_filenames)):
+                code_string_array_temp.append("0")
+            print(len(code_string_array_temp))
+            code_string = ','.join(str(x) for x in code_string_array_temp)
+            keep_logging(
+                'Warning: position %s not found in position_label dictionary.' % variants.POS,
+                'Warning: position %s not found in position_label dictionary.' % variants.POS,
+                logger, 'info')
         if str(variants.POS) in core_positions:
             code_string = code_string.replace('VARIANT', '1')
             code_string_unmasked = code_string_unmasked.replace('VARIANT', '1')
@@ -3536,33 +3570,44 @@ def generate_Indel_matrix(final_merge_anno_file, functional_filter_pos_array, ph
         else:
             functional_field = functional_field + "NULL"
 
-        code_string = position_indel_label[str(variants.POS)]
-        # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
-        code_string = code_string.replace('reference_allele_indel_proximate', '4')
-        code_string = code_string.replace('reference_allele', '0')
-        code_string = code_string.replace('reference_unmapped_position', '-1')
-        code_string = code_string.replace('LowAF_QUAL_DP_proximate_SNP', '2')
-        code_string = code_string.replace('LowAF_DP_QUAL_proximate_SNP', '2')
-        code_string = code_string.replace('LowAF_QUAL_proximate_SNP', '2')
-        code_string = code_string.replace('LowAF_DP_proximate_SNP', '2')
-        code_string = code_string.replace('LowAF_proximate_SNP', '2')
-        code_string = code_string.replace('LowAF_QUAL_DP', '2')
-        code_string = code_string.replace('LowAF_DP_QUAL', '2')
-        code_string = code_string.replace('LowAF_QUAL', '2')
-        code_string = code_string.replace('LowAF_DP', '2')
-        code_string = code_string.replace('HighAF_QUAL_DP_proximate_SNP', '2')
-        code_string = code_string.replace('HighAF_DP_QUAL_proximate_SNP', '2')
-        code_string = code_string.replace('HighAF_QUAL_proximate_SNP', '2')
-        code_string = code_string.replace('HighAF_DP_proximate_SNP', '2')
-        code_string = code_string.replace('HighAF_proximate_SNP', '2')
-        code_string = code_string.replace('HighAF_QUAL_DP', '2')
-        code_string = code_string.replace('HighAF_DP_QUAL', '2')
-        code_string = code_string.replace('HighAF_QUAL', '2')
-        code_string = code_string.replace('HighAF_DP', '2')
-        code_string = code_string.replace('LowAF', '-3')
-        code_string = code_string.replace('HighAF', '-4')
-        code_string_unmasked =code_string
-
+        # Adding a new condition to check. 2022-12-12
+        if str(variants.POS) in position_indel_label.keys():
+            code_string = position_indel_label[str(variants.POS)]
+            # Extract positions filtered by Indel Proximate filters and assign N instead of reference allele - 2020-05-20
+            code_string = code_string.replace('reference_allele_indel_proximate', '4')
+            code_string = code_string.replace('reference_allele', '0')
+            code_string = code_string.replace('reference_unmapped_position', '-1')
+            code_string = code_string.replace('LowAF_QUAL_DP_proximate_SNP', '2')
+            code_string = code_string.replace('LowAF_DP_QUAL_proximate_SNP', '2')
+            code_string = code_string.replace('LowAF_QUAL_proximate_SNP', '2')
+            code_string = code_string.replace('LowAF_DP_proximate_SNP', '2')
+            code_string = code_string.replace('LowAF_proximate_SNP', '2')
+            code_string = code_string.replace('LowAF_QUAL_DP', '2')
+            code_string = code_string.replace('LowAF_DP_QUAL', '2')
+            code_string = code_string.replace('LowAF_QUAL', '2')
+            code_string = code_string.replace('LowAF_DP', '2')
+            code_string = code_string.replace('HighAF_QUAL_DP_proximate_SNP', '2')
+            code_string = code_string.replace('HighAF_DP_QUAL_proximate_SNP', '2')
+            code_string = code_string.replace('HighAF_QUAL_proximate_SNP', '2')
+            code_string = code_string.replace('HighAF_DP_proximate_SNP', '2')
+            code_string = code_string.replace('HighAF_proximate_SNP', '2')
+            code_string = code_string.replace('HighAF_QUAL_DP', '2')
+            code_string = code_string.replace('HighAF_DP_QUAL', '2')
+            code_string = code_string.replace('HighAF_QUAL', '2')
+            code_string = code_string.replace('HighAF_DP', '2')
+            code_string = code_string.replace('LowAF', '-3')
+            code_string = code_string.replace('HighAF', '-4')
+            code_string_unmasked =code_string
+        else:
+            code_string_array_temp = []
+            for x in range(len(vcf_filenames)):
+                code_string_array_temp.append("0")
+            print(len(code_string_array_temp))
+            code_string = ','.join(str(x) for x in code_string_array_temp)
+            keep_logging(
+                'Warning: position %s not found in position_indel_label dictionary.' % variants.POS,
+                'Warning: position %s not found in position_indel_label dictionary.' % variants.POS,
+                logger, 'info')
         if str(variants.POS) in indel_core_positions:
             code_string = code_string.replace('VARIANT', '1')
             code_string_unmasked = code_string_unmasked.replace('VARIANT', '1')
@@ -4231,7 +4276,7 @@ def annotated_snp_matrix():
     position_label, position_indel_label = generate_position_label_dict(final_merge_anno_file)
 
     # Commented for debugging
-    #mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
+    mask_fq_mq_positions, mask_fq_mq_positions_outgroup_specific = get_low_fq_mq_positions(position_label)
 
     generate_SNP_matrix(final_merge_anno_file, functional_filter_pos_array, phage_positions, repetitive_positions,
                         mask_positions, position_label, core_positions, snp_var_ann_dict)
@@ -4399,7 +4444,9 @@ if __name__ == '__main__':
     temp_dir = "/tmp/snpkit_temp"
     if not os.path.exists("/tmp/snpkit_temp"):
         make_sure_path_exists(temp_dir)
-        
+    else:
+        keep_logging('- /tmp/snpkit_temp already exists and is non-empty.', '- /tmp/snpkit_temp already exists and is non-empty.', logger, 'info')
+        os.system("rm /tmp/snpkit_temp/*")
 
     # Read Config file into Config object that will be used to extract configuration settings set up in config file.
     global config_file
@@ -4457,7 +4504,7 @@ if __name__ == '__main__':
         fp.close()
     vcf_filenames = sorted(vcf_filenames_temp)
     vcf_filenames_outgroup = sorted(vcf_filenames_temp_outgroup)
-
+    
     make_sure_files_exists(vcf_filenames, Config, logger)
 
     log_file_handle = "%s/%s_%s.log.txt" % (args.filter2_only_snp_vcf_dir, log_unique_time, analysis_name_log)
@@ -4503,15 +4550,14 @@ if __name__ == '__main__':
                                                                      args.filter2_only_snp_vcf_dir, num_cores)
 
         # bgzip and tabix all the vcf files in core_temp_dir.
-        # files_for_tabix = glob.glob((args.filter2_only_snp_vcf_dir).replace('core_temp_dir/', '*/*_vcf_results/*.vcf'))
-        # tabix(files_for_tabix, "vcf", logger, Config)
+        #files_for_tabix = glob.glob((args.filter2_only_snp_vcf_dir).replace('core_temp_dir/', '*/*_vcf_results/*.vcf'))
+        #tabix(files_for_tabix, "vcf", logger, Config)
         
         # Get the cluster option; create and run jobs based on given parameter. The jobs will parse all the intermediate vcf file to extract information such as if any unique variant position was unmapped in a sample, if it was filtered out dur to DP,MQ, FQ, proximity to indel, proximity to other SNPs and other variant filter parameters set in config file.
         tmp_dir = "/tmp/temp_%s/" % log_unique_time
         make_sure_path_exists(tmp_dir)
 
-        create_job(args.jobrun, vcf_filenames, unique_position_file, temp_dir, scheduler_directives, script_Directive,
-                   job_name_flag, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
+        create_job(args.jobrun, vcf_filenames, unique_position_file, temp_dir, scheduler_directives, script_Directive, job_name_flag, temp_dir, args.outgroup, logger, args.filter2_only_snp_vcf_dir, num_cores)
 
         create_indel_job(args.jobrun, vcf_filenames, unique_indel_position_file, temp_dir, scheduler_directives,
                          script_Directive, job_name_flag, temp_dir, args.outgroup, logger,
@@ -4588,6 +4634,7 @@ if __name__ == '__main__':
 
         # Commented out for debugging
         # Run core steps. Generate SNP and data Matrix results. Extract core SNPS and consensus files.
+        # Debug 2022/12/21
         Only_ref_indel_positions_for_closely = core_prep_indel()
 
         Only_ref_variant_positions_for_closely = core_prep_snp()
@@ -4753,9 +4800,13 @@ if __name__ == '__main__':
 
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
 
-        functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
-        functional_filter_pos_array = functional_filter_pos_array.squeeze()
-        Only_ref_variant_positions_for_closely = pd.read_csv("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, sep='\n', header=None)
+        if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
+            functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
+            functional_filter_pos_array = functional_filter_pos_array.squeeze()
+        else:
+            functional_filter_pos_array = pd.DataFrame()
+
+        Only_ref_variant_positions_for_closely = pd.read_csv("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, header=None)
         Only_ref_variant_positions_for_closely = Only_ref_variant_positions_for_closely.squeeze()
         exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values,functional_filter_pos_array.values))
         Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
@@ -4787,7 +4838,7 @@ if __name__ == '__main__':
             outgroup_specific_positions = []
 
         # Annotate core variants. Generate SNP and Indel matrix.
-        #annotated_snp_matrix()
+        # annotated_snp_matrix()
 
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('- Generating Fasta from Variant Alleles.', '- Generating Fasta from Variant Alleles.', logger,

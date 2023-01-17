@@ -156,6 +156,11 @@ def pipeline(args, logger):
             # GATK indel calling integration
             #final_raw_indel_vcf = prepare_indel(final_raw_vcf_mpileup, args.output_folder, args.analysis_name, reference, logger, Config)
             return final_raw_vcf, final_raw_indel_vcf
+        
+        # elif caller == "gatk_joint":
+        #     keep_logging('- Joint SNP Calling using using GATK4.', 'Joint SNP Calling using using GATK4.', logger, 'info')
+        #     gatkhaplotypecaller_GVCF(out_sorted_bam,  args.output_folder, args.index, args.analysis_name, logger, Config)
+            
         else:
             keep_logging('- Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. gatkhaplotypecaller', 'Please provide Variant Caller name in config file under the section [pipeline]. Options for Variant caller: 1. samtools 2. gatkhaplotypecaller', logger, 'info')
             exit()
@@ -176,6 +181,7 @@ def pipeline(args, logger):
         Avg_dp_cmd = "grep \'^Total\' %s | awk -F\',\' \'{print $3}\'" % gatk_depth_of_coverage_file
         proc = sp.Popen([Avg_dp_cmd], stdout=sp.PIPE, shell=True)
         (out, err) = proc.communicate()
+        print (out)
         Avg_dp = float(out)
         keep_logging('- The Average Depth per reference genome base is: %s' % Avg_dp, '- The Average Depth per reference genome base is: %s' % Avg_dp, logger, 'info')
         filter_variants(final_raw_vcf, args.output_folder, args.analysis_name, args.index, logger, Config, Avg_dp)
@@ -215,14 +221,15 @@ def pipeline(args, logger):
 
     if len(steps_list) == 1:
         if steps_list[0] == "call":
-            clean()
-            out_sam = align_reads()
-            out_sorted_bam = post_align(out_sam)
+            #clean()
+            #out_sam = align_reads()
+            #out_sorted_bam = post_align(out_sam)
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
+            #coverage_depth_stats()
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            if not os.path.exists(gatk_depth_of_coverage_file):
-                gatk_depth_of_coverage_file = coverage_depth_stats()
-            final_raw_vcf, final_raw_indel_vcf = varcall()
+            ## if not os.path.exists(gatk_depth_of_coverage_file):
+            ##     gatk_depth_of_coverage_file = coverage_depth_stats()
+            #final_raw_vcf, final_raw_indel_vcf = varcall()
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             annotation((final_raw_vcf).replace('_aln_mpileup_raw.vcf_5bp_indel_removed.vcf', '_filter2_final.vcf_no_proximate_snp.vcf'))

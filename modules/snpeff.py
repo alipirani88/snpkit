@@ -88,17 +88,33 @@ def prepare_snpEff_db(reference, vc_logs_folder, logger, Config):
             os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]), logger)
     else:
         keep_logging(
-            "- Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\n-Exiting..." % (
+        "- Warning: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file.\n- Warning: This will cause issues in subsequent analyses." % (
+        os.path.dirname(reference), reference_basename[0]),
+        "- Warning: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\n- Warning: This will cause issues in subsequent analyses." % (
+        os.path.dirname(reference), reference_basename[0]), logger, 'exception')
+        #exit()
+    
+    if os.path.isfile("%s/%s.gbf" % (os.path.dirname(reference), reference_basename[0])):
+        # keep_logging("cp %s/%s.gbf %s/data/%s/genes.gbk" % (
+        #     os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]),
+        #              "cp %s/%s.gbf %s/data/%s/genes.gbk" % (os.path.dirname(reference), reference_basename[0],
+        #                                                     bin_dir,
+        #                                                     reference_basename[0]), logger, 'debug')
+        call("cp %s/%s.gbf %s/data/%s/genes.gbk" % (
+            os.path.dirname(reference), reference_basename[0], bin_dir, reference_basename[0]), logger)
+    else:
+        keep_logging(
+            "- Warning: %s/%s.gbf file doesn't exists. Make sure the Genbank file has the same prefix as reference fasta file\n- Warning: This will cause issues in subsequent analyses." % (
             os.path.dirname(reference), reference_basename[0]),
-            "- Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\n-Exiting..." % (
+            "- Warning: %s/%s.gff file doesn't exists. Make sure the Genbank file has the same prefix as reference fasta file\n- Warning: This will cause issues in subsequent analyses." % (
             os.path.dirname(reference), reference_basename[0]), logger, 'exception')
-        exit()
+        #exit()
     
     call("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (
     ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder, bin_dir),
          logger)
-    
-    
+    keep_logging("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], vc_logs_folder, bin_dir), "", logger, 'debug')
+     
 def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
     global bin_dir
     proc = subprocess.Popen(["which snpEff"], stdout=subprocess.PIPE, shell=True)
@@ -140,11 +156,12 @@ def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
                                 (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, bin_dir,
                                 ConfigSectionMap("snpeff", Config)['snpeff_parameters'],
                                 vc_logs_folder, snpeffdb, final_vcf, final_vcf)
-    print (annotate_vcf_cmd)
+    # print (annotate_vcf_cmd)
+    # print (annotate_final_vcf_cmd)
     call(annotate_vcf_cmd, logger)
     call(annotate_final_vcf_cmd, logger)
     files_for_tabix = ['%s_ANN.vcf' % raw_vcf, '%s_ANN.vcf' % final_vcf]
-    tabix([files_for_tabix], "vcf", logger, Config)
+    tabix(files_for_tabix, "vcf", logger, Config)
 
 def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
     global bin_dir
@@ -178,7 +195,8 @@ def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
                                 (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, bin_dir,
                                 ConfigSectionMap("snpeff", Config)['snpeff_parameters'],
                                 vc_logs_folder, snpeffdb, final_vcf, final_vcf)
+    # print (annotate_final_vcf_cmd)
     call(annotate_final_vcf_cmd, logger)
 
     files_for_tabix = ['%s_ANN.vcf' % final_vcf]
-    tabix([files_for_tabix], "vcf", logger, Config)
+    tabix(files_for_tabix, "vcf", logger, Config)

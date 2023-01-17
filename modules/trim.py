@@ -22,7 +22,7 @@ def trim(input1, input2, out_path, crop, logger, Config):
         headcrop_string = 'HEADCROP:' + ConfigSectionMap("Trimmomatic", Config)['headcrop_length']
         if not crop:
             cmdstring = "trimmomatic PE -phred33 " + input1 + " " + input2 + " " + clean_filenames + " " + illumina_string + " " + sliding_string + " " + minlen_string + " " + headcrop_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
-            keep_logging(cmdstring, cmdstring, logger, 'debug')
+            # keep_logging('', cmdstring, logger, 'debug')
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:
@@ -45,7 +45,7 @@ def trim(input1, input2, out_path, crop, logger, Config):
         headcrop_string = 'HEADCROP:' + ConfigSectionMap("Trimmomatic", Config)['headcrop_length']
         if not crop:
             cmdstring = "trimmomatic SE " + input1 + " " + clean_filenames + " " + illumina_string + " " + sliding_string + " " + minlen_string + " " + headcrop_string + " 2> %s/%s_trim_out.log" % (out_path, os.path.basename(os.path.dirname(out_path)))
-            keep_logging(cmdstring, cmdstring, logger, 'debug')
+            # keep_logging(cmdstring, cmdstring, logger, 'debug')
             try:
                 call(cmdstring, logger)
             except sp.CalledProcessError:

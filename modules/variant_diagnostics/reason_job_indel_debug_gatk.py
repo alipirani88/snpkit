@@ -117,13 +117,20 @@ def generate_dicts():
 
     program_starts = time.time()
     for variants in VCF(ori_mpileup_file + ".gz"):
-        positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('DP'))
-        #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('FQ'))
-        #positions_mpileup_vcf[int(variants.POS)].append(variants.QUAL)
-        positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('QD'))
-        positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('MQ'))
-        positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF'))
-        #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
+        #print (type(variants.INFO.get('DP')))
+        if variants.INFO.get('DP') is not None and variants.INFO.get('QD') is not None and variants.INFO.get('MQ') is not None and variants.INFO.get('AF') is not None:
+            positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('DP'))
+            #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('FQ'))
+            #positions_mpileup_vcf[int(variants.POS)].append(variants.QUAL)
+            positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('QD'))
+            positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('MQ'))
+            positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF'))
+            #positions_mpileup_vcf[int(variants.POS)].append(variants.INFO.get('AF1'))
+        else:
+            positions_mpileup_vcf[int(variants.POS)].append(0)
+            positions_mpileup_vcf[int(variants.POS)].append(0)
+            positions_mpileup_vcf[int(variants.POS)].append(0)
+            positions_mpileup_vcf[int(variants.POS)].append(0)
 
     now = time.time()
     #print ("Time taken to load raw vcf data array - {0} seconds".format(now - program_starts))
@@ -154,8 +161,8 @@ def get_reason():
                     pst = "_proximate_SNP"
                 else:
                     pst = ""
-                # print (j)
-                # print (positions_mpileup_vcf[int(j)])
+                #print (j)
+                #print (positions_mpileup_vcf[int(j)])
                 if type(positions_mpileup_vcf[int(j)][3]) is tuple:
                     if positions_mpileup_vcf[int(j)][3][0] < 0.9:
                         st = "LowAF"

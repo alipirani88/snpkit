@@ -18,7 +18,7 @@ resources: nodes=1:ppn=4,pmem=4000mb,walltime=250:00:00
 large_resources: nodes=1:ppn=12,mem=47gb,walltime=250:00:00
 email: apirani@med.umich.edu
 queue: flux
-flux_account: esnitkin1
+flux_account: esnitkin0
 notification: a,b,e
 
 [slurm]
@@ -26,7 +26,7 @@ resources: --nodes=1 --ntasks=1 --cpus-per-task=1 --mem=5g --time=125:00:00
 large_resources: --nodes=1 --ntasks-per-node=12 --mem=47000mb --time=250:00:00
 email: apirani@med.umich.edu
 partition: standard
-flux_account: esnitkin1
+flux_account: esnitkin0
 notification: BEGIN,END,FAIL,REQUEUE
 
 # Set command line Parameters for individual tools used by snpkit
@@ -138,10 +138,9 @@ min_tandem_repeat_length: 20
 percent_id: 95
 
 [SNP_filters]
-filter_criteria: snitkin_filters
-# Other Criterias: SPANDx_filters, loose_filters, snitkin_filters, contamination_filters
+filter_criteria: snpkit
 
-[snitkin_filters]
+[snpkit]
 avg_depth: no
 # If AVG_DEPTH is yes, the below DP threshold will be ignored. Instead, LOW_DEPTH and HIGH_DEPTH filter parameter will be used.
 # Filter variants with Depth less than the below threshold
@@ -231,17 +230,9 @@ apply_functional_filters: yes
 find_phage_region: yes
 find_repetitive_region: yes
 mask_region: no
-mask_file: /nfs/esnitkin/bin_group/variant_calling_bin/reference/test_file.txt
+mask_file: mask.txt
 mobile_elements: yes
 apply_to_calls: yes
-
-
-#CLUSTER_SNP: 3
-#CLUSTER_WINDOW_SNP: 10
-#MLEAF_SNP: 0.95
-#QD_SNP: 10.0
-#FS_SNP: 10.0
-#HAPLO_SNP: 20.0
 
 ##SNP annotations
 [snpeff]
@@ -249,7 +240,7 @@ snpeff_bin: //
 base_cmd: snpEff
 snpeff_parameters: -d -no-downstream -no-upstream
 prebuild: no
-db: Staphylococcus_aureus_subsp_aureus_usa300_tch1516
+db: 
 dataDir: /data/
 
 ########################################################################################################################
@@ -275,26 +266,20 @@ Ref_Name: MRSA_USA_300.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300/
 
-#[MRSA_USA_100]
-# Name of reference genome fasta file.
-#Ref_Name: MRSA_USA_100_1.fasta
-# path to the reference genome fasta file.
-#Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_100/
-#Gff_Name: MRSA_USA_100.gff
-
-[CDIFF_630]
-# Name of reference genome fasta file.
-Ref_Name: cdiff_630.fasta
-# path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630/
-
 [CDIFF_630_ncbi]
 # Name of reference genome fasta file.
 Ref_Name: cdiff_630.fasta
 # path to the reference genome fasta file.
 Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630_ncbi/
 
+[Ecoli_NCTC13441_ST131]
+# Name of reference genome fasta file.
+Ref_Name: Ecoli_NCTC13441_ST131.fasta
+# path to the reference genome fasta file.
+Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Ecoli_NCTC13441_ST131/
+
 # This setting is deprecated. snpkit uses conda environments for 
 # Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
 [bin_path]
 binbase: 
+
