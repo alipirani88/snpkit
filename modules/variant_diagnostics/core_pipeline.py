@@ -11,9 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """ Hacky way to append. Instead Add this path to PYTHONPATH Variable """
 from collections import OrderedDict
 from collections import defaultdict
-#from joblib import Parallel, delayed
 import multiprocessing
-#import thread
 import glob
 import readline
 import pandas as pd
@@ -81,8 +79,6 @@ required.add_argument('-config', action='store', dest="config",
 args = parser.parse_args()
 
 """ Generic Methods """
-
-
 def make_sure_path_exists(out_path):
     """This function checks if the args out_path exists and generates an empty directory if it doesn't.
 
@@ -212,7 +208,6 @@ def run_command(i):
     done = "Completed: %s" % i
     return done
 
-
 """core_prep methods
 
     This block contains methods that are respnsible for running the first part of core_All step of the pipeline.
@@ -231,7 +226,6 @@ def run_command(i):
         - 
 
 """
-
 
 def generate_paste_command():
     """
@@ -782,11 +776,9 @@ def generate_position_label_data_matrix():
             # Only_filtered_variant_positions_for_closely = results.loc[results['1'] != numberofsamples, 'Unnamed: 0']
             Only_ref_variant_positions_for_closely.to_csv('Only_ref_variant_positions_for_closely', index=False, sep='\n')
             Only_filtered_variant_positions_for_closely.to_csv('Only_filtered_positions_for_closely', index=False, sep='\n')
-
         return Only_ref_variant_positions_for_closely
 
     def temp_generate_position_label_data_matrix_All_label():
-
         """
         Read temp_label_final_raw.txt SNP position label data matrix for generating barplot statistics.
         """
@@ -1627,24 +1619,6 @@ def create_job_DP(jobrun, vcf_filenames, script_Directive, job_name_flag):
         
         results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in command_array)
 
-    # elif jobrun == "cluster":
-    #     """ Test pending """
-    #     command_file = "%s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir
-    #     f3 = open(command_file, 'w+')
-    #     for i in vcf_filenames:
-    #         job_name = os.path.basename(i)
-    #         job_print_string = "#PBS -N %s\n#PBS -M apirani@med.umich.edu\n#PBS -m a\n#PBS -V\n#PBS -l nodes=1:ppn=1,mem=4000mb,walltime=76:00:00\n#PBS -q fluxod\n#PBS -A esnitkin_fluxod\n#PBS -l qos=flux\n\ncd %s\n/nfs/esnitkin/bin_group/anaconda2/bin/python /nfs/esnitkin/bin_group/pipeline/Github/variant_calling_pipeline_dev/modules/variant_diagnostics/DP_analysis.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_file %s\n" % (job_name, args.filter2_only_snp_vcf_dir, args.filter2_only_snp_vcf_dir, i)
-    #         job_file_name = "%s_DP.pbs" % (i)
-    #         f1=open(job_file_name, 'w+')
-    #         f1.write(job_print_string)
-    #         f1.close()
-    #     pbs_dir = args.filter2_only_snp_vcf_dir + "/*_DP.pbs"
-    #     pbs_scripts = glob.glob(pbs_dir)
-    #     for i in pbs_scripts:
-    #         f3.write("bash %s\n" % i)
-    #     f3.close()
-    #     os.system("bash %s/commands_list_DP.sh" % args.filter2_only_snp_vcf_dir)
-
     else:
         """
         Generate a Command list of each job and run it on local system one at a time
@@ -2076,8 +2050,10 @@ def prepare_snpEff_db(reference_basename):
             "Error: %s/%s.gff file doesn't exists. Make sure the GFF file has the same prefix as reference fasta file\nExiting..." % (
             os.path.dirname(args.reference), reference_basename[0]), logger, 'exception')
         exit()
+    
     # keep_logging("java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
     # keep_logging("java -jar %s/%s/%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), "java -jar %s/%s/%s build -gff3 -v %s -c %s/snpEff.config -dataDir %s/%s/data" % (ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin'], ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, ConfigSectionMap("bin_path", Config)['binbase'], ConfigSectionMap("snpeff", Config)['snpeff_bin']), logger, 'debug')
+    
     ## Great Lakes Changes
     keep_logging("%s build -genbank -v %s -c %s/snpEff.config -dataDir %s/data" % (
     ConfigSectionMap("snpeff", Config)['base_cmd'], reference_basename[0], args.filter2_only_snp_vcf_dir, bin_dir),
@@ -2133,7 +2109,7 @@ def variant_annotation():
                            (ConfigSectionMap("snpeff", Config)['base_cmd'], raw_vcf, bin_dir,
                             ConfigSectionMap("snpeff", Config)['snpeff_parameters'], args.filter2_only_snp_vcf_dir,
                             snpeffdb, raw_vcf, raw_vcf)
-        # print annotate_vcf_cmd
+        
         annotate_vcf_cmd_array.append(annotate_vcf_cmd)
         final_vcf = i
         annotate_final_vcf_cmd = "%s -csvStats %s_ANN.csv -dataDir %s/data/ %s -c %s/snpEff.config %s %s > %s_ANN.vcf" % \
@@ -2142,7 +2118,6 @@ def variant_annotation():
                                   args.filter2_only_snp_vcf_dir, snpeffdb, final_vcf, final_vcf)
         annotate_final_vcf_cmd_array.append(annotate_final_vcf_cmd)
 
-    # print annotate_vcf_cmd_array
     results = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_vcf_cmd_array)
     results_2 = Parallel(n_jobs=num_cores)(delayed(run_command)(command) for command in annotate_final_vcf_cmd_array)
     method_time_taken = datetime.now() - method_start_time
