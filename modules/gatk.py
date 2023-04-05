@@ -179,6 +179,7 @@ def gatk_DepthOfCoverage(out_sorted_bam, out_path, analysis_name, reference, log
     pattern = re.compile("|".join(rep.keys()))
     interval = pattern.sub(lambda m: rep[re.escape(m.group(0))], reference)
     cmd = "gatk DepthOfCoverage -R %s -O %s/%s_depth_of_coverage -I %s --summary-coverage-threshold 1 --summary-coverage-threshold 5 --summary-coverage-threshold 9 --summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 25 --ignore-deletion-sites --intervals %s" % (reference, out_path, analysis_name, out_sorted_bam, interval)
+    print(cmd)
     try:
         call(cmd, logger)
     except sp.CalledProcessError:

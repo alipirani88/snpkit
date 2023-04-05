@@ -221,15 +221,15 @@ def pipeline(args, logger):
 
     if len(steps_list) == 1:
         if steps_list[0] == "call":
-            #clean()
-            #out_sam = align_reads()
-            #out_sorted_bam = post_align(out_sam)
+            clean()
+            out_sam = align_reads()
+            out_sorted_bam = post_align(out_sam)
             out_sorted_bam = "%s/%s_aln_sort.bam" % (args.output_folder, args.analysis_name)
             #coverage_depth_stats()
             gatk_depth_of_coverage_file = "%s/%s_depth_of_coverage.sample_summary" % (args.output_folder, args.analysis_name)
-            ## if not os.path.exists(gatk_depth_of_coverage_file):
-            ##     gatk_depth_of_coverage_file = coverage_depth_stats()
-            #final_raw_vcf, final_raw_indel_vcf = varcall()
+            if not os.path.exists(gatk_depth_of_coverage_file):
+                gatk_depth_of_coverage_file = coverage_depth_stats()
+            final_raw_vcf, final_raw_indel_vcf = varcall()
             final_raw_vcf = "%s/%s_aln_mpileup_raw.vcf_5bp_indel_removed.vcf" % (args.output_folder, args.analysis_name)
             filter(gatk_depth_of_coverage_file)
             annotation((final_raw_vcf).replace('_aln_mpileup_raw.vcf_5bp_indel_removed.vcf', '_filter2_final.vcf_no_proximate_snp.vcf'))
