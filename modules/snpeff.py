@@ -156,8 +156,8 @@ def variant_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
                                 (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, bin_dir,
                                 ConfigSectionMap("snpeff", Config)['snpeff_parameters'],
                                 vc_logs_folder, snpeffdb, final_vcf, final_vcf)
-    # print (annotate_vcf_cmd)
-    # print (annotate_final_vcf_cmd)
+    print (annotate_vcf_cmd)
+    print (annotate_final_vcf_cmd)
     call(annotate_vcf_cmd, logger)
     call(annotate_final_vcf_cmd, logger)
     files_for_tabix = ['%s_ANN.vcf' % raw_vcf, '%s_ANN.vcf' % final_vcf]
@@ -195,7 +195,7 @@ def indel_annotation(vcf_file, reference, vc_logs_folder, Config, logger):
                                 (ConfigSectionMap("snpeff", Config)['base_cmd'], final_vcf, bin_dir,
                                 ConfigSectionMap("snpeff", Config)['snpeff_parameters'],
                                 vc_logs_folder, snpeffdb, final_vcf, final_vcf)
-    # print (annotate_final_vcf_cmd)
+    print (annotate_final_vcf_cmd)
     call(annotate_final_vcf_cmd, logger)
 
     files_for_tabix = ['%s_ANN.vcf' % final_vcf]

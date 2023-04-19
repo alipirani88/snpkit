@@ -414,6 +414,7 @@ def run_core_prep_analysis(core_temp_dir, reference, analysis_name, log_unique_t
     return core_prep_pipeline
 
 def run_core_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
+    
     file_exists(reference)
     core_pipeline = "python3 %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 2 -jobrun %s -results_dir %s -config %s -scheduler %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file, args.scheduler)
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
@@ -887,10 +888,11 @@ if __name__ == '__main__':
              logger)
         core_temp_dir = args.output + "/core_temp_dir/"
 
-        proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output], stdout=subprocess.PIPE,
-                                shell=True)
-        (out2, err2) = proc.communicate()
-        core_results_dir = (out2.decode('ascii')).strip()
+        # proc = subprocess.Popen(["ls -1ad %s/*_core_results | tail -n1" % args.output], stdout=subprocess.PIPE,
+        #                         shell=True)
+        # (out2, err2) = proc.communicate()
+        # print(out2)
+        # core_results_dir = (out2.decode('ascii')).strip()
         
         list_of_label_files = glob.glob("%s/*_label" % core_temp_dir)
         list_of_vcf_files = []

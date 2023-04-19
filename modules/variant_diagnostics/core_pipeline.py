@@ -4776,13 +4776,14 @@ if __name__ == '__main__':
         functional_class_filter_positions = "%s/Functional_class_filter_positions.txt" % args.filter2_only_snp_vcf_dir
 
         if ConfigSectionMap("functional_filters", Config)['apply_functional_filters'] == "yes":
-            functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, sep='\n', header=None)
+            functional_filter_pos_array = pd.read_csv(functional_class_filter_positions, header=None)
             functional_filter_pos_array = functional_filter_pos_array.squeeze()
         else:
             functional_filter_pos_array = pd.DataFrame()
 
-        Only_ref_variant_positions_for_closely = pd.read_csv("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, header=None)
-        Only_ref_variant_positions_for_closely = Only_ref_variant_positions_for_closely.squeeze()
+        Only_ref_variant_positions_for_closely = pd.read_csv("%s/Only_ref_variant_positions_for_closely" % args.filter2_only_snp_vcf_dir, header=0)
+        #Only_ref_variant_positions_for_closely = Only_ref_variant_positions_for_closely.squeeze()
+        # print(Only_ref_variant_positions_for_closely)
         exclude_ref_var_functional = pd.Series(np.intersect1d(Only_ref_variant_positions_for_closely.values,functional_filter_pos_array.values))
         Only_ref_variant_positions_for_closely_without_functional_filtered_positions = Only_ref_variant_positions_for_closely[~Only_ref_variant_positions_for_closely.isin(exclude_ref_var_functional)]
         Only_ref_variant_positions_for_closely_without_functional_filtered_positions.to_csv('%s/Only_ref_variant_positions_for_closely_without_functional_filtered_positions' % args.filter2_only_snp_vcf_dir, index=False, sep='\n', header=None)
@@ -4813,14 +4814,14 @@ if __name__ == '__main__':
             outgroup_specific_positions = []
 
         # Annotate core variants. Generate SNP and Indel matrix.
-        # annotated_snp_matrix()
+        annotated_snp_matrix()
 
         # # Read new allele matrix and generate fasta; generate a seperate function
         keep_logging('- Generating Fasta from Variant Alleles.', '- Generating Fasta from Variant Alleles.', logger,
                      'info')
 
-        create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
-                                        script_Directive, job_name_flag)
+        # create_job_allele_variant_fasta(args.jobrun, vcf_filenames, args.filter2_only_snp_vcf_dir, config_file,
+        #                                 script_Directive, job_name_flag)
 
         # extract_only_ref_variant_fasta_from_reference_allele_variant()
 

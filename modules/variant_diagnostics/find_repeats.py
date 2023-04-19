@@ -11,7 +11,7 @@ def nucmer_repeat(reference, outdir, logger, Config):
                  'info')
     prefix = str(reference.split('.')[0]) + "_repeat"
     nucmer_repeat_cmd = "%s --maxmatch --nosimplify --prefix=%s %s %s" % (ConfigSectionMap("mummer", Config)['nucmer_base_cmd'], prefix, reference, reference)
-    #keep_logging('', 'Running: %s' % nucmer_repeat_cmd, logger, 'debug')
+    # keep_logging('Running: %s' % nucmer_repeat_cmd, 'Running: %s' % nucmer_repeat_cmd, logger, 'debug')
     call(nucmer_repeat_cmd, logger)
     showcoords_cmd = "show-coords -I %s -r %s.delta > %s.coords" % (ConfigSectionMap("mummer", Config)['percent_id'], prefix, prefix)
     # keep_logging('Running: %s' % showcoords_cmd, 'Running: %s' % showcoords_cmd, logger, 'debug')
@@ -20,8 +20,8 @@ def nucmer_repeat(reference, outdir, logger, Config):
     tandem_repeats_cmd = "exact-tandems %s %s > %s_tandem_repeats_file" % (reference, ConfigSectionMap("mummer", Config)['min_tandem_repeat_length'], prefix)
     # keep_logging('Running: %s' % tandem_repeats_cmd, 'Running: %s' % tandem_repeats_cmd, logger, 'debug')
     # keep_logging('Running: %s' % repeat_match_cmd, 'Running: %s' % repeat_match_cmd, logger, 'debug')
-    # call(tandem_repeats_cmd, logger)
-    # call(repeat_match_cmd, logger)
+    call(tandem_repeats_cmd, logger)
+    call(repeat_match_cmd, logger)
     inexact_repeat_positions = []
     with open("%s.coords" % prefix) as fp:
         # for i in range(1,6):
