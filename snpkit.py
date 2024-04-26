@@ -51,9 +51,9 @@ def parser():
     development.add_argument('-extract_unmapped', action='store', dest="extract_unmapped", help='Extract unmapped reads, assemble it and detect AMR genes using ariba')
     optional.add_argument('-gubbins', action='store', dest="gubbins", help='Run Gubbins. Options: yes,no. Default: no')
     development.add_argument('-outgroup', action='store', dest="outgroup", help='Outgroup sample name. Alpha testing version. Not recommended.')
-    subsample.add_argument('-downsample', action='store', dest="downsample", help='Subsample reads to a default depth of 100X or user specified -coverage_depth')
-    subsample.add_argument('-coverage_depth', action='store', dest="coverage_depth",
-                          help='Downsample reads to this depth')
+    subsample.add_argument('-downsample', action='store', dest="downsample", help='By Default, downsample reads to 100X')
+    # subsample.add_argument('-coverage_depth', action='store', dest="coverage_depth",
+    #                       help='Downsample reads to this depth')
     subsample.add_argument('-genomesize', action='store', dest="genomesize",
                           help='Genome size to calculate raw coverage')
     
@@ -249,6 +249,8 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                     command = "python3 %s/pipeline.py -PE1 %s -o %s/%s -analysis %s -index %s -type SE -config %s -steps %s -clean" % (os.path.dirname(os.path.abspath(__file__)), first_file, output_folder, first_part, first_part, reference, config_file, steps)
                 if args.genomesize:
                     command = command + " -genome_size %s" % args.genomesize
+                else:
+                    command = command + " -genome_size 5000000"
             else:
                 if args.clean:
                     command = "python3 %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (
@@ -258,19 +260,20 @@ def create_varcall_jobs(filenames_array, type, output_folder, reference, steps, 
                     command = "python3 %s/pipeline.py -PE1 %s -PE2 %s -o %s/%s -analysis %s -index %s -type PE -config %s -steps %s -clean" % (os.path.dirname(os.path.abspath(__file__)), first_file, second_file, output_folder, first_part, first_part, reference, config_file, steps)
                 if args.genomesize:
                     command = command + " -genome_size %s" % args.genomesize
-
-            # # Adding Downsampling support 2019-06-20
-            if args.downsample == "yes":
-                if args.coverage_depth:
-                    depth = args.coverage_depth
                 else:
-                    depth = 100
+                    command = command + " -genome_size 5000000"
 
-                command = command + " -downsample yes -coverage_depth %s" % depth
+            # # Adding Downsampling support by default - 2024-04-26
+            # if args.downsample == "yes":
+            #     if args.coverage_depth:
+            #         depth = args.coverage_depth
+            #     else:
+            #         depth = 100
+            command = command + " -downsample yes -coverage_depth 100"
 
             # Adding samclip feature July 2020
-            if args.clip:
-               command = command + " -clip"
+            #if args.clip:
+            command = command + " -clip"
             with open(job_name, 'w') as out:
                 job_title = "%s %s%s" % (script_Directive, job_name_flag, first_part)
                 out.write("#!/bin/sh" + '\n')
@@ -454,6 +457,9 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
     file_exists(reference)
 
     core_pipeline = "python3 %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 3 -jobrun %s -results_dir %s -config %s -scheduler %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file, args.scheduler)
+    core_pipeline = core_pipeline + " -gubbins yes"
+    core_pipeline = core_pipeline + " -mask"
+
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
     Pbs_model_lines = "#PBS -M %s\n#PBS -m %s\n#PBS -V\n#PBS -l nodes=1:ppn=4,pmem=4000mb,walltime=92:00:00\n#PBS -q %s\n#PBS -A %s\n#PBS -l qos=flux\n"\
                       % (ConfigSectionMap("scheduler", Config)['email'], ConfigSectionMap("scheduler", Config)['notification'], ConfigSectionMap("scheduler", Config)['queue'], ConfigSectionMap("scheduler", Config)['flux_account'])
@@ -483,12 +489,17 @@ def run_report_analysis(core_temp_dir, reference, analysis_name, log_unique_time
 
 def run_tree_analysis(core_temp_dir, reference, analysis_name, log_unique_time, cluster, logger, core_results_dir, config_file):
     core_pipeline = "python3 %s/modules/variant_diagnostics/core_pipeline.py -filter2_only_snp_vcf_dir %s -filter2_only_snp_vcf_filenames %s/vcf_filenames -reference %s -steps 4 -jobrun %s -results_dir %s -config %s -scheduler %s" % (os.path.dirname(os.path.abspath(__file__)), core_temp_dir, core_temp_dir, reference, cluster, core_results_dir, config_file, args.scheduler)
-    if args.gubbins == "yes":
-        core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+    core_pipeline = core_pipeline + " -gubbins yes"
+    core_pipeline = core_pipeline + " -mask"
+
     if args.outgroup:
         core_pipeline = core_pipeline + " -outgroup %s" % args.outgroup
-    if args.mask:
-        core_pipeline = core_pipeline + " -mask"
+
+    # if args.gubbins == "yes":
+    #     core_pipeline = core_pipeline + " -gubbins %s" % args.gubbins
+    
+    # if args.mask:
+    #     core_pipeline = core_pipeline + " -mask"
 
 
     job_name = core_temp_dir + "/" + log_unique_time + "_" + analysis_name + ".pbs"
