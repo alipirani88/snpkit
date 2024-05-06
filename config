@@ -258,34 +258,33 @@ Ref_Path: /path-to/reference/index/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1.fasta
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+Ref_Path: /nfs/turbo/umms-esnitkin/data_sharing/reference/KPNIH1/
 
 [MRSA_USA_300]
 # Name of reference genome fasta file.
 Ref_Name: MRSA_USA_300.fasta
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/MRSA_USA_300/
+Ref_Path: /nfs/turbo/umms-esnitkin/data_sharing/reference/MRSA_USA_300/
 
 [CDIFF_630_ncbi]
 # Name of reference genome fasta file.
 Ref_Name: cdiff_630.fasta
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630_ncbi/
+Ref_Path: /nfs/turbo/umms-esnitkin/data_sharing/reference/CDIFF_630_ncbi/
 
 [Ecoli_NCTC13441_ST131]
 # Name of reference genome fasta file.
 Ref_Name: Ecoli_NCTC13441_ST131.fasta
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/Ecoli_NCTC13441_ST131/
+Ref_Path: /nfs/turbo/umms-esnitkin/data_sharing/reference/Ecoli_NCTC13441_ST131/
 
 [cdiff_630]
 # Name of reference genome fasta file.
 Ref_Name: cdiff_630.fasta
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/CDIFF_630/
+Ref_Path: /nfs/turbo/umms-esnitkin/data_sharing/reference/CDIFF_630/
 
 # This setting is deprecated. snpkit uses conda environments for 
 # Set bin folder path. Please make sure all the executables are placed in bin folder. Also make sure the path for individual tools are correct.
 [bin_path]
 binbase: 
-
