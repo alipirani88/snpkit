@@ -121,22 +121,22 @@ The pipeline requires three main inputs - readsdir, name of the reference genome
 ```
 [KPNIH1]
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/
+Ref_Path: /nfs/turbo/umms-esnitkin/data_sharing/reference/KPNIH1/
 # Name of reference genome fasta file.
 Ref_Name: KPNIH1.fasta
 ```
 
-Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH reference genome, you can create a new section in your config file with a different index name.
+Here, Ref_Name is the reference genome fasta file located in Ref_Path. Similarly, if you want to use a different version of KPNIH1 reference genome, you can create a new section in your config file with a different index name.
 
 ```
-[KPNIH1_new]
+[KPNIH1_V2024]
 # path to the reference genome fasta file.
-Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
+Ref_Path: /nfs/turbo/umms-esnitkin/data_sharing/reference/KPNIH1_V2024/
 # Name of reference genome fasta file.
-Ref_Name: KPNIH1_new.fasta
+Ref_Name: KPNIH1_V2024.fasta
 ```
 
-THe pipeline also requires Phaster results of your reference genome to mask phage region. The pipeline assumes that you have placed the reference genome fasta file `KPNIH1.fasta` in folder `/nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/`, a genbank annotation file with extension `.gbf` and phaster results downloaded from Phaster website for your specific reference genome. The phaster file  that pipeline expects are `summary.txt` and `phage_regions.fna`.
+THe pipeline also requires Phaster results of your reference genome to mask phage region. The pipeline assumes that you have placed the reference genome fasta file `KPNIH1.fasta` in folder `/nfs/turbo/umms-esnitkin/data_sharing/reference/KPNIH1/`, a genbank annotation file with extension `.gbf` and phaster results downloaded from Phaster website for your specific reference genome. The phaster file  that pipeline expects are `summary.txt` and `phage_regions.fna`.
 
 
 ### For detailed information, please refer to the [wiki](https://github.com/alipirani88/snpkit/wiki) page.
