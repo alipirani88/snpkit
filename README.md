@@ -89,7 +89,7 @@ This step will gather all the variant call results of the pipeline, generate SNP
 
 ## Input
 
-The pipeline requires three main inputs - 
+The pipeline requires three main inputs - readsdir, name of the reference genome and path to the config file.
 
 **1. readsdir:** Place your Illumina SE/PE reads in a folder and give path to this folder with -readsdir argument. Apart from the standard Miseq/Hiseq fastq naming convention (R1_001_final.fastq.gz), other acceptable fastq extensions are: 
 
@@ -136,7 +136,7 @@ Ref_Path: /nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1_new/
 Ref_Name: KPNIH1_new.fasta
 ```
 
-THe pipeline also requires Phaster results of your reference genome to mask phage region. To enable this place the phaster results files in the reference genome folder.
+THe pipeline also requires Phaster results of your reference genome to mask phage region. The pipeline assumes that you have placed the reference genome fasta file `KPNIH1.fasta` in folder `/nfs/esnitkin/bin_group/variant_calling_bin/reference/KPNIH1/`, a genbank annotation file with extension `.gbf` and phaster results downloaded from Phaster website for your specific reference genome. The phaster file  that pipeline expects are `summary.txt` and `phage_regions.fna`.
 
 
 ### For detailed information, please refer to the [wiki](https://github.com/alipirani88/snpkit/wiki) page.
